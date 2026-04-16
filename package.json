@@ -1,10 +1,23 @@
 {
   "name": "aimtp",
   "version": "0.0.1",
-  "description": "",
-  "main": "index.js",
+  "description": "专注合规的 Markdown 转 PDF 桌面应用",
+  "main": "dist/main/main.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.electron.json",
+    "build:renderer": "vite build",
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder",
+    "test": "playwright test",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
   "repository": {
     "type": "git",
