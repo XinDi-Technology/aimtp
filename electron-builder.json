@@ -1,0 +1,24 @@
+{
+  "appId": "com.aimtp.converter",
+  "productName": "AIMTP",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
+  "extraMetadata": {
+    "main": "dist/main/main.js"
+  },
+  "win": { 
+    "target": "nsis"
+  },
+  "mac": { 
+    "target": "dmg"
+  },
+  "linux": { 
+    "target": "AppImage"
+  },
+  "publish": null
+}

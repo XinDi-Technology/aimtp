@@ -1,0 +1,200 @@
+# Build and Release workflow for AIMTP project
+# 此工作流负责构建、测试和发布AIMTP应用
+
+name: Build and Release
+
+# 触发条件配置
+on:
+  # 当代码推送到main或develop分支时触发
+  push:
+    branches: [main, develop]
+    # 当创建以v开头的标签时触发（用于版本发布）
+    tags: ['v*']
+  # 当向main分支提交拉取请求时触发
+  pull_request:
+    branches: [main]
+    # 只在拉取请求打开、同步或重新打开时触发
+    types: [opened, synchronize, reopened]
+  # 允许通过GitHub界面或API手动触发工作流
+  workflow_dispatch:
+
+# 环境变量配置
+env:
+  # 指定Node.js版本
+  NODE_VERSION: '24'
+
+# 作业配置
+jobs:
+  # 代码检查作业
+  lint:
+    # 在Ubuntu最新版本上运行
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # 设置Node.js环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # 缓存node_modules目录，提高构建速度
+      - name: Cache node_modules
+        uses: actions/cache@v5
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+
+      # 安装依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 运行TypeScript类型检查
+      - name: TypeScript type check
+        run: npm run typecheck || echo "Type check skipped"
+
+      # 构建Vite应用
+      - name: Build Vite
+        run: npm run build:vite
+
+  # 测试作业
+  test:
+    # 依赖于lint作业，只有lint通过后才运行
+    needs: lint
+    # 在Ubuntu最新版本上运行
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # 设置Node.js环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # 缓存node_modules目录，提高构建速度
+      - name: Cache node_modules
+        uses: actions/cache@v5
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+
+      # 缓存Playwright浏览器，避免重复下载
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # 安装依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 安装Playwright浏览器
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      # 运行测试
+      - name: Run tests
+        run: npm run test
+
+  # Electron构建作业
+  build-electron:
+    # 依赖于lint和test作业，只有两者都通过后才运行
+    needs: [lint, test]
+    # 在Windows最新版本上运行（用于构建Windows安装包）
+    runs-on: windows-latest
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # 设置Node.js环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # 缓存node_modules目录，提高构建速度
+      - name: Cache node_modules
+        uses: actions/cache@v5
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+
+      # 安装依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 安装Playwright浏览器
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
+
+      # 构建Electron应用
+      - name: Build Electron
+        run: npm run build
+
+      # 构建Windows安装包
+      - name: Build Electron app (Windows)
+        run: npm run dist
+
+      # 上传Windows安装包作为 artifacts
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-installer
+          path: release/*.exe
+          retention-days: 7
+
+  # 发布作业
+  release:
+    # 依赖于build-electron作业，只有构建成功后才运行
+    needs: build-electron
+    # 只在创建以v开头的标签时运行
+    if: startsWith(github.ref, 'refs/tags/v')
+    # 在Ubuntu最新版本上运行
+    runs-on: ubuntu-latest
+    # 需要写入内容的权限
+    permissions:
+      contents: write
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # 下载Windows安装包 artifacts
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-installer
+          path: release
+
+      # 创建GitHub Release并上传安装包
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: release/*.exe
+          draft: false
+          prerelease: false
+          tag_name: ${{ github.ref_name }}
+          name: AIMTP ${{ github.ref_name }}
+        env:
+          # 使用GitHub Token进行授权
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

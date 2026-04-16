@@ -1,0 +1,324 @@
+.preview-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid #e0e0e0;
+}
+
+.panel-header {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.markdown-preview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  max-width: 100%;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1a1a1a;
+}
+
+/* GitHub Alerts */
+.github-alert {
+  background: #f0f6fc;
+  border: 1px solid #d0deec;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 12px 0;
+  display: flex;
+  gap: 12px;
+}
+
+.github-alert.note {
+  background: #f0f6fc;
+  border: 1px solid #d0deec;
+}
+
+.github-alert.tip {
+  background: #dafbe1;
+  border: 1px solid #a8e6b1;
+}
+
+.github-alert.important {
+  background: #fff8c5;
+  border: 1px solid #e3d593;
+}
+
+.github-alert.warning {
+  background: #fff8c5;
+  border: 1px solid #e3d593;
+}
+
+.github-alert.danger {
+  background: #ffebe9;
+  border: 1px solid #ffc1aa;
+}
+
+.alert-icon {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+/* Ruler Styles */
+.ruler-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.ruler {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #6c757d;
+  font-family: monospace;
+}
+
+.ruler-horizontal {
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.ruler-vertical {
+  position: absolute;
+  right: 10px;
+  top: 0;
+  transform: rotate(90deg);
+  transform-origin: right center;
+  width: 100px;
+  text-align: center;
+}
+
+.ruler-label {
+  font-weight: 500;
+}
+
+.preview-with-margins {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-middle {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.margin-ruler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 1px solid #90caf9;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #1565c0;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.margin-ruler-top,
+.margin-ruler-bottom {
+  width: 100%;
+  max-width: 250px;
+}
+
+.margin-ruler-left,
+.margin-ruler-right {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  height: 200px;
+  min-height: 200px;
+}
+
+.margin-ruler-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.content-area {
+  flex: 1;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 2px;
+  border: 1px solid #e0e0e0;
+}
+
+.content-area .markdown-preview {
+  padding: 0;
+  box-shadow: none;
+}
+
+/* MathJax SVG Output Styles */
+.math-display {
+  margin: 1em 0;
+  padding: 0.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.math-display svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 行内数学公式 */
+.math-inline svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* MathJax 公式加载中占位符样式 */
+.math-placeholder {
+  background: #f5f5f5;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-family: monospace;
+  color: #666;
+}
+
+/* MathJax 错误提示样式 */
+.math-error {
+  color: #d4462a;
+  font-size: 0.9em;
+  background: #fff8f8;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ffc1aa;
+}
+
+/* 确保 SVG 在打印时正确显示 */
+@media print {
+  .math-display svg,
+  .mermaid svg {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ============================================================================
+   Mermaid 流程图样式
+   ============================================================================ */
+
+/* Mermaid 图表容器 */
+.mermaid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5em 0;
+  padding: 1em;
+  background: transparent;
+  overflow-x: auto;
+}
+
+/* Mermaid 图表容器（替换后的 SVG） */
+.mermaid-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5em 0;
+  padding: 1em;
+  background: transparent;
+  overflow-x: auto;
+}
+
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mermaid 错误提示 */
+.mermaid-error {
+  color: #d4462a;
+  font-size: 0.9em;
+  background: #fff8f8;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #ffc1aa;
+  margin: 1em 0;
+}
+
+.mermaid-error summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: #b33a1d;
+}
+
+.mermaid-error code {
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+/* Mermaid SVG 基础样式 */
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Mermaid 流程图节点样式增强 */
+.mermaid .node {
+  transition: fill 0.2s ease;
+}
+
+.mermaid .edgePath .path {
+  stroke-width: 2px;
+}
+
+/* Mermaid 序列图样式 */
+.mermaid .actor {
+  fill: #fff;
+  stroke: #333;
+}
+
+.mermaid .actorLines {
+  stroke: #666;
+}
+
+/* Mermaid 甘特图样式 */
+.mermaid .task {
+  fill: #e1e5e8;
+  stroke: #333;
+}
+
+/* Mermaid 类图样式 */
+.mermaid .classBox {
+  fill: #f0f0f0;
+  stroke: #333;
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .mermaid {
+    filter: invert(0);
+  }
+}
