@@ -525,45 +525,45 @@ export const SettingsPanel: React.FC = () => {
           💾 保存设置为模板
         </button>
       </div>
-    </aside>
 
-    {/* 模板名称输入弹窗 */}
-    {showModal && (
-      <div className="modal-overlay" onClick={() => setShowModal(false)}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <h3>保存设置为模板</h3>
-          <div className="setting-group">
-            <label className="setting-label">模板名称</label>
-            <input
-              type="text"
-              className="setting-input"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="请输入模板名称"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSaveTemplate();
-                } else if (e.key === 'Escape') {
-                  setShowModal(false);
-                }
-              }}
-            />
-          </div>
-          <div className="modal-actions">
-            <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
-              取消
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleSaveTemplate}
-              disabled={!templateName.trim()}
-            >
-              保存
-            </button>
+      {/* 模板名称输入弹窗 */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>保存设置为模板</h3>
+            <div className="setting-group">
+              <label className="setting-label">模板名称</label>
+              <input
+                type="text"
+                className="setting-input"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="请输入模板名称"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveTemplate();
+                  } else if (e.key === 'Escape') {
+                    setShowModal(false);
+                  }
+                }}
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
+                取消
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveTemplate}
+                disabled={!templateName.trim()}
+              >
+                保存
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
+    </aside>
   );
 };
