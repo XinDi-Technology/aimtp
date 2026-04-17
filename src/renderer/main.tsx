@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
+// 在所有导入之后立即打印，确保脚本已开始执行
+console.log('[Aimtp] main.tsx module evaluation started');
+
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './styles.css';
-
-console.log('Aimtp renderer process starting...');
 
 const handleError = (error: Error, source?: string) => {
   console.error(`[Aimtp] Error in ${source || 'unknown'}:`, error);

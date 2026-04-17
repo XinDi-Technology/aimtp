@@ -5,8 +5,7 @@ import { t } from '../../shared/i18n';
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 
-// TODO: 待功能完善后考虑使用 React.memo 优化组件渲染性能
-export const EditorPanel: React.FC = () => {
+export const EditorPanel: React.FC = React.memo(() => {
   const { 
     markdown, 
     setMarkdown, 
@@ -128,4 +127,6 @@ console.log('Hello');
       )}
     </div>
   );
-};
+});
+
+EditorPanel.displayName = 'EditorPanel';

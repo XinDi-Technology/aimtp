@@ -18,7 +18,6 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
   const { markdown, locale, page, font, extensions, headerFooter, cover } = options;
   
   try {
-    // TODO: 待功能完善后考虑缓存相同配置的 MarkdownIt 实例，避免每次重新创建
     const md = resetMarkdownIt({
       codeHighlight: extensions.codeHighlight,
       showLineNumbers: extensions.showLineNumbers,

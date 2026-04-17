@@ -10,8 +10,9 @@ export default defineConfig({
       generateBundle(_options: any, bundle: any) {
         const htmlFile = bundle['index.html'];
         if (htmlFile && htmlFile.type === 'asset') {
+          // 更加健壮的替换逻辑，匹配 crossorigin, crossorigin="", crossorigin='anonymous' 等
           htmlFile.source = (htmlFile.source as string).replace(
-            /crossorigin=""/g,
+            /crossorigin(="[^"]*"|='[^']*'|(?!\s*>))?/g,
             'crossorigin="anonymous"'
           );
         }
@@ -35,7 +36,8 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['mathjax'],
+    // 移除 mathjax 的排除，让 Vite 尝试预构建它
+    exclude: [],
   },
   assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
   // preview 使用项目根目录作为根目录，但需要手动切换到 dist/renderer

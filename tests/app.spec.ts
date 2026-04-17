@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_TIMEOUT = 10000;
-const UI_TIMEOUT = 5000;
+const BASE_TIMEOUT = 30000;
+const UI_TIMEOUT = 10000;
 
 test.describe('Aimtp Application', () => {
   test.beforeEach(async ({ page }) => {

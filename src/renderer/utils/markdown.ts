@@ -26,7 +26,22 @@ export interface MarkdownItOptions {
   codeTheme?: string;
 }
 
+// 缓存 MarkdownIt 实例
+const mdCache = new Map<string, MarkdownIt>();
+
+/**
+ * 根据选项生成唯一的缓存键
+ */
+const getCacheKey = (options: MarkdownItOptions): string => {
+  return JSON.stringify(options);
+};
+
 export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
+  const cacheKey = getCacheKey(options);
+  if (mdCache.has(cacheKey)) {
+    return mdCache.get(cacheKey)!;
+  }
+
   const md = new MarkdownIt({
     html: true,
     breaks: true,
@@ -74,6 +89,9 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
     // 使用自定义 Mermaid 插件
     md.use(mermaidPlugin);
   }
+
+  // 存入缓存
+  mdCache.set(cacheKey, md);
 
   return md;
 };
