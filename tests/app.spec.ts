@@ -5,10 +5,14 @@ const UI_TIMEOUT = 5000;
 
 test.describe('Aimtp Application', () => {
   test.beforeEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear());
     await page.goto('/', { timeout: BASE_TIMEOUT });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
+    try {
+      await page.evaluate(() => localStorage.clear());
+    } catch (e) {
+      console.log('localStorage not available in this context');
+    }
   });
 
   test.describe('Core UI Components', () => {
@@ -33,7 +37,11 @@ test.describe('Aimtp Application', () => {
 
   test.describe('Editor Functionality', () => {
     test.beforeEach(async ({ page }) => {
-      await page.evaluate(() => localStorage.removeItem('aimtp-autosave'));
+      try {
+        await page.evaluate(() => localStorage.removeItem('aimtp-autosave'));
+      } catch (e) {
+        console.log('localStorage not available in this context');
+      }
     });
 
     test('should edit markdown content and see preview', async ({ page }) => {
@@ -177,9 +185,13 @@ test.describe('Aimtp Application', () => {
 
   test.describe('Settings Persistence', () => {
     test.beforeEach(async ({ page }) => {
-      await page.evaluate(() => localStorage.clear());
       await page.goto('/', { timeout: BASE_TIMEOUT });
       await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
+      try {
+        await page.evaluate(() => localStorage.clear());
+      } catch (e) {
+        console.log('localStorage not available in this context');
+      }
     });
 
     test('should persist settings after reload', async ({ page }) => {
@@ -195,7 +207,11 @@ test.describe('Aimtp Application', () => {
 
   test.describe('Edge Cases', () => {
     test.beforeEach(async ({ page }) => {
-      await page.evaluate(() => localStorage.clear());
+      try {
+        await page.evaluate(() => localStorage.clear());
+      } catch (e) {
+        console.log('localStorage not available in this context');
+      }
     });
 
     test('should handle special characters in markdown', async ({ page }) => {
