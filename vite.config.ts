@@ -12,6 +12,7 @@ export default defineConfig({
     target: 'esnext',
     minify: 'esbuild',
     chunkSizeWarningLimit: 1000,
+    cssMinify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
@@ -30,6 +31,9 @@ export default defineConfig({
       '@': resolve(__dirname, 'src/renderer'),
       '@fonts': resolve(__dirname, 'src/fonts'),
     },
+  },
+  optimizeDeps: {
+    exclude: ['mathjax'],
   },
   assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2', '**/*.css'],
 });
