@@ -25,6 +25,7 @@ export default defineConfig({
     },
   },
   resolve: {
+    conditions: ['browser', 'import', 'module', 'default'],
     alias: {
       '@': resolve(__dirname, 'src/renderer'),
     },
