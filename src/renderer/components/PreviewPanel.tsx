@@ -3,18 +3,13 @@ import { useAppStore } from '../store/useAppStore';
 import { resetMarkdownIt } from '../utils/markdown';
 import { renderMermaid } from '../utils/mermaidPlugin';
 import { typesetMath } from '../utils/mathjaxPlugin';
+import { getHljsTheme, getHljsBaseStyles } from '../utils/hljsThemes';
 import { t } from '../../shared/i18n';
 import './PreviewPanel.css';
 
 interface PreviewPanelProps {
   className?: string;
 }
-
-const CODE_THEME_MAP: Record<string, string> = {
-  github: 'highlight.js/styles/github.css',
-  monokai: 'highlight.js/styles/monokai.css',
-  dracula: 'highlight.js/styles/dracula.css',
-};
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
   const { markdown, font, extensions, page, locale } = useAppStore();
@@ -47,18 +42,18 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     renderContent();
   }, [markdown, extensions]);
   
+  // 注入 Highlight.js 主题样式
   useEffect(() => {
     const currentTheme = extensions.codeTheme || 'github';
-    const themePath = CODE_THEME_MAP[currentTheme] || CODE_THEME_MAP.github;
+    const themeCss = `${getHljsBaseStyles()}${getHljsTheme(currentTheme)}`;
     
-    let existingLink = document.querySelector('link[data-highlight-theme]') as HTMLLinkElement;
-    if (!existingLink) {
-      existingLink = document.createElement('link');
-      existingLink.rel = 'stylesheet';
-      existingLink.setAttribute('data-highlight-theme', 'true');
-      document.head.appendChild(existingLink);
+    let styleTag = document.getElementById('hljs-theme-style') as HTMLStyleElement;
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'hljs-theme-style';
+      document.head.appendChild(styleTag);
     }
-    existingLink.href = themePath;
+    styleTag.textContent = themeCss;
   }, [extensions.codeTheme]);
   
   const html = useMemo(() => {

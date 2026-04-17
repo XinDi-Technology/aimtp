@@ -1,9 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-
-// 在所有导入之后立即打印，确保脚本已开始执行
-console.log('[Aimtp] main.tsx module evaluation started');
-
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './styles.css';
@@ -36,9 +32,6 @@ window.addEventListener('unhandledrejection', (event) => {
 
 try {
   const rootElement = document.getElementById('root');
-  console.log('[Aimtp] Root element found:', !!rootElement);
-  console.log('[Aimtp] Root element content before:', rootElement?.innerHTML);
-  console.log('[Aimtp] React version:', React.version);
   
   if (!rootElement) {
     throw new Error('Root element not found');
@@ -58,9 +51,6 @@ try {
       </ErrorBoundary>
     </React.StrictMode>
   );
-  
-  console.log('[Aimtp] React root rendered successfully');
-  console.log('[Aimtp] Root element content after:', rootElement.innerHTML);
 } catch (error) {
   console.error('[Aimtp] Fatal error during initialization:', error);
   handleError(error instanceof Error ? error : new Error(String(error)), 'initialization');

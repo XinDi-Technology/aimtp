@@ -10,9 +10,7 @@ import { useAppStore } from './store/useAppStore';
 import { usePDFExport, useFontLoading } from './hooks';
 
 function App() {
-  console.log('[Aimtp] App component rendering...');
   const { locale, showEditor, showTemplateSelection } = useAppStore();
-  console.log('[Aimtp] App store state:', { locale, showEditor, showTemplateSelection });
   const { handleExportPdf } = usePDFExport();
 
   useFontLoading();
@@ -41,7 +39,5 @@ function App() {
     </ErrorBoundary>
   );
 }
-
-console.log('[Aimtp] App component defined');
 
 export default App;
