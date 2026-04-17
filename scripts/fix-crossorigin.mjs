@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import { fileURLToPath, URL } from 'url';
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const indexPath = resolve(__dirname, '../dist/renderer/index.html');
 
 try {
