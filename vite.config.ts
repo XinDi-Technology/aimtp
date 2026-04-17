@@ -28,7 +28,8 @@ export default defineConfig({
     conditions: ['browser', 'import', 'module', 'default'],
     alias: {
       '@': resolve(__dirname, 'src/renderer'),
+      '@fonts': resolve(__dirname, 'src/fonts'),
     },
   },
-  assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
+  assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2', '**/*.css'],
 });

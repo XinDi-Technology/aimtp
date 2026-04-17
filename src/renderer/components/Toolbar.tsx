@@ -35,11 +35,12 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
   const t = (key: keyof typeof labels.zh) => labels[locale][key];
 
   return (
-    <header className="toolbar" role="banner">
+    <header className="toolbar" role="banner" data-testid="toolbar">
       <button 
         className="btn btn-toolbar" 
         onClick={handleImportFile}
         aria-label={t('importFile')}
+        data-testid="import-file-btn"
       >
         <span aria-hidden="true">📁</span> {locale === 'zh' ? '导入文件' : 'Import'}
       </button>
@@ -49,6 +50,7 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
         title={t('toggleEditor')}
         aria-label={t('toggleEditor')}
         aria-pressed={showEditor}
+        data-testid="toggle-editor-btn"
       >
         <span aria-hidden="true">{showEditor ? '👁️' : '✏️'}</span>
       </button>
@@ -57,6 +59,7 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
         className="btn btn-toolbar lang-toggle"
         onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
         aria-label={t('language')}
+        data-testid="lang-toggle-btn"
       >
         {locale === 'zh' ? '中文' : 'EN'}
       </button>
@@ -64,6 +67,7 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
         className="btn btn-toolbar"
         onClick={() => setShowTemplateSelection(true)}
         aria-label={t('template')}
+        data-testid="template-btn"
       >
         <span aria-hidden="true">🎨</span> {t('template')}
       </button>
@@ -73,6 +77,7 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
         disabled={isGenerating}
         aria-label={t('export')}
         aria-busy={isGenerating}
+        data-testid="export-pdf-btn"
       >
         {isGenerating ? (
           <>

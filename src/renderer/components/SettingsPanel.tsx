@@ -16,16 +16,17 @@ export const SettingsPanel: React.FC = () => {
   };
 
   return (
-    <aside className="settings-panel">
+    <aside className="settings-panel" data-testid="settings-panel">
       <h2>⚙️ 设置</h2>
 
-      <div className="setting-section">
+      <div className="setting-section" data-testid="page-settings">
         <h3>页面设置</h3>
         
         <div className="setting-group">
           <label className="setting-label">页面尺寸</label>
           <select
             className="setting-input setting-select"
+            data-testid="page-size-select"
             value={page.size}
             onChange={(e) => setPage({ size: e.target.value as PageSettings['size'] })}
           >

@@ -73,7 +73,7 @@ export const EditorPanel: React.FC = () => {
   }, []);
 
   return (
-    <div className="editor-panel">
+    <div className="editor-panel" data-testid="editor-panel">
       <div className="panel-header">
         {t('editor-panel-title', locale)}
         {autoSaveEnabled && lastSavedAt && (
@@ -84,6 +84,7 @@ export const EditorPanel: React.FC = () => {
       </div>
       <textarea
         className="editor-textarea"
+        data-testid="editor-textarea"
         value={markdown}
         onChange={handleChange}
         placeholder={`在此输入 Markdown 内容...
