@@ -37,6 +37,6 @@ export default defineConfig({
   },
   assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
   preview: {
-    root: 'dist/renderer',
+    root: resolve(__dirname, 'dist/renderer'),
   },
 });
