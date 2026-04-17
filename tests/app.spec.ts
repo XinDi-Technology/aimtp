@@ -28,12 +28,21 @@ test.describe('Aimtp Application', () => {
         failedRequests.push(`${status} ${response.url()}`);
       }
     });
+    
+    // 监听请求失败
+    const failedRequestErrors: string[] = [];
+    page.on('requestfailed', request => {
+      failedRequestErrors.push(`${request.failure()?.errorText} - ${request.url()}`);
+    });
 
     await page.goto('/', { timeout: BASE_TIMEOUT });
     await page.waitForLoadState('domcontentloaded');
     
     // 等待更长时间让 JavaScript 执行
     await page.waitForLoadState('networkidle').catch(() => {});
+    
+    // 额外等待 5 秒，让所有模块有机会执行
+    await page.waitForTimeout(5000);
     
     // 打印收集的日志
     console.log('=== Browser Console Logs ===');
@@ -57,12 +66,32 @@ test.describe('Aimtp Application', () => {
       console.log('=== End Failed Requests ===');
     }
     
+    if (failedRequestErrors.length > 0) {
+      console.log('=== Request Failed Errors ===');
+      failedRequestErrors.forEach(err => console.log(err));
+      console.log('=== End Request Failed Errors ===');
+    }
+    
     // 检查 root 元素内容
     const rootContent = await page.evaluate(() => {
       const root = document.getElementById('root');
       return root ? root.innerHTML : 'root element not found';
     });
     console.log('Root element content:', rootContent);
+    
+    // 检查 window 对象上的任何错误
+    const windowErrors = await page.evaluate(() => {
+      const errors: string[] = [];
+      if ((window as any).__error) {
+        errors.push((window as any).__error);
+      }
+      return errors;
+    });
+    if (windowErrors.length > 0) {
+      console.log('=== Window Errors ===');
+      windowErrors.forEach(err => console.log(err));
+      console.log('=== End Window Errors ===');
+    }
     
     // Wait for toolbar with extended timeout and add error logging
     try {
@@ -72,6 +101,7 @@ test.describe('Aimtp Application', () => {
       console.log('Page content when toolbar not found:', pageContent);
       console.log('Console errors:', consoleErrors);
       console.log('Failed requests:', failedRequests);
+      console.log('Request failed errors:', failedRequestErrors);
       throw error;
     }
     
