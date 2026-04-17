@@ -28,4 +28,10 @@ export default defineConfig({
   preview: {
     port: 4173,
   },
+  // 在构建时自动修复 crossorigin 属性，避免运行时脚本依赖
+  transformIndexHtml: {
+    transform(html) {
+      return html.replace(/crossorigin=""/g, 'crossorigin="anonymous"');
+    },
+  },
 });
