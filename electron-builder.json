@@ -9,7 +9,7 @@
     "package.json"
   ],
   "extraMetadata": {
-    "main": "dist/main/main.js"
+    "main": "dist/main/main/main.js"
   },
   "win": { 
     "target": "nsis"
