@@ -14,7 +14,6 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
   },
   projects: [
     {
@@ -23,7 +22,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build:vite && npx vite preview --port 4173 --host',
+    command: 'npm run build:vite && npx vite preview --port 4173',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 180000,
