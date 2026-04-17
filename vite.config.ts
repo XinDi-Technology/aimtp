@@ -5,20 +5,13 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   root: resolve(__dirname, 'src/renderer'),
-  // base: './', // 移除以使用绝对路径，避免相对路径解析问题
   build: {
     outDir: resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,
-    target: 'esnext',
+    target: 'es2020',
     minify: 'esbuild',
     chunkSizeWarningLimit: 2000,
     cssMinify: false,
-    // 禁用代码分割，使用单一 bundle，避免 Vite 8 + Rolldown 模块加载问题
-    rollupOptions: {
-      output: {
-        codeSplitting: false,  // 强制单一文件输出
-      },
-    },
   },
   resolve: {
     conditions: ['browser', 'import', 'module', 'default'],
@@ -31,4 +24,8 @@ export default defineConfig({
     exclude: ['mathjax'],
   },
   assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
+  // preview 使用项目根目录作为根目录，但需要手动切换到 dist/renderer
+  preview: {
+    port: 4173,
+  },
 });

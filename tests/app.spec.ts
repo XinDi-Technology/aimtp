@@ -16,11 +16,16 @@ test.describe('Aimtp Application', () => {
       consoleLogs.push(`[${msg.type()}] ${text}`);
     });
     
-    // 监听网络请求
+    // 监听网络请求 - 添加详细信息
     const failedRequests: string[] = [];
+    const allRequests: string[] = [];
     page.on('response', response => {
-      if (response.status() >= 400) {
-        failedRequests.push(`${response.status()} ${response.url()}`);
+      const url = response.url();
+      const status = response.status();
+      const contentType = response.headers()['content-type'] || 'N/A';
+      allRequests.push(`${status} ${contentType} ${url}`);
+      if (status >= 400) {
+        failedRequests.push(`${status} ${response.url()}`);
       }
     });
 
@@ -41,11 +46,23 @@ test.describe('Aimtp Application', () => {
       console.log('=== End Console Errors ===');
     }
     
+    // 打印所有网络请求（用于调试）
+    console.log('=== All Network Requests ===');
+    allRequests.forEach(req => console.log(req));
+    console.log('=== End Network Requests ===');
+    
     if (failedRequests.length > 0) {
       console.log('=== Failed Network Requests ===');
       failedRequests.forEach(req => console.log(req));
       console.log('=== End Failed Requests ===');
     }
+    
+    // 检查 root 元素内容
+    const rootContent = await page.evaluate(() => {
+      const root = document.getElementById('root');
+      return root ? root.innerHTML : 'root element not found';
+    });
+    console.log('Root element content:', rootContent);
     
     // Wait for toolbar with extended timeout and add error logging
     try {
