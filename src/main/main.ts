@@ -82,9 +82,9 @@ ipcMain.handle('save-pdf-to-path', async (_, data: Uint8Array, filePath: string)
   }
 });
 
-ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any; locale?: string }) => {
-  const locale = options.locale || 'zh';
-  
+ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any; locale?: 'zh' | 'en' }) => {
+  const locale: 'zh' | 'en' = options.locale || 'zh';
+
   if (!mainWindow) {
     throw new Error(t('no-main-window', locale));
   }

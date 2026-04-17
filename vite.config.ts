@@ -9,11 +9,16 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,
+    target: 'esnext',
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor';
+            if (id.includes('react')) return 'react-vendor';
+            if (id.includes('mathjax')) return 'mathjax';
+            if (id.includes('mermaid')) return 'mermaid';
           }
         },
       },

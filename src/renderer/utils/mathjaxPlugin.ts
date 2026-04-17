@@ -25,6 +25,8 @@ type MathType = 'inline' | 'display';
 
 /**
  * 初始化 MathJax 4
+ * 注意：MathJax 在 Vite 预览模式下可能无法正常工作
+ * 如果初始化失败，会回退到禁用状态
  * 遵循官方推荐：等待 init 完成后再使用
  */
 const initMathJax = async (): Promise<void> => {
