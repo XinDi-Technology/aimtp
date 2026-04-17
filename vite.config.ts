@@ -11,17 +11,12 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'esnext',
     minify: 'esbuild',
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
     cssMinify: false,
+    // 禁用代码分割，使用单一 bundle，避免 Vite 8 + Rolldown 模块加载问题
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'react-vendor';
-            if (id.includes('mathjax')) return 'mathjax';
-            if (id.includes('mermaid')) return 'mermaid';
-          }
-        },
+        codeSplitting: false,  // 强制单一文件输出
       },
     },
   },
@@ -36,7 +31,4 @@ export default defineConfig({
     exclude: ['mathjax'],
   },
   assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
-  preview: {
-    root: resolve(__dirname, 'dist/renderer'),
-  },
 });
