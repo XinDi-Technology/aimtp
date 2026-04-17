@@ -16,7 +16,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: join(app.getAppPath(), 'dist', 'main', 'main', 'preload.js'),
+      preload: join(app.getAppPath(), 'dist', 'main', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
