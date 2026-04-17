@@ -5,7 +5,7 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   root: resolve(__dirname, 'src/renderer'),
-  base: './',
+  // base: './', // 移除以使用绝对路径，避免相对路径解析问题
   build: {
     outDir: resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,

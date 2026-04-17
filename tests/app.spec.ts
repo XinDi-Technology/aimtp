@@ -5,8 +5,47 @@ const UI_TIMEOUT = 5000;
 
 test.describe('Aimtp Application', () => {
   test.beforeEach(async ({ page }) => {
+    // 监听所有控制台消息
+    const consoleLogs: string[] = [];
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      const text = msg.text();
+      if (msg.type() === 'error') {
+        consoleErrors.push(text);
+      }
+      consoleLogs.push(`[${msg.type()}] ${text}`);
+    });
+    
+    // 监听网络请求
+    const failedRequests: string[] = [];
+    page.on('response', response => {
+      if (response.status() >= 400) {
+        failedRequests.push(`${response.status()} ${response.url()}`);
+      }
+    });
+
     await page.goto('/', { timeout: BASE_TIMEOUT });
     await page.waitForLoadState('domcontentloaded');
+    
+    // 等待更长时间让 JavaScript 执行
+    await page.waitForLoadState('networkidle').catch(() => {});
+    
+    // 打印收集的日志
+    console.log('=== Browser Console Logs ===');
+    consoleLogs.forEach(log => console.log(log));
+    console.log('=== End Console Logs ===');
+    
+    if (consoleErrors.length > 0) {
+      console.log('=== Console Errors ===');
+      consoleErrors.forEach(err => console.log(err));
+      console.log('=== End Console Errors ===');
+    }
+    
+    if (failedRequests.length > 0) {
+      console.log('=== Failed Network Requests ===');
+      failedRequests.forEach(req => console.log(req));
+      console.log('=== End Failed Requests ===');
+    }
     
     // Wait for toolbar with extended timeout and add error logging
     try {
@@ -14,12 +53,8 @@ test.describe('Aimtp Application', () => {
     } catch (error) {
       const pageContent = await page.content();
       console.log('Page content when toolbar not found:', pageContent);
-      const consoleErrors = await page.evaluate(() => {
-        const errors: string[] = [];
-        window.onerror = (msg) => errors.push(msg);
-        return errors;
-      });
       console.log('Console errors:', consoleErrors);
+      console.log('Failed requests:', failedRequests);
       throw error;
     }
     
