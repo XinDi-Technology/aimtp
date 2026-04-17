@@ -36,7 +36,6 @@
   "homepage": "https://github.com/XinDi-Technology/aimtp#readme",
   "dependencies": {
     "dompurify": "^3.4.0",
-    "electron": "^41.2.1",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.1",
     "markdown-it-footnote": "^4.0.0",
@@ -72,6 +71,7 @@
     "typescript": "^6.0.2",
     "vite": "^8.0.8",
     "esbuild": "^0.28.0",
+    "electron": "^41.2.1",
     "wait-on": "^9.0.5"
   }
 }
