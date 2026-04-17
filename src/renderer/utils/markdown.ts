@@ -66,15 +66,11 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
   }
 
   if (options.mathJax) {
-    // 初始化 MathJax
-    initMathJaxInstance();
     // 使用 MathJax 插件
     md.use(mathjaxPlugin);
   }
 
   if (options.mermaid) {
-    // 初始化 Mermaid
-    initMermaidInstance();
     // 使用自定义 Mermaid 插件
     md.use(mermaidPlugin);
   }

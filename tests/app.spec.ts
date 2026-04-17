@@ -35,7 +35,7 @@ test.describe('AIMTP Application', () => {
     await langToggle.click();
     
     const langText = await langToggle.textContent();
-    expect(langText).toMatch(/EN|中文/);
+    expect(langText).toMatch(/(EN|中文)/);
   });
 
   test('should edit markdown content and see preview', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should open template selection panel', async ({ page }) => {
-    const templateBtn = page.locator('.toolbar button').filter({ hasText: /模板|Template/ });
+    const templateBtn = page.locator('.toolbar button').filter({ hasText: /(模板|Template)/ });
     await templateBtn.click();
     
     const templatePanel = page.locator('.template-selection-panel');
@@ -74,15 +74,15 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should show preset templates in selection panel', async ({ page }) => {
-    const templateBtn = page.locator('.toolbar button').filter({ hasText: /模板|Template/ });
+    const templateBtn = page.locator('.toolbar button').filter({ hasText: /(模板|Template)/ });
     await templateBtn.click();
     
     const templatePanel = page.locator('.template-selection-panel');
-    await expect(templatePanel).toContainText(/预设模板|Preset Templates/);
+    await expect(templatePanel).toContainText(/(预设模板|Preset Templates)/);
   });
 
   test('should select blank template', async ({ page }) => {
-    const templateBtn = page.locator('.toolbar button').filter({ hasText: /模板|Template/ });
+    const templateBtn = page.locator('.toolbar button').filter({ hasText: /(模板|Template)/ });
     await templateBtn.click();
     
     const blankTemplate = page.locator('.template-card').first();
@@ -93,7 +93,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should have export PDF button', async ({ page }) => {
-    const exportBtn = page.locator('.toolbar button').filter({ hasText: /导出 PDF|Export PDF/ });
+    const exportBtn = page.locator('.toolbar button').filter({ hasText: /(导出 PDF|Export PDF)/ });
     await expect(exportBtn).toBeVisible();
   });
 
@@ -110,35 +110,35 @@ test.describe('AIMTP Application', () => {
 
   test('should have extension settings in settings panel', async ({ page }) => {
     const settingsPanel = page.locator('.settings-panel');
-    await expect(settingsPanel).toContainText(/扩展功能|Extensions/);
+    await expect(settingsPanel).toContainText(/(扩展功能|Extensions)/);
   });
 
   test('should have code highlight toggle', async ({ page }) => {
     const settingsPanel = page.locator('.settings-panel');
     const codeHighlightCheckbox = settingsPanel.locator('input[type="checkbox"]').filter({
-      has: page.locator('text=/启用代码高亮|codeHighlight/')
+      has: page.locator('text=/(启用代码高亮|codeHighlight)/')
     });
     await expect(codeHighlightCheckbox.first()).toBeVisible();
   });
 
   test('should have GitHub alerts toggle', async ({ page }) => {
     const settingsPanel = page.locator('.settings-panel');
-    await expect(settingsPanel).toContainText(/GitHub 风格警告框|githubAlerts/);
+    await expect(settingsPanel).toContainText(/(GitHub 风格警告框|githubAlerts)/);
   });
 
   test('should have cover settings', async ({ page }) => {
     const settingsPanel = page.locator('.settings-panel');
-    await expect(settingsPanel).toContainText(/封面设置|Cover Settings/);
+    await expect(settingsPanel).toContainText(/(封面设置|Cover Settings)/);
   });
 
   test('should have header footer settings', async ({ page }) => {
     const settingsPanel = page.locator('.settings-panel');
-    await expect(settingsPanel).toContainText(/页眉页脚|Header Footer/);
+    await expect(settingsPanel).toContainText(/(页眉页脚|Header Footer)/);
   });
 
   test('should have save as template button', async ({ page }) => {
     const settingsPanel = page.locator('.settings-panel');
-    const saveTemplateBtn = settingsPanel.locator('button').filter({ hasText: /保存设置为模板|Save as Template/ });
+    const saveTemplateBtn = settingsPanel.locator('button').filter({ hasText: /(保存设置为模板|Save as Template)/ });
     await expect(saveTemplateBtn).toBeVisible();
   });
 
@@ -167,25 +167,46 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should toggle auto save setting', async ({ page }) => {
+    // 等待 SettingsPanel 完全加载
+    await page.waitForLoadState('domcontentloaded');
+    
     const settingsPanel = page.locator('.settings-panel');
-    const autoSaveCheckbox = settingsPanel.locator('input[type="checkbox"]').filter({
-      has: page.locator('text=/启用自动保存|Enable Auto Save/')
-    });
-    await expect(autoSaveCheckbox.first()).toBeVisible();
+    // 等待 SettingsPanel 可见
+    await settingsPanel.waitFor({ state: 'visible' });
+    
+    // 使用 xpath 定位包含自动保存文本的 label 元素，然后找到其中的 input
+    const autoSaveCheckbox = page.locator('//label[contains(text(), "启用自动保存") or contains(text(), "Enable Auto Save")]/input[@type="checkbox"]');
+    await autoSaveCheckbox.waitFor({ state: 'visible', timeout: 10000 });
+    
+    await expect(autoSaveCheckbox).toBeVisible();
   });
 
   test('should have page margins controls', async ({ page }) => {
+    // 等待 SettingsPanel 完全加载
+    await page.waitForLoadState('domcontentloaded');
+    
     const settingsPanel = page.locator('.settings-panel');
+    // 等待 SettingsPanel 可见
+    await settingsPanel.waitFor({ state: 'visible' });
+    
+    // 等待 margin-controls 元素可见
     const marginControls = settingsPanel.locator('.margin-controls');
+    await marginControls.waitFor({ state: 'visible', timeout: 10000 });
+    
     await expect(marginControls).toBeVisible();
   });
 
   test('should update word count when editing', async ({ page }) => {
+    // 清除自动保存内容，避免恢复对话框阻止访问 textarea
+    await page.evaluate(() => {
+      localStorage.removeItem('aimtp-autosave');
+    });
+    
     const editor = page.locator('.editor-panel textarea');
     await editor.fill('Hello World\nThis is a test');
     
     const statusBar = page.locator('.status-bar');
-    await expect(statusBar).toContainText(/字数|word/);
-    await expect(statusBar).toContainText(/行数|line/);
+    await expect(statusBar).toContainText(/(字 数|word)/);
+    await expect(statusBar).toContainText(/(行数|line)/);
   });
 });

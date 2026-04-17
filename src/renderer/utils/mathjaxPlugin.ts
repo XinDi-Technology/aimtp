@@ -43,8 +43,6 @@ const initMathJax = async (): Promise<void> => {
   mathJaxInitPromise = MathJax.init({
     loader: {
       load: ['input/tex', 'output/svg'],
-      // 不从 CDN 加载，使用本地 node_modules
-      source: require('mathjax'),
     },
     tex: {
       // 支持的行内公式分隔符
@@ -266,7 +264,8 @@ export const mathjaxPlugin = (md: MarkdownIt): void => {
       
       // 提取公式内容（去除首尾 $）
       const math = content.slice(1, -1);
-      return renderMathInlineSync(math);
+      // 总是返回占位符，由 typesetMath 函数在 DOM 渲染后处理
+      return `<span class="math-inline" data-math="${encodeURIComponent(math)}">\(${math}\)</span>`;
     }
 
     // 非数学内容，使用默认渲染
@@ -284,7 +283,8 @@ export const mathjaxPlugin = (md: MarkdownIt): void => {
       
       // 提取公式内容（去除首尾 $$）
       const math = content.slice(2, -2);
-      return renderMathDisplaySync(math);
+      // 总是返回占位符，由 typesetMath 函数在 DOM 渲染后处理
+      return `<div class="math-display" data-math="${encodeURIComponent(math)}">\[${math}\]</div>`;
     }
 
     // 非数学内容，使用默认渲染
