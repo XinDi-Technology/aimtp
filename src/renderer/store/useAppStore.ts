@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { logger } from '../utils/logger';
 
 export interface PageSettings {
@@ -542,157 +543,197 @@ const saveAutoSaveEnabled = (enabled: boolean) => {
   }
 };
 
-export const useAppStore = create<AppState>((set, get) => ({
-  markdown: TEMPLATES.blank,
-  setMarkdown: (markdown) => set({ markdown }),
-  
-  currentTemplate: 'blank',
-  setCurrentTemplate: (currentTemplate) => set({ currentTemplate }),
-  
-  locale: 'zh',
-  setLocale: (locale) => set({ locale }),
-  
-  page: defaultPage,
-  setPage: (page) => set((state) => ({ page: { ...state.page, ...page } })),
-  
-  font: defaultFont,
-  setFont: (font) => set((state) => ({ font: { ...state.font, ...font } })),
-  
-  extensions: defaultExtensions,
-  setExtensions: (extensions) => set((state) => ({ extensions: { ...state.extensions, ...extensions } })),
-  
-  cover: defaultCover,
-  setCover: (cover) => set((state) => ({ cover: { ...state.cover, ...cover } })),
-  
-  headerFooter: defaultHeaderFooter,
-  setHeaderFooter: (headerFooter) => set((state) => ({ headerFooter: { ...state.headerFooter, ...headerFooter } })),
-  
-  isGenerating: false,
-  setIsGenerating: (isGenerating) => set({ isGenerating }),
-  
-  generatedHtml: '',
-  setGeneratedHtml: (generatedHtml) => set({ generatedHtml }),
-  
-  showEditor: true,
-  setShowEditor: (showEditor) => set({ showEditor }),
-  
-  showTemplateSelection: false,
-  setShowTemplateSelection: (show) => set({ showTemplateSelection: show, showEditor: !show }),
-  
-  customTemplates: loadCustomTemplates(),
-  
-  saveAsTemplate: (name) => {
-    const trimmedName = name?.trim();
-    
-    if (!trimmedName) {
-      logger.warn('Template name cannot be empty');
-      return;
-    }
-    
-    if (trimmedName.length > 100) {
-      logger.warn('Template name is too long (max 100 characters)');
-      return;
-    }
-    
-    const state = get();
-    const newTemplate: CustomTemplate = {
-      id: Date.now().toString(),
-      name: trimmedName,
-      settings: {
-        page: { ...state.page },
-        font: { ...state.font },
-        extensions: { ...state.extensions },
-        headerFooter: { ...state.headerFooter },
-        cover: { ...state.cover },
-      },
-      createdAt: Date.now(),
-    };
-    const newTemplates = [...state.customTemplates, newTemplate];
-    saveCustomTemplates(newTemplates);
-    set({
-      customTemplates: newTemplates,
-    });
-  },
-  
-  applyTemplate: (templateId) => {
-    const state = get();
-    const template = state.customTemplates.find(t => t.id === templateId);
-    if (template) {
-      set({
-        page: { ...template.settings.page },
-        font: { ...template.settings.font },
-        extensions: { ...template.settings.extensions },
-        headerFooter: { ...template.settings.headerFooter },
-        cover: { ...template.settings.cover },
-        showTemplateSelection: false,
-        showEditor: true,
-      });
-    }
-  },
-  
-  deleteTemplate: (templateId) => {
-    const state = get();
-    const newTemplates = state.customTemplates.filter(t => t.id !== templateId);
-    saveCustomTemplates(newTemplates);
-    set({
-      customTemplates: newTemplates,
-    });
-  },
-  
-  selectPresetTemplate: (templateKey) => {
-    const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
-    if (template) {
-      set({
-        markdown: template,
-        currentTemplate: templateKey,
-        showTemplateSelection: false,
-        showEditor: true,
-      });
-    }
-  },
-
-  autoSaveEnabled: loadAutoSaveEnabled(),
-  setAutoSaveEnabled: (enabled) => {
-    saveAutoSaveEnabled(enabled);
-    set({ autoSaveEnabled: enabled });
-  },
-
-  lastSavedAt: null,
-  setLastSavedAt: (time) => set({ lastSavedAt: time }),
-
-  loadAutoSave: () => {
-    if (!localStorageAvailable()) {
-      logger.warn('localStorage is not available, cannot load autosave');
-      return null;
-    }
-    try {
-      const stored = localStorage.getItem(AUTOSAVE_KEY);
-      if (stored) {
-        const data = JSON.parse(stored);
-        if (isValidString(data.content) && isValidNumber(data.timestamp)) {
-          return data.content;
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      markdown: TEMPLATES.blank,
+      setMarkdown: (markdown) => set({ markdown }),
+      
+      currentTemplate: 'blank',
+      setCurrentTemplate: (currentTemplate) => set({ currentTemplate }),
+      
+      locale: 'zh',
+      setLocale: (locale) => set({ locale }),
+      
+      page: defaultPage,
+      setPage: (page) => set((state) => ({ page: { ...state.page, ...page } })),
+      
+      font: defaultFont,
+      setFont: (font) => set((state) => ({ font: { ...state.font, ...font } })),
+      
+      extensions: defaultExtensions,
+      setExtensions: (extensions) => set((state) => ({ extensions: { ...state.extensions, ...extensions } })),
+      
+      cover: defaultCover,
+      setCover: (cover) => set((state) => ({ cover: { ...state.cover, ...cover } })),
+      
+      headerFooter: defaultHeaderFooter,
+      setHeaderFooter: (headerFooter) => set((state) => ({ headerFooter: { ...state.headerFooter, ...headerFooter } })),
+      
+      isGenerating: false,
+      setIsGenerating: (isGenerating) => set({ isGenerating }),
+      
+      generatedHtml: '',
+      setGeneratedHtml: (generatedHtml) => set({ generatedHtml }),
+      
+      showEditor: true,
+      setShowEditor: (showEditor) => set({ showEditor }),
+      
+      showTemplateSelection: false,
+      setShowTemplateSelection: (show) => set({ showTemplateSelection: show, showEditor: !show }),
+      
+      customTemplates: loadCustomTemplates(),
+      
+      saveAsTemplate: (name) => {
+        const trimmedName = name?.trim();
+        
+        if (!trimmedName) {
+          logger.warn('Template name cannot be empty');
+          return;
         }
-      }
-    } catch (error) {
-      logger.error('Failed to load autosave:', error);
-    }
-    return null;
-  },
+        
+        if (trimmedName.length > 100) {
+          logger.warn('Template name is too long (max 100 characters)');
+          return;
+        }
+        
+        const state = get();
+        const newTemplate: CustomTemplate = {
+          id: Date.now().toString(),
+          name: trimmedName,
+          settings: {
+            page: { ...state.page },
+            font: { ...state.font },
+            extensions: { ...state.extensions },
+            headerFooter: { ...state.headerFooter },
+            cover: { ...state.cover },
+          },
+          createdAt: Date.now(),
+        };
+        const newTemplates = [...state.customTemplates, newTemplate];
+        saveCustomTemplates(newTemplates);
+        set({
+          customTemplates: newTemplates,
+        });
+      },
+      
+      applyTemplate: (templateId) => {
+        const state = get();
+        const template = state.customTemplates.find(t => t.id === templateId);
+        if (template) {
+          set({
+            page: { ...template.settings.page },
+            font: { ...template.settings.font },
+            extensions: { ...template.settings.extensions },
+            headerFooter: { ...template.settings.headerFooter },
+            cover: { ...template.settings.cover },
+            showTemplateSelection: false,
+            showEditor: true,
+          });
+        }
+      },
+      
+      deleteTemplate: (templateId) => {
+        const state = get();
+        const newTemplates = state.customTemplates.filter(t => t.id !== templateId);
+        saveCustomTemplates(newTemplates);
+        set({
+          customTemplates: newTemplates,
+        });
+      },
+      
+      selectPresetTemplate: (templateKey) => {
+        const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
+        if (template) {
+          set({
+            markdown: template,
+            currentTemplate: templateKey,
+            showTemplateSelection: false,
+            showEditor: true,
+          });
+        }
+      },
 
-  saveAutoSave: (content) => {
-    if (!localStorageAvailable()) {
-      logger.warn('localStorage is not available, cannot save autosave');
-      return;
+      autoSaveEnabled: loadAutoSaveEnabled(),
+      setAutoSaveEnabled: (enabled) => {
+        saveAutoSaveEnabled(enabled);
+        set({ autoSaveEnabled: enabled });
+      },
+
+      lastSavedAt: null,
+      setLastSavedAt: (time) => set({ lastSavedAt: time }),
+
+      loadAutoSave: () => {
+        if (!localStorageAvailable()) {
+          logger.warn('localStorage is not available, cannot load autosave');
+          return null;
+        }
+        try {
+          const stored = localStorage.getItem(AUTOSAVE_KEY);
+          if (stored) {
+            const data = JSON.parse(stored);
+            if (isValidString(data.content) && isValidNumber(data.timestamp)) {
+              return data.content;
+            }
+          }
+        } catch (error) {
+          logger.error('Failed to load autosave:', error);
+        }
+        return null;
+      },
+
+      saveAutoSave: (content) => {
+        if (!localStorageAvailable()) {
+          logger.warn('localStorage is not available, cannot save autosave');
+          return;
+        }
+        try {
+          // TODO: 待功能完善后考虑添加 localStorage 容量超限处理和用户提示
+          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+            content,
+            timestamp: Date.now(),
+          }));
+          set({ lastSavedAt: Date.now() });
+        } catch (error) {
+          logger.error('Failed to save autosave:', error);
+        }
+      },
+    }),
+    {
+      name: 'aimtp-app-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        markdown: state.markdown,
+        locale: state.locale,
+        page: state.page,
+        font: state.font,
+        extensions: state.extensions,
+        cover: state.cover,
+        headerFooter: state.headerFooter,
+        autoSaveEnabled: state.autoSaveEnabled,
+        customTemplates: state.customTemplates,
+        currentTemplate: state.currentTemplate,
+      }),
+      // 在状态加载（rehydrate）时执行的验证逻辑
+      onRehydrateStorage: (state) => {
+        return (rehydratedState, error) => {
+          if (error) {
+            logger.error('Failed to rehydrate app storage:', error);
+          } else if (rehydratedState) {
+            // 进行基本的设置验证，防止由于版本变更或手动篡改导致的非法值
+            try {
+              rehydratedState.page = validatePageSettings(rehydratedState.page);
+              rehydratedState.font = validateFontSettings(rehydratedState.font);
+              rehydratedState.extensions = validateExtensionSettings(rehydratedState.extensions);
+              rehydratedState.cover = validateCoverSettings(rehydratedState.cover);
+              rehydratedState.headerFooter = validateHeaderFooterSettings(rehydratedState.headerFooter);
+              rehydratedState.customTemplates = validateCustomTemplates(rehydratedState.customTemplates);
+            } catch (e) {
+              logger.warn('Validation during rehydration failed, using some default values:', e);
+            }
+          }
+        };
+      },
     }
-    try {
-      // TODO: 待功能完善后考虑添加 localStorage 容量超限处理和用户提示
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
-        content,
-        timestamp: Date.now(),
-      }));
-      set({ lastSavedAt: Date.now() });
-    } catch (error) {
-      logger.error('Failed to save autosave:', error);
-    }
-  },
-}));
+  )
+);
