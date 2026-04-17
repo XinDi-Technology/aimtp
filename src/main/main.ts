@@ -16,7 +16,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: join(app.getAppPath(), 'main', 'preload.js'),
+      preload: join(app.getAppPath(), 'dist', 'main', 'main', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -25,7 +25,7 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
-    mainWindow.loadFile(join(app.getAppPath(), 'renderer', 'index.html'));
+    mainWindow.loadFile(join(app.getAppPath(), 'dist', 'renderer', 'index.html'));
   }
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
