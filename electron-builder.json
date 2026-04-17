@@ -6,7 +6,14 @@
   },
   "files": [
     "dist/**/*",
+    "src/fonts/**/*",
     "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "src/fonts",
+      "to": "dist/renderer/fonts"
+    }
   ],
   "extraMetadata": {
     "main": "dist/main/main/main.js"

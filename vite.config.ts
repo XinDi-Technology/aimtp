@@ -35,5 +35,5 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['mathjax'],
   },
-  assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2', '**/*.css'],
+  assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
 });

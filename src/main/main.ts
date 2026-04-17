@@ -15,6 +15,9 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    // 注意：Windows 系统在没有显式设置 title 时，可能会在任务栏等位置将 productName 显示为大写 "AIMTP"
+    // 添加 title 属性确保显示为 "Aimtp"
+    title: 'Aimtp',
     webPreferences: {
       preload: join(app.getAppPath(), 'dist', 'main', 'preload.js'),
       contextIsolation: true,
