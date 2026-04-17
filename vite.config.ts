@@ -27,6 +27,16 @@ export default defineConfig({
     minify: 'esbuild',
     chunkSizeWarningLimit: 2000,
     cssMinify: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-utils': ['markdown-it', 'dompurify', 'highlight.js', 'zustand'],
+          'vendor-mathjax': ['mathjax'],
+          'vendor-mermaid': ['mermaid'],
+        },
+      },
+    },
   },
   resolve: {
     conditions: ['browser', 'import', 'module', 'default'],

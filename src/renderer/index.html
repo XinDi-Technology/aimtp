@@ -10,6 +10,10 @@
       }
       // 调试日志 - 在任何模块加载前执行
       console.log('[Aimtp] HTML parsed, MathJax polyfill applied');
+      
+      window.addEventListener('error', function(e) {
+        console.error('[Aimtp] Script error caught in index.html:', e.message, 'at', e.filename, ':', e.lineno);
+      }, true);
     </script>
     <title>Aimtp</title>
   </head>

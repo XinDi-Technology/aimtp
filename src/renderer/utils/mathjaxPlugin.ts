@@ -12,8 +12,10 @@
  */
 
 import MarkdownIt from 'markdown-it';
-import MathJax from 'mathjax';
 import { logger } from './logger';
+
+// 动态导入 MathJax 以避免顶层评估失败
+let MathJax: any = null;
 
 // MathJax 初始化状态
 let mathJaxInitialized = false;
@@ -42,44 +44,49 @@ const initMathJax = async (): Promise<void> => {
 
   mathJaxInitializing = true;
 
-  mathJaxInitPromise = MathJax.init({
-    loader: {
-      load: ['input/tex', 'output/svg'],
-    },
-    tex: {
-      // 支持的行内公式分隔符
-      inlineMath: [
-        ['$', '$'],
-        ['\\(', '\\)'],
-      ],
-      // 支持的块级公式分隔符
-      displayMath: [
-        ['$$', '$$'],
-        ['\\[', '\\]'],
-      ],
-      // 启用常用 TeX 扩展包
-      packages: {
-        '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
-      },
-    },
-    svg: {
-      // 全局字体缓存，减少重复加载
-      fontCache: 'global',
-      // 禁用字体本地化路径
-      localFontPath: '',
-      localFontFamily: '',
-    },
-  });
-
   try {
+    // 尝试动态导入 MathJax
+    const module = await import('mathjax');
+    MathJax = module.default || module;
+    
+    mathJaxInitPromise = MathJax.init({
+      loader: {
+        load: ['input/tex', 'output/svg'],
+      },
+      tex: {
+        // 支持的行内公式分隔符
+        inlineMath: [
+          ['$', '$'],
+          ['\\(', '\\)'],
+        ],
+        // 支持的块级公式分隔符
+        displayMath: [
+          ['$$', '$$'],
+          ['\\[', '\\]'],
+        ],
+        // 启用常用 TeX 扩展包
+        packages: {
+          '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
+        },
+      },
+      svg: {
+        // 全局字体缓存，减少重复加载
+        fontCache: 'global',
+        // 禁用字体本地化路径
+        localFontPath: '',
+        localFontFamily: '',
+      },
+    });
+
     await mathJaxInitPromise;
     mathJaxInitialized = true;
     logger.log('MathJax initialized successfully with SVG output');
   } catch (error) {
+    mathJaxInitialized = false;
     mathJaxInitializing = false;
     mathJaxInitPromise = null;
     logger.error('Failed to initialize MathJax:', error);
-    throw error;
+    // 不抛出错误，允许应用继续运行（只是公式无法渲染）
   } finally {
     mathJaxInitializing = false;
   }
