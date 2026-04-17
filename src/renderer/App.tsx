@@ -12,7 +12,7 @@ import { usePDFExport, useFontLoading } from './hooks';
 function App() {
   const { locale, showEditor, showTemplateSelection } = useAppStore();
   const { handleExportPdf } = usePDFExport();
-  
+
   useFontLoading();
 
   return (

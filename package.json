@@ -17,8 +17,10 @@
     "preview": "vite preview",
     "dist": "npm run build && electron-builder",
     "test": "playwright test",
+    "test:preview": "npm run build:vite && npx vite preview --port 4173",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
