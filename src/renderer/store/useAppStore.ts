@@ -468,7 +468,22 @@ const validateCustomTemplates = (data: any): CustomTemplate[] => {
     .filter((template): template is CustomTemplate => template !== null);
 };
 
+const localStorageAvailable = (): boolean => {
+  try {
+    const key = '__aimtp_storage_test__';
+    localStorage.setItem(key, key);
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const loadCustomTemplates = (): CustomTemplate[] => {
+  if (!localStorageAvailable()) {
+    logger.warn('localStorage is not available, using default templates');
+    return [];
+  }
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -486,6 +501,10 @@ const loadCustomTemplates = (): CustomTemplate[] => {
 };
 
 const saveCustomTemplates = (templates: CustomTemplate[]) => {
+  if (!localStorageAvailable()) {
+    logger.warn('localStorage is not available, cannot save templates');
+    return;
+  }
   try {
     // TODO: 待功能完善后考虑添加 localStorage 容量超限处理和用户提示
     localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
@@ -495,6 +514,10 @@ const saveCustomTemplates = (templates: CustomTemplate[]) => {
 };
 
 const loadAutoSaveEnabled = (): boolean => {
+  if (!localStorageAvailable()) {
+    logger.warn('localStorage is not available, using default autosave setting');
+    return true;
+  }
   try {
     const stored = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
     if (stored) {
@@ -508,6 +531,10 @@ const loadAutoSaveEnabled = (): boolean => {
 };
 
 const saveAutoSaveEnabled = (enabled: boolean) => {
+  if (!localStorageAvailable()) {
+    logger.warn('localStorage is not available, cannot save autosave setting');
+    return;
+  }
   try {
     localStorage.setItem(AUTOSAVE_ENABLED_KEY, JSON.stringify(enabled));
   } catch (error) {
@@ -634,6 +661,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLastSavedAt: (time) => set({ lastSavedAt: time }),
 
   loadAutoSave: () => {
+    if (!localStorageAvailable()) {
+      logger.warn('localStorage is not available, cannot load autosave');
+      return null;
+    }
     try {
       const stored = localStorage.getItem(AUTOSAVE_KEY);
       if (stored) {
@@ -649,6 +680,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveAutoSave: (content) => {
+    if (!localStorageAvailable()) {
+      logger.warn('localStorage is not available, cannot save autosave');
+      return;
+    }
     try {
       // TODO: 待功能完善后考虑添加 localStorage 容量超限处理和用户提示
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({

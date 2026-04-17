@@ -7,9 +7,29 @@ test.describe('Aimtp Application', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { timeout: BASE_TIMEOUT });
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
+    
+    // Wait for toolbar with extended timeout and add error logging
     try {
-      await page.evaluate(() => localStorage.clear());
+      await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
+    } catch (error) {
+      const pageContent = await page.content();
+      console.log('Page content when toolbar not found:', pageContent);
+      const consoleErrors = await page.evaluate(() => {
+        const errors: string[] = [];
+        window.onerror = (msg) => errors.push(msg);
+        return errors;
+      });
+      console.log('Console errors:', consoleErrors);
+      throw error;
+    }
+    
+    // Try to clear localStorage if available
+    try {
+      await page.evaluate(() => {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.clear();
+        }
+      });
     } catch (e) {
       console.log('localStorage not available in this context');
     }
