@@ -3,6 +3,10 @@ import { test, expect } from '@playwright/test';
 test.describe('AIMTP Application', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5173');
+    // 等待页面完全加载
+    await page.waitForLoadState('networkidle');
+    // 等待至少一个关键元素出现
+    await page.waitForSelector('header.toolbar', { timeout: 10000 });
   });
 
   test('should load the main page without errors', async ({ page }) => {
@@ -11,7 +15,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should have toolbar component', async ({ page }) => {
-    const toolbar = page.locator('.toolbar');
+    const toolbar = page.locator('header.toolbar');
     await expect(toolbar).toBeVisible();
   });
 
@@ -66,7 +70,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should open template selection panel', async ({ page }) => {
-    const templateBtn = page.locator('.toolbar button').filter({ hasText: /(模板|Template)/ });
+    const templateBtn = page.locator('header.toolbar button').filter({ hasText: /(模板|Template)/ });
     await templateBtn.click();
     
     const templatePanel = page.locator('.template-selection-panel');
@@ -74,7 +78,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should show preset templates in selection panel', async ({ page }) => {
-    const templateBtn = page.locator('.toolbar button').filter({ hasText: /(模板|Template)/ });
+    const templateBtn = page.locator('header.toolbar button').filter({ hasText: /(模板|Template)/ });
     await templateBtn.click();
     
     const templatePanel = page.locator('.template-selection-panel');
@@ -82,7 +86,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should select blank template', async ({ page }) => {
-    const templateBtn = page.locator('.toolbar button').filter({ hasText: /(模板|Template)/ });
+    const templateBtn = page.locator('header.toolbar button').filter({ hasText: /(模板|Template)/ });
     await templateBtn.click();
     
     const blankTemplate = page.locator('.template-card').first();
@@ -93,7 +97,7 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should have export PDF button', async ({ page }) => {
-    const exportBtn = page.locator('.toolbar button').filter({ hasText: /(导出 PDF|Export PDF)/ });
+    const exportBtn = page.locator('header.toolbar button').filter({ hasText: /(导出 PDF|Export PDF)/ });
     await expect(exportBtn).toBeVisible();
   });
 
