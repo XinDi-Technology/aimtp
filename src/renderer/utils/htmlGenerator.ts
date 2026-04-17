@@ -86,15 +86,17 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
 <head>
   <meta charset="UTF-8">
   ${hljsStyles}
-  ${extensions.mermaid ? `<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>` : ''}
+  ${extensions.mermaid ? `<script>
+    // Mermaid is loaded from local node_modules
+  </script>` : ''}
   ${extensions.mathJax ? `<script>
+    // MathJax is loaded from local node_modules
     window.MathJax = {
-      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+      tex: { inlineMath: [["$", "$"], ["\\(", "\\)"]], displayMath: [["$$", "$$"], ["\\[", "\\]"]] },
       svg: { fontCache: 'global' },
       startup: { ready: () => MathJax.startup.defaultReady() }
     };
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@4/esm/tex-svg.js" type="module"></script>` : ''}
+  </script>` : ''}
   <style>
     body {
       font-family: ${font.body}, sans-serif;

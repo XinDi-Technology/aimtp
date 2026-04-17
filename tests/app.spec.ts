@@ -127,18 +127,42 @@ test.describe('AIMTP Application', () => {
   });
 
   test('should have cover settings', async ({ page }) => {
+    // 等待 SettingsPanel 完全加载
+    await page.waitForLoadState('domcontentloaded');
+    
     const settingsPanel = page.locator('.settings-panel');
+    // 等待 SettingsPanel 可见
+    await settingsPanel.waitFor({ state: 'visible' });
+    
+    // 等待包含封面设置文本的元素可见
+    await settingsPanel.waitFor({ state: 'visible', timeout: 10000 });
     await expect(settingsPanel).toContainText(/(封面设置|Cover Settings)/);
   });
 
   test('should have header footer settings', async ({ page }) => {
+    // 等待 SettingsPanel 完全加载
+    await page.waitForLoadState('domcontentloaded');
+    
     const settingsPanel = page.locator('.settings-panel');
+    // 等待 SettingsPanel 可见
+    await settingsPanel.waitFor({ state: 'visible' });
+    
+    // 等待包含页眉页脚文本的元素可见
+    await settingsPanel.waitFor({ state: 'visible', timeout: 10000 });
     await expect(settingsPanel).toContainText(/(页眉页脚|Header Footer)/);
   });
 
   test('should have save as template button', async ({ page }) => {
+    // 等待 SettingsPanel 完全加载
+    await page.waitForLoadState('domcontentloaded');
+    
     const settingsPanel = page.locator('.settings-panel');
+    // 等待 SettingsPanel 可见
+    await settingsPanel.waitFor({ state: 'visible' });
+    
+    // 等待保存模板按钮可见
     const saveTemplateBtn = settingsPanel.locator('button').filter({ hasText: /(保存设置为模板|Save as Template)/ });
+    await saveTemplateBtn.waitFor({ state: 'visible', timeout: 10000 });
     await expect(saveTemplateBtn).toBeVisible();
   });
 
