@@ -36,4 +36,7 @@ export default defineConfig({
     exclude: ['mathjax'],
   },
   assetsInclude: ['**/*.ttf', '**/*.woff', '**/*.woff2'],
+  preview: {
+    root: 'dist/renderer',
+  },
 });
