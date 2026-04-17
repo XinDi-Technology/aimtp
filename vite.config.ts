@@ -5,11 +5,15 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [
     react(),
-    // 自定义插件：修复 crossorigin 属性
+    // 自定义插件：修复 crossorigin 属性 - 使用 post 钩子确保在其他插件处理后执行
     {
       name: 'fix-crossorigin',
+      enforce: 'post' as const,
       transformIndexHtml(html: string) {
-        return html.replace(/crossorigin=""/g, 'crossorigin="anonymous"');
+        return {
+          html: html.replace(/crossorigin=""/g, 'crossorigin="anonymous"'),
+          tags: [],
+        };
       },
     },
   ],
