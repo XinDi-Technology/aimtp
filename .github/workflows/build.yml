@@ -54,13 +54,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 运行TypeScript类型检查
+      # 运行TypeScript类型检查（可选）
       - name: TypeScript type check
-        run: npm run typecheck || echo "Type check skipped"
+        run: npm run typecheck || echo "::warning::Type check has warnings, but continuing..."
 
       # 构建Vite应用
       - name: Build Vite
         run: npm run build:vite
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096' # 增加内存限制
 
   # 测试作业
   test:
@@ -97,11 +99,25 @@ jobs:
 
       # 安装Playwright浏览器
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0 # 使用系统缓存
 
       # 运行测试
       - name: Run tests
         run: npm test
+        env:
+          CI: 'true'
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      # 上传测试结果（仅在失败时）
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7
 
   # Electron构建作业
   build-electron:
@@ -137,10 +153,14 @@ jobs:
       # 构建Electron应用
       - name: Build Electron
         run: npm run build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
 
       # 构建Windows安装包
       - name: Build Electron app (Windows)
         run: npm run dist
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
 
       # 上传Windows安装包作为 artifacts
       - name: Upload Windows artifact
