@@ -21,32 +21,22 @@ export const TemplateSelectionPanel: React.FC = () => {
 
   return (
     <div className="template-selection-inline-panel">
-      <div className="panel-header">
-        <span>🎨 {locale === 'zh' ? '选择模板' : 'Select Template'}</span>
-        <button 
-          className="btn btn-ghost close-btn"
-          onClick={() => setShowTemplateSelection(false)}
-          aria-label={locale === 'zh' ? '关闭' : 'Close'}
-          title={locale === 'zh' ? '关闭' : 'Close'}
-        >
-          ✕
-        </button>
-      </div>
-
       <div className="template-selection-content">
         {/* 预设模板 */}
         <div className="template-section">
           <h3>{locale === 'zh' ? '预设模板' : 'Preset Templates'}</h3>
-          <div className="template-grid">
+          <div className="template-list">
             {templateList.map((template) => (
-              <div key={template.key} className="template-card">
-                <div className="template-card-header">
+              <div key={template.key} className="template-row">
+                <div className="template-row-info">
                   <span className="template-card-icon">{template.icon}</span>
-                  <h4>{locale === 'zh' ? template.name : template.nameEn}</h4>
+                  <div className="template-row-text">
+                    <h4>{locale === 'zh' ? template.name : template.nameEn}</h4>
+                    <p className="template-card-desc">
+                      {locale === 'zh' ? template.desc : template.descEn}
+                    </p>
+                  </div>
                 </div>
-                <p className="template-card-desc">
-                  {locale === 'zh' ? template.desc : template.descEn}
-                </p>
                 <button 
                   className="btn btn-primary template-select-btn"
                   onClick={() => selectPresetTemplate(template.key)}
@@ -62,17 +52,19 @@ export const TemplateSelectionPanel: React.FC = () => {
         {customTemplates.length > 0 && (
           <div className="template-section">
             <h3>{locale === 'zh' ? '自定义模板' : 'Custom Templates'}</h3>
-            <div className="template-grid">
+            <div className="template-list">
               {customTemplates.map((template) => (
-                <div key={template.id} className="template-card">
-                  <div className="template-card-header">
+                <div key={template.id} className="template-row">
+                  <div className="template-row-info">
                     <span className="template-card-icon">⚙️</span>
-                    <h4>{template.name}</h4>
+                    <div className="template-row-text">
+                      <h4>{template.name}</h4>
+                      <p className="template-card-desc">
+                        {locale === 'zh' ? '创建于' : 'Created'} {new Date(template.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <p className="template-card-desc">
-                    {locale === 'zh' ? '创建于' : 'Created'} {new Date(template.createdAt).toLocaleDateString()}
-                  </p>
-                  <div className="template-card-actions">
+                  <div className="template-row-actions">
                     <button 
                       className="btn btn-primary template-select-btn"
                       onClick={() => applyTemplate(template.id)}

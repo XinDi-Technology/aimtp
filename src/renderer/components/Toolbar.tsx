@@ -25,21 +25,16 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
 
   // 处理主题切换
   const handleToggleTheme = () => {
-    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(theme);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
+    // 只在浅色和深色之间切换
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   // 获取主题图标和提示
   const getThemeInfo = () => {
-    switch (theme) {
-      case 'light':
-        return { icon: '☀️', label: locale === 'zh' ? '浅色模式' : 'Light' };
-      case 'dark':
-        return { icon: '🌙', label: locale === 'zh' ? '暗色模式' : 'Dark' };
-      case 'system':
-        return { icon: '💻', label: locale === 'zh' ? '跟随系统' : 'System' };
+    if (theme === 'light') {
+      return { icon: '☀️', label: locale === 'zh' ? '切换到暗色模式' : 'Switch to Dark Mode' };
+    } else {
+      return { icon: '🌙', label: locale === 'zh' ? '切换到浅色模式' : 'Switch to Light Mode' };
     }
   };
 
@@ -109,11 +104,13 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
       </button>
       <button 
         className="btn btn-toolbar"
-        onClick={() => setShowTemplateSelection(true)}
-        aria-label={t('template')}
+        onClick={() => setShowTemplateSelection(!showTemplateSelection)}
+        title={showTemplateSelection ? (locale === 'zh' ? '关闭模板选择' : 'Close Template Selection') : t('template')}
+        aria-label={showTemplateSelection ? (locale === 'zh' ? '关闭模板选择' : 'Close Template Selection') : t('template')}
+        aria-pressed={showTemplateSelection}
         data-testid="template-btn"
       >
-        <span aria-hidden="true">🎨</span> {t('template')}
+        <span aria-hidden="true">🎨</span> {showTemplateSelection ? (locale === 'zh' ? '关闭' : 'Close') : t('template')}
       </button>
       <button 
         className="btn btn-toolbar btn-primary-action" 

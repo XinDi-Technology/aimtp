@@ -146,15 +146,14 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
     const pdfData = await pdfWindow.webContents.printToPDF({
       pageSize,
       margins: {
-        marginType: 'custom',
-        top: safeMargin(margins.top),
-        bottom: safeMargin(margins.bottom),
-        left: safeMargin(margins.left),
-        right: safeMargin(margins.right),
+        top: safeMargin(margins.top) / 25.4, // mm to inches
+        bottom: safeMargin(margins.bottom) / 25.4,
+        left: safeMargin(margins.left) / 25.4,
+        right: safeMargin(margins.right) / 25.4,
       },
       printBackground: true,
-      scale: 1,
-    } as any);
+      preferCSSPageSize: false,
+    });
 
     return pdfData;
   } catch (error) {

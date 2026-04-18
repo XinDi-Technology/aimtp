@@ -581,7 +581,7 @@ export const useAppStore = create<AppState>()(
       locale: 'zh',
       setLocale: (locale) => set({ locale }),
       
-      theme: 'system', // 默认跟随系统
+      theme: 'light', // 默认浅色主题
       setTheme: (theme) => {
         set({ theme });
         applyTheme(theme);
@@ -755,7 +755,7 @@ export const useAppStore = create<AppState>()(
             logger.error('Failed to rehydrate app storage:', error);
           } else if (rehydratedState) {
             // 应用主题
-            applyTheme(rehydratedState.theme || 'system');
+            applyTheme(rehydratedState.theme || 'light');
             
             // 进行基本的设置验证，防止由于版本变更或手动篡改导致的非法值
             try {
