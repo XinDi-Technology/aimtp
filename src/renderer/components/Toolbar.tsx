@@ -8,15 +8,48 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
-  const { showEditor, setShowEditor, locale, setLocale, setShowTemplateSelection, isGenerating } = useAppStore();
+  const { showEditor, setShowEditor, showTemplateSelection, setShowTemplateSelection, locale, setLocale, theme, setTheme, isGenerating } = useAppStore();
   const { handleImportFile } = useFileImport();
+
+  // 处理布局切换按钮点击
+  const handleToggleLayout = () => {
+    if (showTemplateSelection) {
+      // 如果正在显示模板选择，直接关闭并隐藏编辑器（预览全宽）
+      setShowTemplateSelection(false);
+      setShowEditor(false);
+    } else {
+      // 否则切换编辑器显示/隐藏
+      setShowEditor(!showEditor);
+    }
+  };
+
+  // 处理主题切换
+  const handleToggleTheme = () => {
+    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+    const currentIndex = themes.indexOf(theme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex]);
+  };
+
+  // 获取主题图标和提示
+  const getThemeInfo = () => {
+    switch (theme) {
+      case 'light':
+        return { icon: '☀️', label: locale === 'zh' ? '浅色模式' : 'Light' };
+      case 'dark':
+        return { icon: '🌙', label: locale === 'zh' ? '暗色模式' : 'Dark' };
+      case 'system':
+        return { icon: '💻', label: locale === 'zh' ? '跟随系统' : 'System' };
+    }
+  };
 
   const labels = useMemo(() => ({
     zh: {
       template: '模板',
       generating: '生成中...',
       exportPdf: '导出 PDF',
-      toggleEditor: '切换编辑器',
+      focusPreview: '专注预览',
+      showEditor: '显示编辑器',
       importFile: '导入文件',
       language: '语言',
       export: '导出',
@@ -25,7 +58,8 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
       template: 'Template',
       generating: 'Generating...',
       exportPdf: 'Export PDF',
-      toggleEditor: 'Toggle Editor',
+      focusPreview: 'Focus Preview',
+      showEditor: 'Show Editor',
       importFile: 'Import File',
       language: 'Language',
       export: 'Export',
@@ -46,13 +80,14 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
       </button>
       <button 
         className="btn btn-toolbar"
-        onClick={() => setShowEditor(!showEditor)}
-        title={t('toggleEditor')}
-        aria-label={t('toggleEditor')}
+        onClick={handleToggleLayout}
+        title={showEditor ? t('focusPreview') : t('showEditor')}
+        aria-label={showEditor ? t('focusPreview') : t('showEditor')}
         aria-pressed={showEditor}
         data-testid="toggle-editor-btn"
       >
-        <span aria-hidden="true">{showEditor ? '👁️' : '✏️'}</span>
+        <span aria-hidden="true">{showEditor ? '🔍' : '✏️'}</span>
+        <span className="btn-text">{showEditor ? t('focusPreview') : t('showEditor')}</span>
       </button>
       <div className="toolbar-spacer"></div>
       <button 
@@ -62,6 +97,15 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
         data-testid="lang-toggle-btn"
       >
         {locale === 'zh' ? '中文' : 'EN'}
+      </button>
+      <button 
+        className="btn btn-toolbar theme-toggle"
+        onClick={handleToggleTheme}
+        title={getThemeInfo().label}
+        aria-label={getThemeInfo().label}
+        data-testid="theme-toggle-btn"
+      >
+        <span aria-hidden="true">{getThemeInfo().icon}</span>
       </button>
       <button 
         className="btn btn-toolbar"

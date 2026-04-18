@@ -2,6 +2,29 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { logger } from '../utils/logger';
 
+// 应用主题
+const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+  const root = document.documentElement;
+  
+  if (theme === 'system') {
+    // 检测系统主题
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  } else {
+    root.setAttribute('data-theme', theme);
+  }
+};
+
+// 监听系统主题变化
+if (typeof window !== 'undefined') {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    const store = useAppStore.getState();
+    if (store.theme === 'system') {
+      applyTheme('system');
+    }
+  });
+}
+
 export interface PageSettings {
   size: 'A4' | 'A3';
   orientation: 'portrait' | 'landscape';
@@ -82,6 +105,9 @@ export interface AppState {
   
   locale: 'zh' | 'en';
   setLocale: (locale: 'zh' | 'en') => void;
+  
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
   
   page: PageSettings;
   setPage: (page: Partial<PageSettings>) => void;
@@ -555,6 +581,12 @@ export const useAppStore = create<AppState>()(
       locale: 'zh',
       setLocale: (locale) => set({ locale }),
       
+      theme: 'system', // 默认跟随系统
+      setTheme: (theme) => {
+        set({ theme });
+        applyTheme(theme);
+      },
+      
       page: defaultPage,
       setPage: (page) => set((state) => ({ page: { ...state.page, ...page } })),
       
@@ -649,6 +681,7 @@ export const useAppStore = create<AppState>()(
             markdown: template,
             currentTemplate: templateKey,
             showTemplateSelection: false,
+            // 保持 showEditor 为 true，确保编辑器和预览都显示
             showEditor: true,
           });
         }
@@ -705,6 +738,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         markdown: state.markdown,
         locale: state.locale,
+        theme: state.theme,
         page: state.page,
         font: state.font,
         extensions: state.extensions,
@@ -720,6 +754,9 @@ export const useAppStore = create<AppState>()(
           if (error) {
             logger.error('Failed to rehydrate app storage:', error);
           } else if (rehydratedState) {
+            // 应用主题
+            applyTheme(rehydratedState.theme || 'system');
+            
             // 进行基本的设置验证，防止由于版本变更或手动篡改导致的非法值
             try {
               rehydratedState.page = validatePageSettings(rehydratedState.page);

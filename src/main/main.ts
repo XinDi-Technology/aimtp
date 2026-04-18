@@ -19,7 +19,7 @@ function createWindow() {
     // 添加 title 属性确保显示为 "Aimtp"
     title: 'Aimtp',
     webPreferences: {
-      preload: join(app.getAppPath(), 'dist', 'main', 'preload.js'),
+      preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },

@@ -20,12 +20,14 @@ export const TemplateSelectionPanel: React.FC = () => {
   } = useAppStore();
 
   return (
-    <div className="template-selection-panel">
-      <div className="template-selection-header">
-        <h2>🎨 {locale === 'zh' ? '选择模板' : 'Select Template'}</h2>
+    <div className="template-selection-inline-panel">
+      <div className="panel-header">
+        <span>🎨 {locale === 'zh' ? '选择模板' : 'Select Template'}</span>
         <button 
           className="btn btn-ghost close-btn"
           onClick={() => setShowTemplateSelection(false)}
+          aria-label={locale === 'zh' ? '关闭' : 'Close'}
+          title={locale === 'zh' ? '关闭' : 'Close'}
         >
           ✕
         </button>

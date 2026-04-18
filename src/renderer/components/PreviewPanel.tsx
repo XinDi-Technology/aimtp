@@ -14,6 +14,15 @@ interface PreviewPanelProps {
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
   const { markdown, font, extensions, page, locale } = useAppStore();
   const contentRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = React.useState<number>(100); // 缩放比例，默认 100%
+  
+  // 缩放选项
+  const zoomOptions = [75, 100, 125, 150];
+  
+  // 处理缩放
+  const handleZoom = (value: number) => {
+    setZoom(value);
+  };
   
   // 渲染 Mermaid 图表和 MathJax 公式
   useEffect(() => {
@@ -122,30 +131,42 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
   return (
     <div className={`preview-panel ${className || ''}`}>
-      <div className="panel-header">{t('preview-panel-title', locale)}</div>
+      <div className="panel-header">
+        <span>{t('preview-panel-title', locale)}</span>
+        <div className="zoom-controls">
+          {zoomOptions.map((value) => (
+            <button
+              key={value}
+              className={`zoom-btn ${zoom === value ? 'active' : ''}`}
+              onClick={() => handleZoom(value)}
+              title={`${value}%`}
+              aria-label={`${value}% zoom`}
+            >
+              {value}%
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="preview-with-margins">
         {isA4 && (
           <div className="ruler-container">
             <div className="ruler ruler-horizontal">
-              <span className="ruler-label">宽度: {width}</span>
-            </div>
-            <div className="ruler ruler-vertical">
-              <span className="ruler-label">高度: {height}</span>
+              <span className="ruler-label">{width}</span>
             </div>
           </div>
         )}
         
         <div className="page-container">
           <div className="margin-ruler margin-ruler-top">
-            <span className="margin-ruler-label">↑ 上边距: {page.margins.top}mm</span>
+            <span className="margin-ruler-label">{page.margins.top}mm</span>
           </div>
           
           <div className="page-middle">
             <div className="margin-ruler margin-ruler-left">
-              <span className="margin-ruler-label">← 左边距: {page.margins.left}mm</span>
+              <span className="margin-ruler-label">{page.margins.left}mm</span>
             </div>
             
-            <div className="content-area">
+            <div className="content-area" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
               <div 
                 ref={contentRef}
                 className="markdown-preview"
@@ -169,13 +190,18 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             </div>
             
             <div className="margin-ruler margin-ruler-right">
-              <span className="margin-ruler-label">右边距: {page.margins.right}mm →</span>
+              <span className="margin-ruler-label">{page.margins.right}mm</span>
             </div>
           </div>
           
           <div className="margin-ruler margin-ruler-bottom">
-            <span className="margin-ruler-label">↓ 下边距: {page.margins.bottom}mm</span>
+            <span className="margin-ruler-label">{page.margins.bottom}mm</span>
           </div>
+        </div>
+        
+        {/* 页码显示 */}
+        <div className="page-number">
+          <span>第 1 页 / 共 1 页</span>
         </div>
       </div>
     </div>

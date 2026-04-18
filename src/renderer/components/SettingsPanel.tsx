@@ -49,45 +49,62 @@ export const SettingsPanel: React.FC = () => {
 
         <div className="setting-group">
           <label className="setting-label">边距 (mm)</label>
-          <div className="margin-controls">
-            <div className="margin-top">
+          <div className="margin-controls-vertical">
+            <div className="margin-item">
+              <span className="margin-label">上</span>
               <input
                 type="number"
                 className="setting-input margin-input"
                 value={page.margins.top}
-                onChange={(e) => setPage({ margins: { ...page.margins, top: Number(e.target.value) } })}
+                min="1"
+                max="50"
+                onChange={(e) => {
+                  const value = Math.min(50, Math.max(1, Number(e.target.value)));
+                  setPage({ margins: { ...page.margins, top: value } });
+                }}
               />
-              <span className="margin-label">上</span>
             </div>
-            <div className="margin-middle">
-              <div className="margin-left">
-                <span className="margin-label">左</span>
-                <input
-                  type="number"
-                  className="setting-input margin-input"
-                  value={page.margins.left}
-                  onChange={(e) => setPage({ margins: { ...page.margins, left: Number(e.target.value) } })}
-                />
-              </div>
-              <div className="margin-center">页面</div>
-              <div className="margin-right">
-                <input
-                  type="number"
-                  className="setting-input margin-input"
-                  value={page.margins.right}
-                  onChange={(e) => setPage({ margins: { ...page.margins, right: Number(e.target.value) } })}
-                />
-                <span className="margin-label">右</span>
-              </div>
-            </div>
-            <div className="margin-bottom">
+            <div className="margin-item">
+              <span className="margin-label">下</span>
               <input
                 type="number"
                 className="setting-input margin-input"
                 value={page.margins.bottom}
-                onChange={(e) => setPage({ margins: { ...page.margins, bottom: Number(e.target.value) } })}
+                min="1"
+                max="50"
+                onChange={(e) => {
+                  const value = Math.min(50, Math.max(1, Number(e.target.value)));
+                  setPage({ margins: { ...page.margins, bottom: value } });
+                }}
               />
-              <span className="margin-label">下</span>
+            </div>
+            <div className="margin-item">
+              <span className="margin-label">左</span>
+              <input
+                type="number"
+                className="setting-input margin-input"
+                value={page.margins.left}
+                min="1"
+                max="50"
+                onChange={(e) => {
+                  const value = Math.min(50, Math.max(1, Number(e.target.value)));
+                  setPage({ margins: { ...page.margins, left: value } });
+                }}
+              />
+            </div>
+            <div className="margin-item">
+              <span className="margin-label">右</span>
+              <input
+                type="number"
+                className="setting-input margin-input"
+                value={page.margins.right}
+                min="1"
+                max="50"
+                onChange={(e) => {
+                  const value = Math.min(50, Math.max(1, Number(e.target.value)));
+                  setPage({ margins: { ...page.margins, right: value } });
+                }}
+              />
             </div>
           </div>
         </div>

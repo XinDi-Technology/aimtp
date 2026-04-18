@@ -23,16 +23,16 @@ function App() {
         </aside>
         <main className="main-content">
           <Toolbar onExportPdf={handleExportPdf} />
-          {showTemplateSelection ? (
-            <section className="template-selection-container" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
-              <TemplateSelectionPanel />
-            </section>
-          ) : (
-            <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '编辑器和预览' : 'Editor and Preview'}>
-              {showEditor && <EditorPanel />}
-              <PreviewPanel className={!showEditor ? 'preview-full-width' : ''} />
-            </div>
-          )}
+          <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '编辑器和预览' : 'Editor and Preview'}>
+            {showTemplateSelection ? (
+              <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
+                <TemplateSelectionPanel />
+              </section>
+            ) : (
+              showEditor && <EditorPanel />
+            )}
+            <PreviewPanel className={!showEditor || showTemplateSelection ? 'preview-full-width' : ''} />
+          </div>
           <StatusBar />
         </main>
       </div>
