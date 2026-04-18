@@ -99,7 +99,7 @@ jobs:
 
       # 安装Playwright浏览器
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium --with-deps
         env:
           PLAYWRIGHT_BROWSERS_PATH: 0 # 使用系统缓存
 
