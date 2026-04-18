@@ -97,13 +97,15 @@ jobs:
       - name: Build Vite
         run: npm run build:vite
 
+      # 清除 Playwright 缓存（确保全新安装）
+      - name: Clear Playwright cache
+        run: npx playwright uninstall --all || true
+
       # 安装Playwright浏览器
       - name: Install Playwright browsers
-        run: |
-          npx playwright install --with-deps
-          npx playwright install chromium
+        run: npx playwright install --with-deps
         env:
-          PLAYWRIGHT_BROWSERS_PATH: 0 # 使用系统缓存
+          PLAYWRIGHT_BROWSERS_PATH: 0
 
       # 运行测试
       - name: Run tests
