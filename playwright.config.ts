@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'list',
+  reporter: process.env.CI ? 'list' : 'html', // CI 使用 list，本地使用 html
   timeout: 30000,
   expect: {
     timeout: 5000,
@@ -14,6 +14,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure', // 只在失败时截图
   },
   projects: [
     {

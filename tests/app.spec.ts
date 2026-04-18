@@ -5,107 +5,52 @@ const UI_TIMEOUT = 10000;
 
 test.describe('Aimtp Application', () => {
   test.beforeEach(async ({ page }) => {
-    // 监听所有控制台消息
-    const consoleLogs: string[] = [];
+    // 只监听错误，减少日志输出
     const consoleErrors: string[] = [];
     page.on('console', msg => {
-      const text = msg.text();
       if (msg.type() === 'error') {
-        consoleErrors.push(text);
+        consoleErrors.push(msg.text());
       }
-      consoleLogs.push(`[${msg.type()}] ${text}`);
     });
     
-    // 监听网络请求 - 添加详细信息
+    // 只监听失败的网络请求
     const failedRequests: string[] = [];
-    const allRequests: string[] = [];
     page.on('response', response => {
-      const url = response.url();
       const status = response.status();
-      const contentType = response.headers()['content-type'] || 'N/A';
-      allRequests.push(`${status} ${contentType} ${url}`);
       if (status >= 400) {
         failedRequests.push(`${status} ${response.url()}`);
       }
     });
-    
-    // 监听请求失败
-    const failedRequestErrors: string[] = [];
-    page.on('requestfailed', request => {
-      failedRequestErrors.push(`${request.failure()?.errorText} - ${request.url()}`);
-    });
 
     await page.goto('/', { timeout: BASE_TIMEOUT });
     await page.waitForLoadState('domcontentloaded');
-    
-    // 等待更长时间让 JavaScript 执行
     await page.waitForLoadState('networkidle').catch(() => {});
     
-    // 额外等待 5 秒，让所有模块有机会执行
-    await page.waitForTimeout(5000);
-    
-    // 打印收集的日志
-    console.log('=== Browser Console Logs ===');
-    consoleLogs.forEach(log => console.log(log));
-    console.log('=== End Console Logs ===');
-    
+    // 只在有错误时输出日志
     if (consoleErrors.length > 0) {
-      console.log('=== Console Errors ===');
+      console.log('\n=== Console Errors ===');
       consoleErrors.forEach(err => console.log(err));
-      console.log('=== End Console Errors ===');
+      console.log('=== End Console Errors ===\n');
     }
-    
-    // 打印所有网络请求（用于调试）
-    console.log('=== All Network Requests ===');
-    allRequests.forEach(req => console.log(req));
-    console.log('=== End Network Requests ===');
     
     if (failedRequests.length > 0) {
-      console.log('=== Failed Network Requests ===');
+      console.log('\n=== Failed Network Requests ===');
       failedRequests.forEach(req => console.log(req));
-      console.log('=== End Failed Requests ===');
+      console.log('=== End Failed Requests ===\n');
     }
     
-    if (failedRequestErrors.length > 0) {
-      console.log('=== Request Failed Errors ===');
-      failedRequestErrors.forEach(err => console.log(err));
-      console.log('=== End Request Failed Errors ===');
-    }
-    
-    // 检查 root 元素内容
-    const rootContent = await page.evaluate(() => {
-      const root = document.getElementById('root');
-      return root ? root.innerHTML : 'root element not found';
-    });
-    console.log('Root element content:', rootContent);
-    
-    // 检查 window 对象上的任何错误
-    const windowErrors = await page.evaluate(() => {
-      const errors: string[] = [];
-      if ((window as any).__error) {
-        errors.push((window as any).__error);
-      }
-      return errors;
-    });
-    if (windowErrors.length > 0) {
-      console.log('=== Window Errors ===');
-      windowErrors.forEach(err => console.log(err));
-      console.log('=== End Window Errors ===');
-    }
-    
-    // Wait for toolbar with extended timeout and add error logging
+    // Wait for toolbar with extended timeout
     try {
       await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
     } catch (error) {
-      const pageContent = await page.content();
-      console.log('Page content when toolbar not found:', pageContent);
-      console.log('Console errors:', consoleErrors);
-      console.log('Failed requests:', failedRequests);
-      console.log('Request failed errors:', failedRequestErrors);
+      console.log('\n⚠️  Toolbar not found. Page content length:', (await page.content()).length);
+      if (consoleErrors.length > 0) {
+        console.log('Console errors:', consoleErrors.slice(0, 5)); // 只显示前5个错误
+      }
       throw error;
     }
     
-    // Try to clear localStorage if available
+    // Clear localStorage
     try {
       await page.evaluate(() => {
         if (typeof localStorage !== 'undefined') {
@@ -113,7 +58,7 @@ test.describe('Aimtp Application', () => {
         }
       });
     } catch (e) {
-      console.log('localStorage not available in this context');
+      // Ignore localStorage errors
     }
   });
 
@@ -219,7 +164,7 @@ test.describe('Aimtp Application', () => {
     });
 
     test('should have page margins controls', async ({ page }) => {
-      await expect(page.locator('.margin-controls')).toBeVisible({ timeout: UI_TIMEOUT });
+      await expect(page.locator('.margin-controls-vertical')).toBeVisible({ timeout: UI_TIMEOUT });
     });
 
     test('should have save as template button', async ({ page }) => {
@@ -240,12 +185,12 @@ test.describe('Aimtp Application', () => {
   test.describe('Template System', () => {
     test('should open template selection panel', async ({ page }) => {
       await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      await expect(page.locator('.template-selection-panel')).toBeVisible({ timeout: UI_TIMEOUT });
+      await expect(page.locator('.template-selection-inline')).toBeVisible({ timeout: UI_TIMEOUT });
     });
 
     test('should show preset templates in selection panel', async ({ page }) => {
       await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      await expect(page.locator('.template-selection-panel')).toContainText(/(预设模板|Preset Templates)/, { timeout: UI_TIMEOUT });
+      await expect(page.locator('.template-selection-inline')).toContainText(/(预设模板|Preset Templates)/, { timeout: UI_TIMEOUT });
     });
 
     test('should select blank template', async ({ page }) => {
