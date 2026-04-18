@@ -195,7 +195,8 @@ test.describe('Aimtp Application', () => {
 
     test('should select blank template', async ({ page }) => {
       await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      await page.locator('.template-card').first().locator('button').click({ timeout: UI_TIMEOUT });
+      // 新布局：使用 .template-row 和 .template-select-btn
+      await page.locator('.template-row').first().locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
       await expect(page.locator('[data-testid="editor-textarea"]')).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
@@ -225,8 +226,9 @@ test.describe('Aimtp Application', () => {
       await expect(page.locator('.preview-panel')).toContainText('This is a note', { timeout: UI_TIMEOUT });
     });
 
-    test('should show A4 ruler in preview', async ({ page }) => {
-      await expect(page.locator('.preview-panel .ruler-container')).toBeVisible({ timeout: UI_TIMEOUT });
+    test('should show A4 page in preview', async ({ page }) => {
+      // 新布局：检查 Word 风格的 A4 页面容器
+      await expect(page.locator('.preview-panel .a4-page')).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
 
