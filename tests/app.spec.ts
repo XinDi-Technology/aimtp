@@ -197,8 +197,10 @@ test.describe('Aimtp Application', () => {
       await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
       // 新布局：使用 .template-row 和 .template-select-btn
       await page.locator('.template-row').first().locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
-      // 等待模板选择面板关闭，编辑器可见
+      // 等待模板选择面板关闭（可能需要短暂延迟）
+      await page.waitForTimeout(500);
       await expect(page.locator('.template-selection-inline')).not.toBeVisible({ timeout: UI_TIMEOUT });
+      // 验证编辑器可见
       await expect(page.locator('[data-testid="editor-textarea"]')).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });

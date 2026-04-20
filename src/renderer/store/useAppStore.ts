@@ -681,7 +681,7 @@ export const useAppStore = create<AppState>()(
             markdown: template,
             currentTemplate: templateKey,
             showTemplateSelection: false, // 关闭模板选择面板
-            // 不修改 showEditor，保持当前布局状态
+            showEditor: true, // 恢复编辑器显示
           });
         }
       },
