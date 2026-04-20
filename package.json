@@ -1,6 +1,6 @@
 {
   "name": "Aimtp",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "专注合规的 Markdown 转 PDF 桌面应用",
   "main": "dist/main/main/main.js",
   "engines": {
