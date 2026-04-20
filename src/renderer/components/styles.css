@@ -369,11 +369,8 @@
   min-height: 0; /* Flexbox 子元素滚动必需 */
 }
 
-.editor-preview .editor-panel {
-  width: 50%;
-  border-right: 1px solid #e0e0e0;
-  overflow: hidden; /* 编辑器面板不滚动 */
-}
+/* EditorPanel 和 PreviewPanel 的布局由 styles.css 中的 flex 属性控制 */
+/* 这里不再设置 width，避免与 flex 布局冲突 */
 
 /* PreviewPanel 的样式已移至 styles.css 和 PreviewPanel.css */
 /* 这里不再定义 .editor-preview .preview-panel，避免样式冲突 */
