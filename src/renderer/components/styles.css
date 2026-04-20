@@ -375,23 +375,8 @@
   overflow: hidden; /* 编辑器面板不滚动 */
 }
 
-.editor-preview .preview-panel {
-  width: 50%;
-  overflow: hidden; /* 预览面板容器不滚动，内部子元素滚动 */
-  display: flex;
-  flex-direction: column;
-  min-height: 0; /* Flexbox 子元素滚动必需 */
-}
-
-.editor-preview .preview-panel.preview-full-width {
-  width: 100%;
-  border-left: none;
-  /* 必须保持与 .preview-panel 相同的 flex 布局 */
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
+/* PreviewPanel 的样式已移至 styles.css 和 PreviewPanel.css */
+/* 这里不再定义 .editor-preview .preview-panel，避免样式冲突 */
 
 /* Modal */
 .modal-overlay {

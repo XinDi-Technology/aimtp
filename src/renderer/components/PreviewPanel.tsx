@@ -312,7 +312,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       {/* 根据 zoomMode 计算 actualZoom */}
       
       <div className="preview-with-margins" ref={containerRef}>
-        <div className="page-container">
+        {/* 在容器级别应用缩放，而不是每个页面 */}
+        <div 
+          className="page-container"
+          style={{
+            transform: `scale(${actualZoom / 100})`,
+            transformOrigin: 'top center',
+          }}
+        >
           {/* 如果启用封面，显示封面页 */}
           {cover.enabled && (
             <div 
@@ -320,8 +327,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               style={{
                 width: `${pageDimensions.width}mm`,
                 height: `${pageDimensions.height}mm`,
-                transform: `scale(${actualZoom / 100})`,
-                transformOrigin: 'top center',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -364,8 +369,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             style={{
               width: `${pageDimensions.width}mm`,
               minHeight: `${pageDimensions.height}mm`,
-              transform: `scale(${actualZoom / 100})`,
-              transformOrigin: 'top center',
               position: 'relative',
             }}
           >

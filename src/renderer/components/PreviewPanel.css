@@ -127,6 +127,8 @@
   overflow: visible;
   padding-bottom: 100px; /* 底部留出空间，确保最后一部分可见 */
   padding-top: 20px; /* 顶部留出空间，确俜封面完全可见 */
+  /* 关键修复：使用 zoom 而不是 transform scale，避免布局问题 */
+  width: 100%;
 }
 
 /* A4 页面 - Word 风格 */
