@@ -37,12 +37,14 @@ export const TemplateSelectionPanel: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <button 
-                  className="btn btn-primary template-select-btn"
-                  onClick={() => selectPresetTemplate(template.key)}
-                >
-                  {locale === 'zh' ? '选择' : 'Select'}
-                </button>
+                <div className="template-row-actions">
+                  <button 
+                    className="btn btn-primary template-select-btn"
+                    onClick={() => selectPresetTemplate(template.key)}
+                  >
+                    {locale === 'zh' ? '选择' : 'Select'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

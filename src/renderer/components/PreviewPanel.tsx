@@ -4,6 +4,7 @@ import { resetMarkdownIt } from '../utils/markdown';
 import { renderMermaid } from '../utils/mermaidPlugin';
 import { typesetMath } from '../utils/mathjaxPlugin';
 import { getHljsTheme, getHljsBaseStyles } from '../utils/hljsThemes';
+import { splitMarkdownByH2, PageSection } from '../utils/pageSplitter';
 import { t } from '../../shared/i18n';
 import './PreviewPanel.css';
 
@@ -13,10 +14,24 @@ interface PreviewPanelProps {
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
   const { markdown, font, extensions, page, locale, cover, headerFooter } = useAppStore();
-  const contentRef = useRef<HTMLDivElement>(null);
+  const contentRefs = useRef<(HTMLDivElement | null)[]>([]); // 多个页面的引用
   const containerRef = useRef<HTMLDivElement>(null); // 容器引用
   const [zoomMode, setZoomMode] = React.useState<'fit-width' | 'fit-height' | 'actual'>('fit-width'); // 缩放模式
   const [actualZoom, setActualZoom] = React.useState<number>(100); // 实际缩放比例
+  
+  // 自动提取第一个 H1 标题作为封面标题的默认值
+  const defaultCoverTitle = useMemo(() => {
+    if (cover.title && cover.title.trim()) {
+      return cover.title;
+    }
+    // 尝试从 Markdown 中提取第一个 H1 标题
+    const h1Match = markdown.match(/^#\s+(.+)$/m);
+    if (h1Match) {
+      return h1Match[1].trim();
+    }
+    // 如果没有 H1，返回默认文本
+    return locale === 'zh' ? '文档标题' : 'Document Title';
+  }, [cover.title, markdown, locale]);
   
   // A4 纸张尺寸（毫米）
   const A4_WIDTH_MM = 210;
@@ -42,21 +57,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   
   const pageDimensions = getPageDimensions();
   
-  // TODO: [P1] 计算页数（基于内容高度）
-  // 实现思路：
-  // 1. 获取 contentRef.current.scrollHeight - 内容总高度
-  // 2. 计算每页可用高度 = (A4_HEIGHT_MM - margins.top - margins.bottom) * (96/25.4)
-  // 3. totalPages = Math.ceil(contentHeight / availableHeight)
-  // 4. 需要考虑：图片、代码块、表格等元素不能被截断
-  // const totalPages = useMemo(() => {
-  //   if (!contentRef.current) return 1;
-  //   const contentHeight = contentRef.current.scrollHeight;
-  //   const marginsTotal = page.margins.top + page.margins.bottom;
-  //   const availableHeightMm = (page.orientation === 'portrait' ? A4_HEIGHT_MM : A4_WIDTH_MM) - marginsTotal;
-  //   const availableHeightPx = availableHeightMm * (96 / 25.4);
-  //   return Math.max(1, Math.ceil(contentHeight / availableHeightPx));
-  // }, [markdown, page]);
-  const totalPages = 1; // 临时值
+  // TODO: [P1] 计算页数（基于 H2 标题分割）
+  const pages = useMemo(() => {
+    return splitMarkdownByH2(markdown);
+  }, [markdown]);
+  
+  const totalPages = Math.max(1, pages.length);
   
   // 处理缩放模式切换
   const handleZoomModeChange = (mode: 'fit-width' | 'fit-height' | 'actual') => {
@@ -117,85 +123,76 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   
   // 渲染 Mermaid 图表和 MathJax 公式
   useEffect(() => {
-    if (!contentRef.current) return;
+    // 遍历所有页面内容进行渲染
+    contentRefs.current.forEach(async (contentRef, pageIndex) => {
+      if (!contentRef) return;
 
-    const renderContent = async () => {
       // 渲染 Mermaid 图表（如果启用）
       if (extensions.mermaid) {
         try {
-          await renderMermaid(contentRef.current!, { suppressErrors: true, resetMmdId: true });
+          await renderMermaid(contentRef, { suppressErrors: true, resetMmdId: true });
         } catch (error) {
-          console.error('Mermaid rendering error:', error);
+          console.error(`Mermaid rendering error on page ${pageIndex + 1}:`, error);
         }
       }
 
       // 渲染 MathJax 公式（如果启用）
       if (extensions.mathJax) {
         try {
-          await typesetMath(contentRef.current!);
+          await typesetMath(contentRef);
         } catch (error) {
-          console.error('MathJax rendering error:', error);
+          console.error(`MathJax rendering error on page ${pageIndex + 1}:`, error);
         }
       }
-    };
-
-    renderContent();
-  }, [markdown, extensions]);
+    });
+  }, [markdown, extensions, pages.length]);
   
-  // 注入 Highlight.js 主题样式
-  useEffect(() => {
+  // 为每个页面生成 HTML 和样式
+  const pageHtmlList = useMemo(() => {
     const currentTheme = extensions.codeTheme || 'github';
     const themeCss = `${getHljsBaseStyles()}${getHljsTheme(currentTheme)}`;
     
-    let styleTag = document.getElementById('hljs-theme-style') as HTMLStyleElement;
-    if (!styleTag) {
-      styleTag = document.createElement('style');
-      styleTag.id = 'hljs-theme-style';
-      document.head.appendChild(styleTag);
-    }
-    styleTag.textContent = themeCss;
-  }, [extensions.codeTheme]);
-  
-  const html = useMemo(() => {
-    try {
-      const md = resetMarkdownIt({
-        codeHighlight: extensions.codeHighlight,
-        showLineNumbers: extensions.showLineNumbers,
-        taskLists: extensions.taskLists,
-        footnotes: extensions.footnotes,
-        mermaid: extensions.mermaid,
-        mathJax: extensions.mathJax,
-        mark: extensions.mark,
-        ins: extensions.ins,
-        sub: extensions.sub,
-        sup: extensions.sup,
-        codeTheme: extensions.codeTheme,
-      });
-      
-      let result = md.render(markdown);
-      
-      if (extensions.githubAlerts) {
-        result = result.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, content) => {
-          const icons: Record<string, string> = {
-            note: 'ℹ️',
-            tip: '💡',
-            important: '⭐',
-            warning: '⚠️',
-            danger: '🚨',
-          };
-          return `<div class="github-alert ${type}">
-            <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
-            <div class="alert-content">${content.trim()}</div>
-          </div>`;
+    return pages.map((pageSection) => {
+      try {
+        const md = resetMarkdownIt({
+          codeHighlight: extensions.codeHighlight,
+          showLineNumbers: extensions.showLineNumbers,
+          taskLists: extensions.taskLists,
+          footnotes: extensions.footnotes,
+          mermaid: extensions.mermaid,
+          mathJax: extensions.mathJax,
+          mark: extensions.mark,
+          ins: extensions.ins,
+          sub: extensions.sub,
+          sup: extensions.sup,
+          codeTheme: extensions.codeTheme,
         });
+        
+        let result = md.render(pageSection.content);
+        
+        if (extensions.githubAlerts) {
+          result = result.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, content) => {
+            const icons: Record<string, string> = {
+              note: 'ℹ️',
+              tip: '💡',
+              important: '⭐',
+              warning: '⚠️',
+              danger: '🚨',
+            };
+            return `<div class="github-alert ${type}">
+              <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
+              <div class="alert-content">${content.trim()}</div>
+            </div>`;
+          });
+        }
+        
+        return { html: result, themeCss };
+      } catch (error) {
+        console.error('Preview markdown parsing error:', error);
+        return { html: `<div class="error-message">Error parsing markdown: ${(error as Error).message}</div>`, themeCss };
       }
-      
-      return result;
-    } catch (error) {
-      console.error('Preview markdown parsing error:', error);
-      return `<div class="error-message">Error parsing markdown: ${(error as Error).message}</div>`;
-    }
-  }, [markdown, extensions]);
+    });
+  }, [pages, extensions]);
   
   const previewStyle: React.CSSProperties = useMemo(() => {
     const isPortrait = page.orientation === 'portrait';
@@ -259,7 +256,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               className="a4-page cover-page"
               style={{
                 width: `${pageDimensions.width}mm`,
-                minHeight: `${pageDimensions.height}mm`,
+                height: `${pageDimensions.height}mm`,  // 使用固定高度，确保是完整 A4 页面
                 transform: `scale(${actualZoom / 100})`,
                 transformOrigin: 'top center',
                 display: 'flex',
@@ -273,7 +270,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   marginBottom: '20px',
                   fontFamily: font.heading,
                 }}>
-                  {cover.title || '文档标题'}
+                  {defaultCoverTitle}
                 </h1>
                 <p className="cover-author" style={{ 
                   fontSize: '18px',
@@ -296,112 +293,95 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             </div>
           )}
           
-          {/* A4 页面 - Word 风格 */}
-          <div 
-            className="a4-page"
-            style={{
-              width: `${pageDimensions.width}mm`,
-              minHeight: `${pageDimensions.height}mm`,
-              transform: `scale(${actualZoom / 100})`,
-              transformOrigin: 'top center',
-            }}
-          >
-            {/* 如果启用页眉，显示页眉 */}
-            {headerFooter.enabled && headerFooter.header.content && (
-              <div 
-                className="page-header"
-                style={{
-                  position: 'absolute',
-                  top: '10mm',
-                  left: `${page.margins.left}mm`,
-                  right: `${page.margins.right}mm`,
-                  textAlign: headerFooter.header.alignment,
-                  fontFamily: headerFooter.header.font,
-                  fontSize: '12px',
-                  color: '#666',
-                  borderBottom: '1px solid #e0e0e0',
-                  paddingBottom: '5mm',
-                }}
-              >
-                {headerFooter.header.content}
-              </div>
-            )}
-            
+          {/* 渲染多个 A4 页面，按 H2 标题分页 */}
+          {pages.map((pageSection, pageIndex) => (
             <div 
-              ref={contentRef}
-              className="markdown-preview"
+              key={pageIndex}
+              className="a4-page"
               style={{
-                ...previewStyle,
-                padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
-                fontFamily: font.body,
+                width: `${pageDimensions.width}mm`,
+                minHeight: `${pageDimensions.height}mm`,
+                transform: `scale(${actualZoom / 100})`,
+                transformOrigin: 'top center',
               }}
             >
-              <style>{`
-                .markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
-                .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
-                  font-family: ${font.heading} !important;
-                }
-                .markdown-preview pre, .markdown-preview code {
-                  font-family: ${font.code} !important;
-                }
-              `}</style>
-              <div dangerouslySetInnerHTML={{ __html: html }} />
-            </div>
-            
-            {/* 如果启用页脚，显示页脚 */}
-            {headerFooter.enabled && (
+              {/* 如果启用页眉，显示页眉 */}
+              {headerFooter.enabled && headerFooter.header.content && (
+                <div 
+                  className="page-header"
+                  style={{
+                    position: 'absolute',
+                    top: '10mm',
+                    left: `${page.margins.left}mm`,
+                    right: `${page.margins.right}mm`,
+                    textAlign: headerFooter.header.alignment,
+                    fontFamily: headerFooter.header.font,
+                    fontSize: '12px',
+                    color: '#666',
+                    borderBottom: '1px solid #e0e0e0',
+                    paddingBottom: '5mm',
+                  }}
+                >
+                  {headerFooter.header.content}
+                </div>
+              )}
+              
               <div 
-                className="page-footer-custom"
+                ref={(el) => {
+                  contentRefs.current[pageIndex] = el;
+                }}
+                className="markdown-preview"
                 style={{
-                  position: 'absolute',
-                  bottom: '10mm',
-                  left: `${page.margins.left}mm`,
-                  right: `${page.margins.right}mm`,
-                  textAlign: headerFooter.footer.alignment,
-                  fontFamily: headerFooter.footer.font,
-                  fontSize: '12px',
-                  color: '#666',
-                  borderTop: '1px solid #e0e0e0',
-                  paddingTop: '5mm',
+                  ...previewStyle,
+                  padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
+                  fontFamily: font.body,
                 }}
               >
-                {headerFooter.footer.content === 'pageNumber' ? '1' :
-                 headerFooter.footer.content === 'pageNumberTotal' ? `1 / ${totalPages}` :
-                 headerFooter.footer.content}
+                <style>{`
+                  .markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
+                  .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
+                    font-family: ${font.heading} !important;
+                  }
+                  .markdown-preview pre, .markdown-preview code {
+                    font-family: ${font.code} !important;
+                  }
+                  /* 代码高亮主题样式 */
+                  ${pageHtmlList[pageIndex]?.themeCss || ''}
+                `}</style>
+                <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
               </div>
-            )}
-            
-            {/* 临时页码显示（未启用页眉页脚时） */}
-            {!headerFooter.enabled && (
-              <div className="page-footer">
-                <span>{locale === 'zh' ? `第 1 页 / 共 ${totalPages} 页` : `Page 1 of ${totalPages}`}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* TODO: [P1] 如果有多个页面，显示分页 */}
-          {/* 实现思路：
-              1. 根据 totalPages 渲染多个 .a4-page
-              2. 每个页面只显示对应部分的内容（需要分割 HTML）
-              3. 或者使用 CSS columns 自动分页
-              4. 在页面之间显示分隔线
-          */}
-          {/* {pages.length > 1 && pages.map((pageContent, index) => (
-            <React.Fragment key={index}>
-              <div className="page-break-indicator">--- 第 {index + 1} 页 ---</div>
-              <div className="a4-page">
-                <div dangerouslySetInnerHTML={{ __html: pageContent }} />
-              </div>
-            </React.Fragment>
-          ))} */}
-          
-          {/* TODO: [P2] 检测并警告可能被截断的元素 */}
-          {/* 实现思路：
-              1. 遍历所有大块元素（h1-h6, pre, table, img, blockquote）
-              2. 检查元素是否跨越分页位置
-              3. 如果会截断，添加警告标记或调整布局
-              4. 可以使用 CSS break-inside: avoid 防止截断
-          */}
+              
+              {/* 如果启用页脚，显示页脚 */}
+              {headerFooter.enabled && (
+                <div 
+                  className="page-footer-custom"
+                  style={{
+                    position: 'absolute',
+                    bottom: '10mm',
+                    left: `${page.margins.left}mm`,
+                    right: `${page.margins.right}mm`,
+                    textAlign: headerFooter.footer.alignment,
+                    fontFamily: headerFooter.footer.font,
+                    fontSize: '12px',
+                    color: '#666',
+                    borderTop: '1px solid #e0e0e0',
+                    paddingTop: '5mm',
+                  }}
+                >
+                  {headerFooter.footer.content === 'pageNumber' ? `${pageIndex + 1}` :
+                   headerFooter.footer.content === 'pageNumberTotal' ? `${pageIndex + 1} / ${totalPages}` :
+                   headerFooter.footer.content}
+                </div>
+              )}
+              
+              {/* 临时页码显示（未启用页眉页脚时） */}
+              {!headerFooter.enabled && (
+                <div className="page-footer">
+                  <span>{locale === 'zh' ? `第 ${pageIndex + 1} 页 / 共 ${totalPages} 页` : `Page ${pageIndex + 1} of ${totalPages}`}</span>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

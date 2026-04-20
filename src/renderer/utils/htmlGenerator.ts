@@ -271,7 +271,16 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
 <body>
   ${cover.enabled ? `
     <div class="cover-page">
-      ${cover.title ? `<div class="cover-title">${DOMPurify.sanitize(cover.title)}</div>` : ''}
+      ${(() => {
+        // 智能提取封面标题
+        let titleText = cover.title;
+        if (!titleText || !titleText.trim()) {
+          // 尝试从 Markdown 中提取第一个 H1 标题
+          const h1Match = markdown.match(/^#\s+(.+)$/m);
+          titleText = h1Match ? h1Match[1].trim() : (locale === 'zh' ? '文档标题' : 'Document Title');
+        }
+        return `<div class="cover-title">${DOMPurify.sanitize(titleText)}</div>`;
+      })()}
       ${cover.author ? `<div class="cover-author">${DOMPurify.sanitize(cover.author)}</div>` : ''}
       ${cover.date ? `<div class="cover-date">${new Date().toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>` : ''}
     </div>

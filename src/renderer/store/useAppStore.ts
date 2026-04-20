@@ -680,9 +680,8 @@ export const useAppStore = create<AppState>()(
           set({
             markdown: template,
             currentTemplate: templateKey,
-            showTemplateSelection: false,
-            // 保持 showEditor 为 true，确保编辑器和预览都显示
-            showEditor: true,
+            showTemplateSelection: false, // 关闭模板选择面板
+            // 不修改 showEditor，保持当前布局状态
           });
         }
       },

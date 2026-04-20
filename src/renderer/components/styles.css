@@ -657,6 +657,8 @@
 .template-row-text {
   flex: 1;
   min-width: 0;
+  writing-mode: horizontal-tb; /* 确保文字横向显示 */
+  text-orientation: mixed;
 }
 
 .template-row-text h4 {
@@ -664,6 +666,8 @@
   font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
+  writing-mode: horizontal-tb; /* 确保文字横向显示 */
+  text-orientation: mixed;
 }
 
 .template-row .template-card-desc {
@@ -671,6 +675,8 @@
   font-size: 13px;
   color: #6c757d;
   line-height: 1.4;
+  writing-mode: horizontal-tb; /* 确保文字横向显示 */
+  text-orientation: mixed;
 }
 
 .template-row-actions {
