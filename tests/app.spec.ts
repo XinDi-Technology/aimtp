@@ -197,6 +197,8 @@ test.describe('Aimtp Application', () => {
       await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
       // 新布局：使用 .template-row 和 .template-select-btn
       await page.locator('.template-row').first().locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
+      // 等待模板选择面板关闭，编辑器可见
+      await expect(page.locator('.template-selection-inline')).not.toBeVisible({ timeout: UI_TIMEOUT });
       await expect(page.locator('[data-testid="editor-textarea"]')).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
@@ -227,8 +229,12 @@ test.describe('Aimtp Application', () => {
     });
 
     test('should show A4 page in preview', async ({ page }) => {
-      // 新布局：检查 Word 风格的 A4 页面容器
-      await expect(page.locator('.preview-panel .a4-page')).toBeVisible({ timeout: UI_TIMEOUT });
+      // 新布局：检查 Word 风格的 A4 页面容器（可能有多个页面）
+      const a4Pages = page.locator('.preview-panel .a4-page');
+      await expect(a4Pages.first()).toBeVisible({ timeout: UI_TIMEOUT });
+      // 验证至少有一个页面
+      const count = await a4Pages.count();
+      expect(count).toBeGreaterThanOrEqual(1);
     });
   });
 
