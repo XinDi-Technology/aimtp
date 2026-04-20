@@ -577,3 +577,69 @@ pre.with-line-numbers {
 [data-theme='dark'] .line-number {
   color: #666;
 }
+
+/* ========================================
+   分页标记样式（连续滚动模式）
+   ======================================== */
+
+/* 内容页面容器 */
+.content-pages {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0;
+}
+
+[data-theme='dark'] .content-pages {
+  background: #ffffff;
+}
+
+/* 章节容器 */
+.page-section {
+  position: relative;
+}
+
+/* 分页标记 */
+.page-break-marker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 40px 20px;
+  padding: 0 20px;
+}
+
+/* 标记线 */
+.marker-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 0, 0, 0.2),
+    transparent
+  );
+}
+
+[data-theme='dark'] .marker-line {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+}
+
+/* 标记文本 */
+.marker-text {
+  font-size: 12px;
+  color: #999;
+  font-family: var(--font-code), monospace;
+  white-space: nowrap;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+}
+
+[data-theme='dark'] .marker-text {
+  color: #666;
+  background: rgba(255, 255, 255, 0.05);
+}

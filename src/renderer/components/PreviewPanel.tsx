@@ -309,7 +309,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               className="a4-page cover-page"
               style={{
                 width: `${pageDimensions.width}mm`,
-                height: `${pageDimensions.height}mm`,  // 使用固定高度，确保是完整 A4 页面
+                height: `${pageDimensions.height}mm`,
                 transform: `scale(${actualZoom / 100})`,
                 transformOrigin: 'top center',
                 display: 'flex',
@@ -348,104 +348,59 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             </div>
           )}
           
-          {/* 渲染多个 A4 页面，按 H2 标题分页 */}
-          {pages.map((pageSection, pageIndex) => (
-            <div 
-              key={pageIndex}
-              className="a4-page"
-              style={{
-                width: `${pageDimensions.width}mm`,
-                height: `${pageDimensions.height}mm`,  // 使用固定高度，确保是完整 A4 页面
-                transform: `scale(${actualZoom / 100})`,
-                transformOrigin: 'top center',
-                overflow: 'hidden',  // 隐藏溢出内容，保持 A4 尺寸
-              }}
-            >
-              {/* 如果启用页眉，显示页眉 */}
-              {headerFooter.enabled && headerFooter.header.content && getHeaderContent && (
+          {/* 内容区域 - 连续显示，用分页标记分隔 */}
+          <div 
+            className="a4-page content-pages"
+            style={{
+              width: `${pageDimensions.width}mm`,
+              minHeight: `${pageDimensions.height}mm`,
+              transform: `scale(${actualZoom / 100})`,
+              transformOrigin: 'top center',
+              position: 'relative',
+            }}
+          >
+            {/* 渲染所有页面内容，连续显示 */}
+            {pages.map((pageSection, pageIndex) => (
+              <div key={pageIndex} className="page-section">
+                {/* 如果不是第一个章节，添加分页标记 */}
+                {pageIndex > 0 && (
+                  <div className="page-break-marker">
+                    <span className="marker-line"></span>
+                    <span className="marker-text">
+                      {locale === 'zh' ? `第 ${pageIndex + (cover.enabled ? 2 : 1)} 页` : `Page ${pageIndex + (cover.enabled ? 2 : 1)}`}
+                    </span>
+                    <span className="marker-line"></span>
+                  </div>
+                )}
+                
+                {/* 章节内容 */}
                 <div 
-                  className="page-header"
+                  ref={(el) => {
+                    contentRefs.current[pageIndex] = el;
+                  }}
+                  className="markdown-preview"
                   style={{
-                    position: 'absolute',
-                    top: '0',
-                    left: `${page.margins.left}mm`,
-                    right: `${page.margins.right}mm`,
-                    height: `${page.margins.top}mm`,
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: headerFooter.header.alignment === 'left' ? 'flex-start' : 
-                                   headerFooter.header.alignment === 'right' ? 'flex-end' : 'center',
-                    fontFamily: headerFooter.header.font,
-                    fontSize: '12px',
-                    color: '#666',
-                    borderBottom: '1px solid #e0e0e0',
-                    paddingBottom: '2mm',
+                    ...previewStyle,
+                    padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
+                    fontFamily: font.body,
                   }}
                 >
-                  {getHeaderContent}
+                  <style key={`hljs-theme-${extensions.codeTheme}`}>
+                    {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
+                    .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
+                      font-family: ${font.heading} !important;
+                    }
+                    .markdown-preview pre, .markdown-preview code {
+                      font-family: ${font.code} !important;
+                    }
+                    /* 代码高亮主题样式 */
+                    ${pageHtmlList[pageIndex]?.themeCss || ''}`}
+                  </style>
+                  <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
                 </div>
-              )}
-              
-              <div 
-                ref={(el) => {
-                  contentRefs.current[pageIndex] = el;
-                }}
-                className="markdown-preview"
-                style={{
-                  ...previewStyle,
-                  padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
-                  fontFamily: font.body,
-                }}
-              >
-                <style key={`hljs-theme-${extensions.codeTheme}`}>
-                  {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
-                  .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
-                    font-family: ${font.heading} !important;
-                  }
-                  .markdown-preview pre, .markdown-preview code {
-                    font-family: ${font.code} !important;
-                  }
-                  /* 代码高亮主题样式 */
-                  ${pageHtmlList[pageIndex]?.themeCss || ''}`}
-                </style>
-                <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
               </div>
-              
-              {/* 如果启用页脚，显示页脚 */}
-              {headerFooter.enabled && (
-                <div 
-                  className="page-footer-custom"
-                  style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    left: `${page.margins.left}mm`,
-                    right: `${page.margins.right}mm`,
-                    height: `${page.margins.bottom}mm`,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: headerFooter.footer.alignment === 'left' ? 'flex-start' : 
-                                   headerFooter.footer.alignment === 'right' ? 'flex-end' : 'center',
-                    fontFamily: headerFooter.footer.font,
-                    fontSize: '12px',
-                    color: '#666',
-                    borderTop: '1px solid #e0e0e0',
-                    paddingTop: '2mm',
-                  }}
-                >
-                  {headerFooter.footer.content === 'pageNumber' ? `${pageIndex + 1}` :
-                   headerFooter.footer.content === 'pageNumberTotal' ? `第 ${pageIndex + 1} 页 / 共 ${totalPages} 页` :
-                   getFooterContent}
-                </div>
-              )}
-              
-              {/* 临时页码显示（未启用页眉页脚时） */}
-              {!headerFooter.enabled && (
-                <div className="page-footer">
-                  <span>{locale === 'zh' ? `第 ${pageIndex + 1} 页 / 共 ${totalPages} 页` : `Page ${pageIndex + 1} of ${totalPages}`}</span>
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
