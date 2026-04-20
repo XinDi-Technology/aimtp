@@ -106,6 +106,7 @@
   /* 确保子元素的 transform 不会导致裁剪 */
   overflow: visible;
   padding-bottom: 100px; /* 底部留出空间，确保最后一部分可见 */
+  padding-top: 20px; /* 顶部留出空间，确俜封面完全可见 */
 }
 
 /* A4 页面 - Word 风格 */
