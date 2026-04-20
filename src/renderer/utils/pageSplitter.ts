@@ -13,7 +13,15 @@ export function splitMarkdownByH2(markdown: string): PageSection[] {
     return [];
   }
 
-  const lines = markdown.split('\n');
+  // 先去除 Front Matter
+  const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+  const contentWithoutFM = markdown.replace(frontMatterRegex, '');
+  
+  if (!contentWithoutFM.trim()) {
+    return [];
+  }
+
+  const lines = contentWithoutFM.split('\n');
   const sections: PageSection[] = [];
   let currentTitle = '';
   let currentContent: string[] = [];
@@ -58,10 +66,10 @@ export function splitMarkdownByH2(markdown: string): PageSection[] {
   }
 
   // 如果没有找到任何 H2，返回整个内容作为一个页面
-  if (sections.length === 0 && markdown.trim()) {
+  if (sections.length === 0 && contentWithoutFM.trim()) {
     sections.push({
       title: '文档',
-      content: markdown,
+      content: contentWithoutFM,
     });
   }
 

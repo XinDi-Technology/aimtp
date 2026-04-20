@@ -61,10 +61,7 @@ export interface ExtensionSettings {
 }
 
 export interface CoverSettings {
-  enabled: boolean;
-  title: string;
-  author: string;
-  date: boolean;
+  enabled: boolean; // 是否启用封面，元数据从 Front Matter 自动提取
 }
 
 export interface HeaderFooterSettings {
@@ -324,9 +321,6 @@ const defaultExtensions: ExtensionSettings = {
 
 const defaultCover: CoverSettings = {
   enabled: false,
-  title: '',
-  author: '',
-  date: true,
 };
 
 const defaultHeaderFooter: HeaderFooterSettings = {
@@ -428,9 +422,6 @@ const validateCoverSettings = (data: any): CoverSettings => {
   
   return {
     enabled: isValidBoolean(data.enabled) ? data.enabled : defaults.enabled,
-    title: isValidString(data.title) ? data.title : defaults.title,
-    author: isValidString(data.author) ? data.author : defaults.author,
-    date: isValidBoolean(data.date) ? data.date : defaults.date,
   };
 };
 

@@ -3,6 +3,7 @@ import { FontSettings, PageSettings, ExtensionSettings, HeaderFooterSettings, Co
 import { logger } from './logger';
 import DOMPurify from 'dompurify';
 import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
+import { parseFrontMatter, formatDate } from './frontMatter';
 
 export interface HtmlGeneratorOptions {
   markdown: string;
@@ -18,6 +19,45 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
   const { markdown, locale, page, font, extensions, headerFooter, cover } = options;
   
   try {
+    // 从 Front Matter 提取元数据
+    const { data: frontMatter } = parseFrontMatter(markdown);
+    
+    // 获取页眉内容
+    const getHeaderContent = () => {
+      if (!headerFooter.header.content) return '';
+      switch (headerFooter.header.content) {
+        case 'title':
+          return String(frontMatter.title || '');
+        case 'author':
+          return String(frontMatter.author || '');
+        case 'date':
+          return formatDate(frontMatter.date, locale);
+        default:
+          return '';
+      }
+    };
+    
+    // 获取页脚内容
+    const getFooterContent = () => {
+      const content = headerFooter.footer.content;
+      if (content === 'pageNumber' || content === 'pageNumberTotal') {
+        return content; // 返回特殊标记
+      }
+      switch (content) {
+        case 'title':
+          return String(frontMatter.title || '');
+        case 'author':
+          return String(frontMatter.author || '');
+        case 'date':
+          return formatDate(frontMatter.date, locale);
+        default:
+          return '';
+      }
+    };
+    
+    const headerContent = getHeaderContent();
+    const footerContent = getFooterContent();
+  
     const md = resetMarkdownIt({
       codeHighlight: extensions.codeHighlight,
       showLineNumbers: extensions.showLineNumbers,
@@ -249,17 +289,21 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
     ${headerFooter.enabled ? `
     @page {
       margin: ${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm;
-      @top-center {
-        content: "${headerFooter.header.content.replace(/"/g, '\\"').replace(/\n/g, ' ')}";
+      
+      /* 页眉 - 根据对齐方式选择位置 */
+      ${headerFooter.header.alignment === 'left' ? `@top-left` : headerFooter.header.alignment === 'right' ? `@top-right` : `@top-center`} {
+        content: "${headerContent.replace(/"/g, '\\"').replace(/\n/g, ' ')}";
         font-family: ${headerFooter.header.font};
-        text-align: ${headerFooter.header.alignment};
         font-size: ${font.baseSize * 0.9}px;
+        color: #666;
       }
-      @bottom-center {
-        content: ${headerFooter.footer.content === 'pageNumber' ? 'counter(page)' : headerFooter.footer.content === 'pageNumberTotal' ? '"第" counter(page) "页/共" counter(pages) "页"' : `"${headerFooter.footer.content.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`};
+      
+      /* 页脚 - 根据对齐方式选择位置 */
+      ${headerFooter.footer.alignment === 'left' ? `@bottom-left` : headerFooter.footer.alignment === 'right' ? `@bottom-right` : `@bottom-center`} {
+        content: ${footerContent === 'pageNumber' ? 'counter(page)' : footerContent === 'pageNumberTotal' ? '"\\7B2C" counter(page) "\\9875/\\5171" counter(pages) "\\9875"' : `"${footerContent.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`};
         font-family: ${headerFooter.footer.font};
-        text-align: ${headerFooter.footer.alignment};
         font-size: ${font.baseSize * 0.9}px;
+        color: #666;
       }
     }
     body {
@@ -272,17 +316,26 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
   ${cover.enabled ? `
     <div class="cover-page">
       ${(() => {
+        // 从 Front Matter 提取封面元数据
+        const { data: frontMatter } = parseFrontMatter(markdown);
+        
         // 智能提取封面标题
-        let titleText = cover.title;
-        if (!titleText || !titleText.trim()) {
+        let titleText = frontMatter.title;
+        if (!titleText) {
           // 尝试从 Markdown 中提取第一个 H1 标题
           const h1Match = markdown.match(/^#\s+(.+)$/m);
           titleText = h1Match ? h1Match[1].trim() : (locale === 'zh' ? '文档标题' : 'Document Title');
         }
-        return `<div class="cover-title">${DOMPurify.sanitize(titleText)}</div>`;
+        
+        const authorText = frontMatter.author || '';
+        const dateText = formatDate(frontMatter.date, locale);
+        
+        return `
+          <div class="cover-title">${DOMPurify.sanitize(String(titleText))}</div>
+          ${authorText ? `<div class="cover-author">${DOMPurify.sanitize(authorText)}</div>` : ''}
+          ${dateText ? `<div class="cover-date">${dateText}</div>` : ''}
+        `;
       })()}
-      ${cover.author ? `<div class="cover-author">${DOMPurify.sanitize(cover.author)}</div>` : ''}
-      ${cover.date ? `<div class="cover-date">${new Date().toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>` : ''}
     </div>
   ` : ''}
   ${content}

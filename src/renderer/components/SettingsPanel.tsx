@@ -340,45 +340,21 @@ export const SettingsPanel: React.FC = () => {
               checked={cover.enabled}
               onChange={(e) => setCover({ enabled: e.target.checked })}
             />
-            启用封面
+            启用封面（从 YAML Front Matter 自动提取元数据）
           </label>
         </div>
-
+        
         {cover.enabled && (
-          <>
-            <div className="setting-group">
-              <label className="setting-label">标题</label>
-              <input
-                type="text"
-                className="setting-input"
-                value={cover.title}
-                onChange={(e) => setCover({ title: e.target.value })}
-                placeholder="输入文档标题"
-              />
-            </div>
-
-            <div className="setting-group">
-              <label className="setting-label">作者</label>
-              <input
-                type="text"
-                className="setting-input"
-                value={cover.author}
-                onChange={(e) => setCover({ author: e.target.value })}
-                placeholder="输入作者名称"
-              />
-            </div>
-
-            <div className="setting-group">
-              <label className="setting-checkbox">
-                <input
-                  type="checkbox"
-                  checked={cover.date}
-                  onChange={(e) => setCover({ date: e.target.checked })}
-                />
-                显示日期
-              </label>
-            </div>
-          </>
+          <div className="setting-hint" style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+            💡 提示：在 Markdown 文件开头添加以下格式：
+            <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px', marginTop: '4px', fontSize: '11px' }}>
+{`---
+title: 文档标题
+author: 作者名
+date: 2024-01-01
+---`}
+            </pre>
+          </div>
         )}
       </div>
 
@@ -437,10 +413,9 @@ export const SettingsPanel: React.FC = () => {
               </div>
 
               <div className="setting-group">
-                <label className="setting-label">内容（标题）</label>
-                <input
-                  type="text"
-                  className="setting-input"
+                <label className="setting-label">内容</label>
+                <select
+                  className="setting-input setting-select"
                   value={headerFooter.header.content}
                   onChange={(e) => setHeaderFooter({ 
                     header: { 
@@ -448,8 +423,16 @@ export const SettingsPanel: React.FC = () => {
                       content: e.target.value 
                     } 
                   })}
-                  placeholder="输入页眉内容"
-                />
+                >
+                  <option value="title">标题（从 YAML 提取）</option>
+                  <option value="author">作者（从 YAML 提取）</option>
+                  <option value="date">日期（从 YAML 提取）</option>
+                  <option value="">不显示</option>
+                </select>
+              </div>
+              
+              <div className="setting-hint" style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                💡 提示：在 Markdown 文件开头添加 YAML Front Matter
               </div>
             </div>
 
@@ -495,40 +478,25 @@ export const SettingsPanel: React.FC = () => {
                 <label className="setting-label">内容</label>
                 <select
                   className="setting-input setting-select"
-                  value={headerFooter.footer.content === 'pageNumber' ? 'pageNumber' : headerFooter.footer.content === 'pageNumberTotal' ? 'pageNumberTotal' : 'custom'}
+                  value={headerFooter.footer.content === 'pageNumber' ? 'pageNumber' : headerFooter.footer.content === 'pageNumberTotal' ? 'pageNumberTotal' : headerFooter.footer.content}
                   onChange={(e) => {
                     const val = e.target.value;
                     setHeaderFooter({ 
                       footer: { 
                         ...headerFooter.footer, 
-                        content: val === 'custom' ? '' : val
+                        content: val
                       } 
                     });
                   }}
                 >
                   <option value="pageNumber">页码</option>
                   <option value="pageNumberTotal">第x页/共x页</option>
-                  <option value="custom">自定义</option>
+                  <option value="title">标题（从 YAML 提取）</option>
+                  <option value="author">作者（从 YAML 提取）</option>
+                  <option value="date">日期（从 YAML 提取）</option>
+                  <option value="">不显示</option>
                 </select>
               </div>
-
-              {headerFooter.footer.content !== 'pageNumber' && headerFooter.footer.content !== 'pageNumberTotal' && (
-                <div className="setting-group">
-                  <label className="setting-label">自定义内容</label>
-                  <input
-                    type="text"
-                    className="setting-input"
-                    value={headerFooter.footer.content}
-                    onChange={(e) => setHeaderFooter({ 
-                      footer: { 
-                        ...headerFooter.footer, 
-                        content: e.target.value 
-                      } 
-                    })}
-                    placeholder="输入页脚内容"
-                  />
-                </div>
-              )}
             </div>
           </>
         )}

@@ -5,6 +5,7 @@ import { renderMermaid } from '../utils/mermaidPlugin';
 import { typesetMath } from '../utils/mathjaxPlugin';
 import { getHljsTheme, getHljsBaseStyles } from '../utils/hljsThemes';
 import { splitMarkdownByH2, PageSection } from '../utils/pageSplitter';
+import { parseFrontMatter, formatDate } from '../utils/frontMatter';
 import { t } from '../../shared/i18n';
 import './PreviewPanel.css';
 
@@ -19,19 +20,71 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const [zoomMode, setZoomMode] = React.useState<'fit-width' | 'fit-height' | 'actual'>('fit-width'); // 缩放模式
   const [actualZoom, setActualZoom] = React.useState<number>(100); // 实际缩放比例
   
-  // 自动提取第一个 H1 标题作为封面标题的默认值
-  const defaultCoverTitle = useMemo(() => {
-    if (cover.title && cover.title.trim()) {
-      return cover.title;
+  // 从 Front Matter 提取封面元数据
+  const frontMatterData = useMemo(() => {
+    const { data } = parseFrontMatter(markdown);
+    return data;
+  }, [markdown]);
+  
+  // 封面标题：优先使用 Front Matter 的 title，其次 H1，最后默认文本
+  const coverTitle = useMemo(() => {
+    if (frontMatterData.title) {
+      return String(frontMatterData.title);
     }
     // 尝试从 Markdown 中提取第一个 H1 标题
     const h1Match = markdown.match(/^#\s+(.+)$/m);
     if (h1Match) {
       return h1Match[1].trim();
     }
-    // 如果没有 H1，返回默认文本
     return locale === 'zh' ? '文档标题' : 'Document Title';
-  }, [cover.title, markdown, locale]);
+  }, [frontMatterData.title, markdown, locale]);
+  
+  // 封面作者
+  const coverAuthor = useMemo(() => {
+    return frontMatterData.author ? String(frontMatterData.author) : '';
+  }, [frontMatterData.author]);
+  
+  // 封面日期
+  const coverDate = useMemo(() => {
+    return formatDate(frontMatterData.date, locale);
+  }, [frontMatterData.date, locale]);
+  
+  // 获取页眉内容（从 Front Matter 提取）
+  const getHeaderContent = useMemo(() => {
+    if (!headerFooter.enabled || !headerFooter.header.content) return '';
+    
+    switch (headerFooter.header.content) {
+      case 'title':
+        return coverTitle;
+      case 'author':
+        return coverAuthor;
+      case 'date':
+        return coverDate;
+      default:
+        return '';
+    }
+  }, [headerFooter.enabled, headerFooter.header.content, coverTitle, coverAuthor, coverDate]);
+  
+  // 获取页脚内容（从 Front Matter 提取或页码）
+  const getFooterContent = useMemo(() => {
+    if (!headerFooter.enabled) return '';
+    
+    const content = headerFooter.footer.content;
+    if (content === 'pageNumber' || content === 'pageNumberTotal') {
+      return content; // 返回特殊标记，稍后处理
+    }
+    
+    switch (content) {
+      case 'title':
+        return coverTitle;
+      case 'author':
+        return coverAuthor;
+      case 'date':
+        return coverDate;
+      default:
+        return '';
+    }
+  }, [headerFooter.enabled, headerFooter.footer.content, coverTitle, coverAuthor, coverDate]);
   
   // A4 纸张尺寸（毫米）
   const A4_WIDTH_MM = 210;
@@ -270,23 +323,25 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   marginBottom: '20px',
                   fontFamily: font.heading,
                 }}>
-                  {defaultCoverTitle}
+                  {coverTitle}
                 </h1>
-                <p className="cover-author" style={{ 
-                  fontSize: '18px',
-                  color: '#666',
-                  marginBottom: '10px',
-                  fontFamily: font.body,
-                }}>
-                  {cover.author || '作者'}
-                </p>
-                {cover.date && (
+                {coverAuthor && (
+                  <p className="cover-author" style={{ 
+                    fontSize: '18px',
+                    color: '#666',
+                    marginBottom: '10px',
+                    fontFamily: font.body,
+                  }}>
+                    {coverAuthor}
+                  </p>
+                )}
+                {coverDate && (
                   <p className="cover-date" style={{ 
                     fontSize: '14px',
                     color: '#999',
                     fontFamily: font.body,
                   }}>
-                    {new Date().toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US')}
+                    {coverDate}
                   </p>
                 )}
               </div>
@@ -306,23 +361,26 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               }}
             >
               {/* 如果启用页眉，显示页眉 */}
-              {headerFooter.enabled && headerFooter.header.content && (
+              {headerFooter.enabled && headerFooter.header.content && getHeaderContent && (
                 <div 
                   className="page-header"
                   style={{
                     position: 'absolute',
-                    top: '10mm',
+                    top: '0',
                     left: `${page.margins.left}mm`,
                     right: `${page.margins.right}mm`,
+                    height: `${page.margins.top}mm`,
+                    display: 'flex',
+                    alignItems: 'flex-end',
                     textAlign: headerFooter.header.alignment,
                     fontFamily: headerFooter.header.font,
                     fontSize: '12px',
                     color: '#666',
                     borderBottom: '1px solid #e0e0e0',
-                    paddingBottom: '5mm',
+                    paddingBottom: '2mm',
                   }}
                 >
-                  {headerFooter.header.content}
+                  {getHeaderContent}
                 </div>
               )}
               
@@ -357,20 +415,23 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   className="page-footer-custom"
                   style={{
                     position: 'absolute',
-                    bottom: '10mm',
+                    bottom: '0',
                     left: `${page.margins.left}mm`,
                     right: `${page.margins.right}mm`,
+                    height: `${page.margins.bottom}mm`,
+                    display: 'flex',
+                    alignItems: 'flex-start',
                     textAlign: headerFooter.footer.alignment,
                     fontFamily: headerFooter.footer.font,
                     fontSize: '12px',
                     color: '#666',
                     borderTop: '1px solid #e0e0e0',
-                    paddingTop: '5mm',
+                    paddingTop: '2mm',
                   }}
                 >
                   {headerFooter.footer.content === 'pageNumber' ? `${pageIndex + 1}` :
                    headerFooter.footer.content === 'pageNumberTotal' ? `${pageIndex + 1} / ${totalPages}` :
-                   headerFooter.footer.content}
+                   getFooterContent}
                 </div>
               )}
               
