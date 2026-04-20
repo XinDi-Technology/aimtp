@@ -137,8 +137,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     const calculateZoom = () => {
       if (!containerRef.current) return;
       
-      const containerWidth = containerRef.current.offsetWidth;
-      const containerHeight = containerRef.current.offsetHeight;
+      // 关键修复：使用 clientWidth/clientHeight 而不是 offsetWidth/offsetHeight
+      // clientWidth/clientHeight 不包含 padding，更准确地反映可用空间
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
       
       // 页面实际像素尺寸（96 DPI）
       const pageWidthPx = pageDimensions.width * (96 / 25.4);
@@ -186,6 +188,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   
   // 渲染 Mermaid 图表和 MathJax 公式
   useEffect(() => {
+    let hasChanges = false;
+    
     // 遍历所有页面内容进行渲染
     contentRefs.current.forEach(async (contentRef, pageIndex) => {
       if (!contentRef) return;
@@ -194,6 +198,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       if (extensions.mermaid) {
         try {
           await renderMermaid(contentRef, { suppressErrors: true, resetMmdId: true });
+          hasChanges = true;
         } catch (error) {
           console.error(`Mermaid rendering error on page ${pageIndex + 1}:`, error);
         }
@@ -203,11 +208,20 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       if (extensions.mathJax) {
         try {
           await typesetMath(contentRef);
+          hasChanges = true;
         } catch (error) {
           console.error(`MathJax rendering error on page ${pageIndex + 1}:`, error);
         }
       }
     });
+    
+    // 如果内容有变化，延迟重新计算缩放比例
+    if (hasChanges) {
+      setTimeout(() => {
+        // 触发窗口 resize 事件，重新计算缩放
+        window.dispatchEvent(new Event('resize'));
+      }, 300); // 等待渲染完成
+    }
   }, [markdown, extensions, pages.length]);
   
   // 为每个页面生成 HTML 和样式
@@ -368,7 +382,9 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             className="a4-page content-pages"
             style={{
               width: `${pageDimensions.width}mm`,
-              minHeight: `${pageDimensions.height}mm`,
+              // 关键修复：使用 auto 而不是固定高度，允许内容自然展开
+              minHeight: 'auto',
+              height: 'auto',
               position: 'relative',
             }}
           >

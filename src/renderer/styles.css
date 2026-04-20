@@ -45,6 +45,17 @@
   box-sizing: border-box;
 }
 
+/* 关键修复：确保 html 和 body 正确设置高度 */
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--bg-primary);
@@ -213,6 +224,7 @@ body {
   flex-direction: column;
   min-width: 0;
   min-height: 0; /* Flexbox 子元素滚动必需 */
+  overflow: visible; /* 允许子元素溢出，支持 transform scale */
 }
 
 /* 工具栏 */
@@ -370,9 +382,9 @@ body {
 .editor-preview {
   flex: 1;
   display: flex;
-  min-height: 0;
+  min-height: 0; /* Flexbox 滚动链必需 */
   pointer-events: auto;
-  overflow: hidden; /* 防止整体溢出，允许子元素滚动 */
+  overflow: hidden; /* 防止整体溢出，允许子元素独立滚动 */
 }
 
 .editor-panel {
@@ -387,13 +399,14 @@ body {
 }
 
 .preview-panel {
-  flex: 1;
+  flex: 1; /* 占据可用空间 */
   background: var(--bg-primary);
   /* padding 已移至 PreviewPanel.css 中的 .preview-with-margins，避免双重 padding */
   min-width: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Flexbox 子元素滚动必需 */
+  min-height: 0; /* Flexbox 滚动链必需：允许子元素正确计算高度 */
+  overflow: visible; /* 关键修复：允许 transform scale 后的内容不被裁剪 */
 }
 
 /* 预览面板全宽模式（当编辑器隐藏或显示模板选择时） */
@@ -440,7 +453,7 @@ body {
   color: var(--text-muted);
 }
 
-/* Markdown 预览 - 极简专业版 */
+/* Markdown 预览 - 极简专业版（仅用于编辑器模式） */
 .markdown-preview {
   background: transparent;
   padding: 40px;

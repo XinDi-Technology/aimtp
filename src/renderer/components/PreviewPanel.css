@@ -68,6 +68,7 @@
   border-color: #e05030;
 }
 
+/* 通用 .markdown-preview 样式 - 仅用于编辑器模式 */
 .markdown-preview {
   flex: 1;
   overflow-y: auto;
@@ -80,7 +81,7 @@
   color: #1a1a1a;
 }
 
-/* Word 风格的页面容器 */
+/* Word 风格的页面容器 - 唯一权威定义 */
 .preview-with-margins {
   flex: 1;
   overflow-y: auto;
@@ -90,10 +91,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start; /* 从顶部开始对齐，确保封面可见 */
-  /* 确保可以滚动看到所有内容 */
-  min-height: 0; /* Flexbox 子元素需要这个才能正确滚动 */
-  /* 调试：添加边框确认容器范围 */
-  /* border: 2px solid red; */
+  min-height: 0; /* Flexbox 子元素必需：允许正确滚动 */
 }
 
 /* 确保滚动条始终可见（Windows） */
@@ -123,12 +121,12 @@
   flex-direction: column;
   gap: 30px; /* 页面之间的间距 - Word 风格 */
   align-items: center;
-  /* 确保子元素的 transform 不会导致裁剪 */
-  overflow: visible;
-  padding-bottom: 100px; /* 底部留出空间，确保最后一部分可见 */
+  /* 关键修复：允许 transform scale 后的内容完全显示 */
+  overflow: visible !important;
+  padding-bottom: 150px; /* 增加底部留白，确保缩放后最后一部分可见 */
   padding-top: 20px; /* 顶部留出空间，确俜封面完全可见 */
-  /* 关键修复：使用 zoom 而不是 transform scale，避免布局问题 */
   width: 100%;
+  /* 不使用 zoom，保持 transform scale 的一致性 */
 }
 
 /* A4 页面 - Word 风格 */
@@ -155,14 +153,17 @@
   overflow-x: hidden;
 }
 
-/* 新的连续滚动模式 - 不限制高度 */
+/* 新的连续滚动模式 - 完全覆盖通用样式 */
 .content-pages .markdown-preview {
-  width: 100%;
-  min-height: auto; /* 不限制最小高度 */
-  padding: 0; /* 边距由 inline style 控制 */
-  margin: 0;
-  box-shadow: none;
-  overflow: visible; /* 让内容自然流动，不滚动 */
+  flex: none !important; /* 关键修复：覆盖 flex: 1 */
+  width: 100% !important;
+  min-height: auto !important; /* 关键修复：覆盖 styles.css 中的 min-height: 100% */
+  height: auto !important; /* 明确设置 auto，避免继承 100% */
+  padding: 0 !important; /* 边距由 inline style 控制 */
+  margin: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important; /* 让内容自然流动，不滚动 */
+  position: relative !important; /* 为绝对定位的子元素提供参考 */
 }
 
 /* 页脚 - 显示页码 */
@@ -291,32 +292,7 @@
   font-weight: 400;
 }
 
-.preview-with-margins {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 24px;
-  background: #f5f5f3; /* 浅灰背景，突出纸张 */
-}
 
-/* 暗色模式下的预览背景 */
-[data-theme='dark'] .preview-with-margins {
-  background: #1a1a1a;
-}
-
-.page-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-middle {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-}
 
 /* 边距指示器 - 极简版 */
 .margin-ruler {
@@ -623,14 +599,13 @@ pre.with-line-numbers {
    分页标记样式（连续滚动模式）
    ======================================== */
 
-/* 内容页面容器 */
+/* 内容页面容器 - 关键修复：允许溢出以支持 transform scale */
 .content-pages {
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0;
-  /* 修复 transform scale 导致的裁剪问题 */
   transform-origin: top center;
-  /* 确保缩放后的内容不会被裁剪 */
+  /* 核心修复：必须设置为 visible，否则 transform scale 会被裁剪 */
   overflow: visible !important;
 }
 
