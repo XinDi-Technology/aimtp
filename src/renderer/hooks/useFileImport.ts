@@ -16,6 +16,8 @@ export const useFileImport = () => {
         try {
           const text = await file.text();
           setMarkdown(text);
+          // TODO: [P1-问题2] 硬编码模板为 'documentation'，不合理
+          // 应该保持当前模板或让用户选择
           setCurrentTemplate('documentation');
         } catch (error) {
           logger.error('Failed to read file:', error);

@@ -524,7 +524,9 @@ const saveCustomTemplates = (templates: CustomTemplate[]) => {
     return;
   }
   try {
-    // TODO: 待功能完善后考虑添加 localStorage 容量超限处理和用户提示
+    // TODO: [潜在问题8] localStorage 容量无限制处理
+    // 如果用户保存大量模板，可能导致存储失败
+    // 建议：检测容量超限并提示用户清理旧数据
     localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
   } catch (error) {
     logger.error('Failed to save custom templates:', error);
@@ -711,7 +713,9 @@ export const useAppStore = create<AppState>()(
           return;
         }
         try {
-          // TODO: 待功能完善后考虑添加 localStorage 容量超限处理和用户提示
+          // TODO: [潜在问题8] localStorage 容量无限制处理
+          // 如果文档很大，可能导致存储失败
+          // 建议：检测容量超限并提示用户，或改用 IndexedDB
           localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
             content,
             timestamp: Date.now(),

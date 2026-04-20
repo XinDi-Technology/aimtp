@@ -27,7 +27,9 @@ export interface MarkdownItOptions {
   codeTheme?: string;
 }
 
-// 缓存 MarkdownIt 实例
+// TODO: [P2-问题5] 缓存无清理机制，可能导致内存泄漏
+// 如果用户频繁切换扩展设置，会产生大量缓存实例
+// 建议：限制缓存大小或使用 LRU 策略
 const mdCache = new Map<string, MarkdownIt>();
 
 /**

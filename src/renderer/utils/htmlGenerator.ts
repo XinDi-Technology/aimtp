@@ -4,6 +4,8 @@ import { logger } from './logger';
 import DOMPurify from 'dompurify';
 import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
 import { parseFrontMatter, formatDate } from './frontMatter';
+import { renderMermaidSync } from './mermaidPlugin';
+import { renderMathInlineAsync, renderMathDisplayAsync } from './mathjaxPlugin';
 
 export interface HtmlGeneratorOptions {
   markdown: string;
@@ -15,7 +17,7 @@ export interface HtmlGeneratorOptions {
   cover: CoverSettings;
 }
 
-export const generateHtml = (options: HtmlGeneratorOptions): string => {
+export const generateHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
   const { markdown, locale, page, font, extensions, headerFooter, cover } = options;
   
   try {
@@ -75,14 +77,6 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
     
     if (extensions.githubAlerts) {
       content = content.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, alertContent) => {
-        const alertStyles: Record<string, { bg: string; border: string }> = {
-          note: { bg: '#f0f6fc', border: '#d0deec' },
-          tip: { bg: '#dafbe1', border: '#a8e6b1' },
-          important: { bg: '#fff8c5', border: '#e3d593' },
-          warning: { bg: '#fff8c5', border: '#e3d593' },
-          danger: { bg: '#ffebe9', border: '#ffc1aa' },
-        };
-        const style = alertStyles[type] || alertStyles.note;
         const icons: Record<string, string> = {
           note: 'ℹ️',
           tip: '💡',
@@ -90,11 +84,29 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
           warning: '⚠️',
           danger: '🚨',
         };
-        return `<div class="github-alert" style="background: ${style.bg}; border: 1px solid ${style.border}; border-radius: 6px; padding: 12px; margin: 12px 0; display: flex; gap: 12px;">
+        return `<div class="github-alert ${type}">
           <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
           <div class="alert-content">${alertContent.trim()}</div>
         </div>`;
       });
+    }
+    
+    // 预渲染 Mermaid 图表
+    if (extensions.mermaid) {
+      try {
+        content = await preRenderMermaid(content);
+      } catch (error) {
+        logger.error('Mermaid pre-render error:', error);
+      }
+    }
+    
+    // 预渲染 MathJax 公式
+    if (extensions.mathJax) {
+      try {
+        content = await preRenderMathJax(content);
+      } catch (error) {
+        logger.error('MathJax pre-render error:', error);
+      }
     }
     
     try {
@@ -150,31 +162,38 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
     h1, h2, h3, h4, h5, h6 {
       font-family: ${font.heading}, sans-serif;
     }
+    /* 动态标题大小（基于 headingScale） */
+    h1 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 5)}px; }
+    h2 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 4)}px; }
+    h3 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 3)}px; }
+    h4 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 2)}px; }
+    h5 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 1)}px; }
+    h6 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 0)}px; }
     pre, code {
       font-family: ${font.code}, monospace;
+      font-size: inherit; /* 继承父元素的 font-size */
     }
     pre {
-      background: #1a1a1a;
-      color: #f5f5f5;
       padding: 16px;
       border-radius: 8px;
       overflow-x: auto;
     }
     code {
-      background: #f5f5f5;
       padding: 2px 6px;
       border-radius: 4px;
     }
     pre code {
-      background: transparent;
       padding: 0;
     }
     blockquote {
-      border-left: 3px solid #d4462a;
+      border-left: 4px solid #c43d24;
       padding-left: 16px;
       margin: 16px 0;
-      color: #5c5c5c;
+      color: #555;
       font-style: italic;
+      background: #fafaf8;
+      padding: 12px 16px;
+      border-radius: 0 4px 4px 0;
     }
     table {
       width: 100%;
@@ -229,18 +248,18 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
       padding: 40px;
     }
     .cover-title {
-      font-size: 48px;
+      font-size: ${font.baseSize * 2.5}px;
       font-weight: bold;
       margin-bottom: 20px;
       font-family: ${font.heading}, sans-serif;
     }
     .cover-author {
-      font-size: 24px;
+      font-size: ${font.baseSize * 1.5}px;
       margin-bottom: 20px;
       font-family: ${font.body}, sans-serif;
     }
     .cover-date {
-      font-size: 18px;
+      font-size: ${font.baseSize * 1.2}px;
       color: #666;
       font-family: ${font.body}, sans-serif;
     }
@@ -339,35 +358,105 @@ export const generateHtml = (options: HtmlGeneratorOptions): string => {
     </div>
   ` : ''}
   ${content}
-  ${extensions.mermaid ? `
-  <script>
-    if (typeof mermaid !== 'undefined') {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'default',
-        securityLevel: 'loose',
-        flowchart: { curve: 'basis', htmlLabels: true, useMaxWidth: true },
-        sequence: { showSequenceNumbers: true }
-      });
-      document.addEventListener('DOMContentLoaded', function() {
-        mermaid.run({ querySelector: '.mermaid', suppressErrors: true });
-      });
-    }
-  </script>` : ''}
-  ${extensions.mathJax ? `
-  <script>
-    if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-      MathJax.startup.promise.then(function() {
-        return MathJax.typesetPromise(document.body);
-      }).catch(function(err) {
-        console.warn('MathJax typeset error:', err);
-      });
-    }
-  </script>` : ''}
 </body>
 </html>`.trim();
   } catch (error) {
     logger.error('HTML generation error:', error);
     return `<html><body><h1>Error generating HTML</h1><p>${(error as Error).message}</p></body></html>`;
   }
+};
+
+// ============================================================================
+// 预渲染函数
+// ============================================================================
+
+/**
+ * 预渲染 Mermaid 图表
+ * 将 <pre class="mermaid"> 替换为 SVG
+ */
+const preRenderMermaid = async (html: string): Promise<string> => {
+  // 匹配所有 mermaid 代码块
+  const mermaidRegex = /<pre class="mermaid"[^>]*>([\s\S]*?)<\/pre>/g;
+  const matches = [...html.matchAll(mermaidRegex)];
+  
+  if (matches.length === 0) {
+    return html;
+  }
+  
+  logger.log(`Pre-rendering ${matches.length} Mermaid diagram(s)...`);
+  
+  for (const match of matches) {
+    const fullMatch = match[0];
+    const code = match[1].trim();
+    
+    try {
+      // 使用 renderMermaidSync 生成 SVG
+      const svg = await renderMermaidSync(code);
+      // 替换 <pre> 为 SVG
+      html = html.replace(fullMatch, svg);
+    } catch (error) {
+      logger.error(`Failed to render Mermaid diagram:`, error);
+      // 保留原始代码，添加错误提示
+      html = html.replace(
+        fullMatch,
+        `<div class="mermaid-error" style="color: #d4462a; padding: 12px; background: #fff8f8; border: 1px solid #ffc1aa; border-radius: 6px;">Mermaid 渲染失败: ${(error as Error).message}</div>`
+      );
+    }
+  }
+  
+  return html;
+};
+
+/**
+ * 预渲染 MathJax 公式
+ * 将 data-math 占位符替换为 SVG
+ */
+const preRenderMathJax = async (html: string): Promise<string> => {
+  // 匹配行内公式
+  const inlineRegex = /<span class="math-inline" data-math="([^"]*)">[^<]*<\/span>/g;
+  const inlineMatches = [...html.matchAll(inlineRegex)];
+  
+  // 匹配块级公式
+  const displayRegex = /<div class="math-display" data-math="([^"]*)">[^<]*<\/div>/g;
+  const displayMatches = [...html.matchAll(displayRegex)];
+  
+  const totalMatches = inlineMatches.length + displayMatches.length;
+  
+  if (totalMatches === 0) {
+    return html;
+  }
+  
+  logger.log(`Pre-rendering ${totalMatches} MathJax formula(s)...`);
+  
+  // 渲染行内公式
+  for (const match of inlineMatches) {
+    const fullMatch = match[0];
+    const encoded = match[1];
+    const math = decodeURIComponent(encoded);
+    
+    try {
+      const svg = await renderMathInlineAsync(math);
+      html = html.replace(fullMatch, svg);
+    } catch (error) {
+      logger.error(`Failed to render inline math:`, error);
+      html = html.replace(fullMatch, `<span style="color: #d4462a;">公式渲染失败</span>`);
+    }
+  }
+  
+  // 渲染块级公式
+  for (const match of displayMatches) {
+    const fullMatch = match[0];
+    const encoded = match[1];
+    const math = decodeURIComponent(encoded);
+    
+    try {
+      const svg = await renderMathDisplayAsync(math);
+      html = html.replace(fullMatch, svg);
+    } catch (error) {
+      logger.error(`Failed to render display math:`, error);
+      html = html.replace(fullMatch, `<div style="color: #d4462a; padding: 12px;">公式渲染失败</div>`);
+    }
+  }
+  
+  return html;
 };

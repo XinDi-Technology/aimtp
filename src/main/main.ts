@@ -32,6 +32,7 @@ function createWindow() {
   }
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
     console.error('Window failed to load:', errorCode, errorDescription);
   });
 }
@@ -51,6 +52,7 @@ ipcMain.handle('select-file', async () => {
     const content = fs.readFileSync(filePath, 'utf-8');
     return { path: filePath, content };
   } catch (error) {
+    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
     console.error('Error selecting file:', error);
     throw new Error(t('file-read-error'));
   }
@@ -67,6 +69,7 @@ ipcMain.handle('select-save-path', async (_) => {
     }
     return result.filePath;
   } catch (error) {
+    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
     console.error('Error selecting save path:', error);
     throw error;
   }
@@ -80,11 +83,17 @@ ipcMain.handle('save-pdf-to-path', async (_, data: Uint8Array, filePath: string)
     fs.writeFileSync(filePath, Buffer.from(data));
     return filePath;
   } catch (error) {
+    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
     console.error('Error saving PDF:', error);
     throw new Error(t('file-write-error'));
   }
 });
 
+// TODO: [P0-问题1] PDF 生成逻辑已过时
+// 当前实现：创建隐藏的 pdfWindow，等待 Mermaid/MathJax 渲染（3-4秒）
+// 问题：htmlGenerator 已经预渲染为 SVG，HTML 是静态的，不需要再等待
+// 影响：性能浪费、资源浪费、临时文件管理
+// 修复方案：简化此 handler，直接使用 mainWindow 或更简单的方式打印 PDF
 ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any; locale?: 'zh' | 'en' }) => {
   const locale: 'zh' | 'en' = options.locale || 'zh';
 

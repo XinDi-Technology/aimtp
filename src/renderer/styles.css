@@ -501,7 +501,7 @@ body {
 
 .markdown-preview h1 {
   font-family: var(--font-display);
-  font-size: 32px;
+  /* font-size 由 PreviewPanel 动态计算（基于 headingScale） */
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: var(--space-xl);
@@ -511,7 +511,7 @@ body {
 
 .markdown-preview h2 {
   font-family: var(--font-display);
-  font-size: 24px;
+  /* font-size 由 PreviewPanel 动态计算（基于 headingScale） */
   font-weight: 700;
   line-height: 1.3;
   margin: var(--space-2xl) 0 var(--space-md);
@@ -523,7 +523,7 @@ body {
 
 .markdown-preview h3 {
   font-family: var(--font-body);
-  font-size: 20px;
+  /* font-size 由 PreviewPanel 动态计算（基于 headingScale） */
   font-weight: 600;
   line-height: 1.4;
   margin: var(--space-xl) 0 var(--space-sm);
@@ -532,7 +532,7 @@ body {
 
 .markdown-preview p {
   margin-bottom: var(--space-md);
-  font-size: 15px;
+  /* font-size 由 previewStyle 动态设置（基于 font.baseSize） */
   line-height: 1.8;
   color: #2c2c2c;
 }
@@ -542,7 +542,7 @@ body {
   background: #f5f5f3;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 13px;
+  /* font-size 继承自父元素（由 previewStyle 或 body 设置） */
   color: #c43d24;
 }
 

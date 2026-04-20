@@ -289,6 +289,19 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     };
   }, [font.baseSize, font.lineHeight, font.body, font.heading, font.code, page.size, page.orientation, page.margins]);
   
+  // 生成动态标题样式（基于 headingScale）
+  const headingStyles = useMemo(() => {
+    const scale = font.headingScale || 1.2; // 默认值 1.2
+    return `
+      .markdown-preview h1 { font-size: ${font.baseSize * Math.pow(scale, 5)}px !important; }
+      .markdown-preview h2 { font-size: ${font.baseSize * Math.pow(scale, 4)}px !important; }
+      .markdown-preview h3 { font-size: ${font.baseSize * Math.pow(scale, 3)}px !important; }
+      .markdown-preview h4 { font-size: ${font.baseSize * Math.pow(scale, 2)}px !important; }
+      .markdown-preview h5 { font-size: ${font.baseSize * Math.pow(scale, 1)}px !important; }
+      .markdown-preview h6 { font-size: ${font.baseSize * Math.pow(scale, 0)}px !important; }
+    `;
+  }, [font.baseSize, font.headingScale]);
+  
   const isA4 = page.size === 'A4';
   const isPortrait = page.orientation === 'portrait';
   const width = isPortrait ? '210mm' : '297mm';
@@ -348,7 +361,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             >
               <div className="cover-content" style={{ textAlign: 'center' }}>
                 <h1 style={{ 
-                  fontSize: '32px', 
+                  fontSize: `${font.baseSize * 2.5}px`, // 使用基础字号的 2.5 倍
                   marginBottom: '20px',
                   fontFamily: font.heading,
                 }}>
@@ -356,7 +369,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                 </h1>
                 {coverAuthor && (
                   <p className="cover-author" style={{ 
-                    fontSize: '18px',
+                    fontSize: `${font.baseSize * 1.5}px`, // 使用基础字号的 1.5 倍
                     color: '#666',
                     marginBottom: '10px',
                     fontFamily: font.body,
@@ -366,7 +379,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                 )}
                 {coverDate && (
                   <p className="cover-date" style={{ 
-                    fontSize: '14px',
+                    fontSize: `${font.baseSize * 1.2}px`, // 使用基础字号的 1.2 倍
                     color: '#999',
                     fontFamily: font.body,
                   }}>
@@ -389,46 +402,145 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             }}
           >
             {/* 渲染所有页面内容，连续显示 */}
-            {pages.map((pageSection, pageIndex) => (
-              <div key={pageIndex} className="page-section">
-                {/* 如果不是第一个章节，添加分页标记 */}
-                {pageIndex > 0 && (
-                  <div className="page-break-marker">
-                    <span className="marker-line"></span>
-                    <span className="marker-text">
-                      {locale === 'zh' ? `第 ${pageIndex + (cover.enabled ? 2 : 1)} 页` : `Page ${pageIndex + (cover.enabled ? 2 : 1)}`}
-                    </span>
-                    <span className="marker-line"></span>
-                  </div>
-                )}
+            {pages.map((pageSection, pageIndex) => {
+              // 计算当前页码（考虑封面）
+              const currentPageNumber = pageIndex + (cover.enabled ? 2 : 1);
+              const totalPagesCount = pages.length + (cover.enabled ? 1 : 0);
+              
+              // 生成页眉 HTML
+              const renderHeader = () => {
+                if (!headerFooter.enabled || !headerFooter.header.content) return null;
                 
-                {/* 章节内容 */}
-                <div 
-                  ref={(el) => {
-                    contentRefs.current[pageIndex] = el;
-                  }}
-                  className="markdown-preview"
-                  style={{
-                    ...previewStyle,
-                    padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
-                    fontFamily: font.body,
-                  }}
-                >
-                  <style key={`hljs-theme-${extensions.codeTheme}`}>
-                    {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
-                    .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
-                      font-family: ${font.heading} !important;
-                    }
-                    .markdown-preview pre, .markdown-preview code {
-                      font-family: ${font.code} !important;
-                    }
-                    /* 代码高亮主题样式 */
-                    ${pageHtmlList[pageIndex]?.themeCss || ''}`}
-                  </style>
-                  <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
+                let headerText = '';
+                switch (headerFooter.header.content) {
+                  case 'title':
+                    headerText = coverTitle;
+                    break;
+                  case 'author':
+                    headerText = coverAuthor;
+                    break;
+                  case 'date':
+                    headerText = coverDate;
+                    break;
+                  default:
+                    return null;
+                }
+                
+                return (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: `${page.margins.top / 2}mm`,
+                      left: page.margins.left + 'mm',
+                      right: page.margins.right + 'mm',
+                      textAlign: headerFooter.header.alignment,
+                      fontFamily: headerFooter.header.font,
+                      fontSize: `${font.baseSize * 0.9}px`,
+                      color: '#666',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {headerText}
+                  </div>
+                );
+              };
+              
+              // 生成页脚 HTML
+              const renderFooter = () => {
+                if (!headerFooter.enabled || !headerFooter.footer.content) return null;
+                
+                let footerText = '';
+                const content = headerFooter.footer.content;
+                
+                if (content === 'pageNumber') {
+                  footerText = String(currentPageNumber);
+                } else if (content === 'pageNumberTotal') {
+                  footerText = `第 ${currentPageNumber} 页 / 共 ${totalPagesCount} 页`;
+                } else {
+                  switch (content) {
+                    case 'title':
+                      footerText = coverTitle;
+                      break;
+                    case 'author':
+                      footerText = coverAuthor;
+                      break;
+                    case 'date':
+                      footerText = coverDate;
+                      break;
+                    default:
+                      return null;
+                  }
+                }
+                
+                return (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: `${page.margins.bottom / 2}mm`,
+                      left: page.margins.left + 'mm',
+                      right: page.margins.right + 'mm',
+                      textAlign: headerFooter.footer.alignment,
+                      fontFamily: headerFooter.footer.font,
+                      fontSize: `${font.baseSize * 0.9}px`,
+                      color: '#666',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {footerText}
+                  </div>
+                );
+              };
+              
+              return (
+                <div key={pageIndex} className="page-section" style={{ position: 'relative' }}>
+                  {/* 如果不是第一个章节，添加分页标记 */}
+                  {pageIndex > 0 && (
+                    <div className="page-break-marker">
+                      <span className="marker-line"></span>
+                      <span className="marker-text">
+                        {locale === 'zh' ? `第 ${currentPageNumber} 页` : `Page ${currentPageNumber}`}
+                      </span>
+                      <span className="marker-line"></span>
+                    </div>
+                  )}
+                  
+                  {/* 页眉 */}
+                  {renderHeader()}
+                  
+                  {/* 章节内容 */}
+                  <div 
+                    ref={(el) => {
+                      contentRefs.current[pageIndex] = el;
+                    }}
+                    className="markdown-preview"
+                    style={{
+                      ...previewStyle,
+                      padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
+                      fontFamily: font.body,
+                    }}
+                  >
+                    <style key={`hljs-theme-${extensions.codeTheme}`}>
+                      {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
+                      .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
+                        font-family: ${font.heading} !important;
+                      }
+                      .markdown-preview pre, .markdown-preview code {
+                        font-family: ${font.code}, monospace !important;
+                        font-size: inherit !important; /* 继承父元素的 font-size */
+                      }
+                      /* 代码高亮主题样式 */
+                      ${pageHtmlList[pageIndex]?.themeCss || ''}
+                      /* 动态标题大小（基于 headingScale） */
+                      ${headingStyles}`}
+                    </style>
+                    <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
+                  </div>
+                  
+                  {/* 页脚 */}
+                  {renderFooter()}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

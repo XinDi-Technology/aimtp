@@ -159,7 +159,7 @@
   width: 100% !important;
   min-height: auto !important; /* 关键修复：覆盖 styles.css 中的 min-height: 100% */
   height: auto !important; /* 明确设置 auto，避免继承 100% */
-  padding: 0 !important; /* 边距由 inline style 控制 */
+  /* padding 由 inline style 动态控制（基于 page.margins） */
   margin: 0 !important;
   box-shadow: none !important;
   overflow: visible !important; /* 让内容自然流动，不滚动 */

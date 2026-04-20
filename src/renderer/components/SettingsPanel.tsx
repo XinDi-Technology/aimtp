@@ -171,6 +171,20 @@ export const SettingsPanel: React.FC = () => {
             onChange={(e) => setFont({ lineHeight: Number(e.target.value) })}
           />
         </div>
+
+        <div className="setting-group">
+          <label className="setting-label">标题缩放系数</label>
+          <input
+            type="number"
+            className="setting-input"
+            value={font.headingScale}
+            step="0.1"
+            min="1.0"
+            max="2.0"
+            onChange={(e) => setFont({ headingScale: Number(e.target.value) })}
+          />
+          <small style={{ color: '#999', fontSize: '12px' }}>范围: 1.0-2.0，默认 1.2（越大标题层次越明显）</small>
+        </div>
       </div>
 
       <div className="setting-section">

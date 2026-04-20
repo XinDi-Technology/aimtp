@@ -41,8 +41,8 @@ export const usePDFExport = () => {
     return true;
   }, [page, locale]);
 
-  const generateHTMLContent = useCallback(() => {
-    return generateHtml({
+  const generateHTMLContent = useCallback(async () => {
+    return await generateHtml({
       markdown,
       locale,
       page,
@@ -58,15 +58,16 @@ export const usePDFExport = () => {
       if (!validateContent()) return;
       if (!validateSettings()) return;
 
-      const htmlContent = generateHTMLContent();
+      setIsGenerating(true);
+      const htmlContent = await generateHTMLContent();
 
       if (window.electronAPI?.selectSavePath && window.electronAPI?.generatePdf && window.electronAPI?.savePdfToPath) {
         const savePath = await window.electronAPI.selectSavePath();
         if (!savePath) {
+          setIsGenerating(false);
           return;
         }
 
-        setIsGenerating(true);
         const pdfData = await window.electronAPI.generatePdf({
           markdown,
           page,
