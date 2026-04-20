@@ -7,7 +7,11 @@
   "files": [
     "dist/**/*",
     "src/fonts/**/*",
-    "package.json"
+    "package.json",
+    "!**/*.map",
+    "!**/*.d.ts",
+    "!tests/**/*",
+    "!**/.DS_Store"
   ],
   "extraResources": [
     {
@@ -18,8 +22,16 @@
   "extraMetadata": {
     "main": "dist/main/main/main.js"
   },
+  "asar": true,
+  "asarUnpack": [],
+  "compression": "maximum",
   "win": { 
-    "target": "nsis"
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ]
   },
   "mac": { 
     "target": "dmg"

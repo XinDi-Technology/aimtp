@@ -365,16 +365,22 @@
 .editor-preview {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  overflow: hidden; /* 保持隐藏，防止整体溢出 */
+  min-height: 0; /* Flexbox 子元素滚动必需 */
 }
 
 .editor-preview .editor-panel {
   width: 50%;
   border-right: 1px solid #e0e0e0;
+  overflow: hidden; /* 编辑器面板不滚动 */
 }
 
 .editor-preview .preview-panel {
   width: 50%;
+  overflow: hidden; /* 预览面板容器不滚动，内部子元素滚动 */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Flexbox 子元素滚动必需 */
 }
 
 .editor-preview .preview-panel.preview-full-width {

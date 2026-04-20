@@ -25,9 +25,15 @@ export default defineConfig({
     outDir: resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,
     target: 'es2020',
-    minify: 'esbuild',
+    minify: 'terser',  // 使用 terser 获得更好的压缩率
+    terserOptions: {
+      compress: {
+        drop_console: true,  // 移除 console.log
+        drop_debugger: true,
+      },
+    },
     chunkSizeWarningLimit: 2000,
-    cssMinify: false,
+    cssMinify: true,  // 启用 CSS 压缩
     rollupOptions: {
       output: {
         manualChunks: {
@@ -36,8 +42,17 @@ export default defineConfig({
           'vendor-mathjax': ['mathjax'],
           'vendor-mermaid': ['mermaid'],
         },
+        // 启用 gzip 压缩
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.woff2')) {
+            return 'assets/fonts/[name][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
       },
     },
+    // 启用 sourcemap 排除（生产环境不需要）
+    sourcemap: false,
   },
   resolve: {
     conditions: ['browser', 'import', 'module', 'default'],

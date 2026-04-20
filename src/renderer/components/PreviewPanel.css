@@ -89,6 +89,7 @@
   padding: 40px 20px;
   display: flex;
   justify-content: center;
+  align-items: flex-start; /* 从顶部开始对齐，确保封面可见 */
   /* 确保可以滚动看到所有内容 */
   min-height: 0; /* Flexbox 子元素需要这个才能正确滚动 */
 }
