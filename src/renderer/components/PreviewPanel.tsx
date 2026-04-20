@@ -355,9 +355,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               className="a4-page"
               style={{
                 width: `${pageDimensions.width}mm`,
-                minHeight: `${pageDimensions.height}mm`,
+                height: `${pageDimensions.height}mm`,  // 使用固定高度，确保是完整 A4 页面
                 transform: `scale(${actualZoom / 100})`,
                 transformOrigin: 'top center',
+                overflow: 'hidden',  // 隐藏溢出内容，保持 A4 尺寸
               }}
             >
               {/* 如果启用页眉，显示页眉 */}
@@ -372,7 +373,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                     height: `${page.margins.top}mm`,
                     display: 'flex',
                     alignItems: 'flex-end',
-                    textAlign: headerFooter.header.alignment,
+                    justifyContent: headerFooter.header.alignment === 'left' ? 'flex-start' : 
+                                   headerFooter.header.alignment === 'right' ? 'flex-end' : 'center',
                     fontFamily: headerFooter.header.font,
                     fontSize: '12px',
                     color: '#666',
@@ -395,8 +397,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   fontFamily: font.body,
                 }}
               >
-                <style>{`
-                  .markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
+                <style key={`hljs-theme-${extensions.codeTheme}`}>
+                  {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
                   .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
                     font-family: ${font.heading} !important;
                   }
@@ -404,8 +406,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                     font-family: ${font.code} !important;
                   }
                   /* 代码高亮主题样式 */
-                  ${pageHtmlList[pageIndex]?.themeCss || ''}
-                `}</style>
+                  ${pageHtmlList[pageIndex]?.themeCss || ''}`}
+                </style>
                 <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
               </div>
               
@@ -421,7 +423,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                     height: `${page.margins.bottom}mm`,
                     display: 'flex',
                     alignItems: 'flex-start',
-                    textAlign: headerFooter.footer.alignment,
+                    justifyContent: headerFooter.footer.alignment === 'left' ? 'flex-start' : 
+                                   headerFooter.footer.alignment === 'right' ? 'flex-end' : 'center',
                     fontFamily: headerFooter.footer.font,
                     fontSize: '12px',
                     color: '#666',
@@ -430,7 +433,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   }}
                 >
                   {headerFooter.footer.content === 'pageNumber' ? `${pageIndex + 1}` :
-                   headerFooter.footer.content === 'pageNumberTotal' ? `${pageIndex + 1} / ${totalPages}` :
+                   headerFooter.footer.content === 'pageNumberTotal' ? `第 ${pageIndex + 1} 页 / 共 ${totalPages} 页` :
                    getFooterContent}
                 </div>
               )}

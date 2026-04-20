@@ -7,6 +7,7 @@ import mdIns from 'markdown-it-ins';
 import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
+import lineNumbersPlugin from './lineNumbersPlugin';
 import { mathjaxPlugin, initMathJaxInstance } from './mathjaxPlugin';
 import { mermaidPlugin, initMermaidInstance } from './mermaidPlugin';
 
@@ -54,6 +55,11 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
       auto: true,
       hljs,
     });
+  }
+
+  // 如果启用行号，在代码高亮之后应用
+  if (options.showLineNumbers) {
+    md.use(lineNumbersPlugin);
   }
 
   if (options.taskLists) {

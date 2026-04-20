@@ -120,7 +120,8 @@
   padding: 0; /* 边距由 inline style 控制 */
   margin: 0;
   box-shadow: none;
-  overflow: visible; /* 让内容自然流动 */
+  overflow-y: auto; /* 允许垂直滚动，显示所有内容 */
+  overflow-x: hidden;
 }
 
 /* 页脚 - 显示页码 */
@@ -526,4 +527,53 @@
   .mermaid {
     filter: invert(0);
   }
+}
+
+/* ========================================
+   代码行号样式
+   ======================================== */
+
+/* 带行号的代码块容器 */
+pre.with-line-numbers {
+  position: relative;
+  padding-left: 3.5em !important; /* 为行号留出空间 */
+}
+
+/* 行号容器 */
+.code-line-numbers {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 1em 0.5em;
+  background: rgba(0, 0, 0, 0.05); /* 轻微的背景色区分 */
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  user-select: none; /* 禁止选中行号 */
+  pointer-events: none; /* 不阻挡鼠标事件 */
+}
+
+/* 暗色模式下的行号背景 */
+[data-theme='dark'] .code-line-numbers {
+  background: rgba(255, 255, 255, 0.05);
+  border-right-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 单个行号 */
+.line-number {
+  font-family: var(--font-code), 'JetBrains Mono', 'Monaspace Argon', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #999;
+  min-height: 1.5em; /* 确保与代码行高一致 */
+  display: flex;
+  align-items: center;
+}
+
+/* 暗色模式下的行号颜色 */
+[data-theme='dark'] .line-number {
+  color: #666;
 }
