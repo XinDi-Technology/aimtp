@@ -386,6 +386,11 @@
 .editor-preview .preview-panel.preview-full-width {
   width: 100%;
   border-left: none;
+  /* 必须保持与 .preview-panel 相同的 flex 布局 */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Modal */

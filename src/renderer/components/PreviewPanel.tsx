@@ -119,18 +119,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   
   // 组件挂载后，确保滚动到顶部
   useEffect(() => {
-    console.log('PreviewPanel mounted/updated', {
-      pagesCount: pages.length,
-      coverEnabled: cover.enabled,
-      containerExists: !!containerRef.current,
-    });
-    
     if (containerRef.current) {
       // 延迟一小段时间，确保内容已渲染
       setTimeout(() => {
-        console.log('Scrolling to top');
         containerRef.current?.scrollTo(0, 0);
-        console.log('Current scroll position:', containerRef.current?.scrollTop);
       }, 100);
     }
   }, [markdown, cover.enabled, pages.length]);

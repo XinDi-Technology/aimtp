@@ -212,6 +212,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0; /* Flexbox 子元素滚动必需 */
 }
 
 /* 工具栏 */
@@ -371,6 +372,7 @@ body {
   display: flex;
   min-height: 0;
   pointer-events: auto;
+  overflow: hidden; /* 防止整体溢出，允许子元素滚动 */
 }
 
 .editor-panel {

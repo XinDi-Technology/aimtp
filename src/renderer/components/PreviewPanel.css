@@ -92,6 +92,26 @@
   align-items: flex-start; /* 从顶部开始对齐，确保封面可见 */
   /* 确保可以滚动看到所有内容 */
   min-height: 0; /* Flexbox 子元素需要这个才能正确滚动 */
+  /* 调试：添加边框确认容器范围 */
+  /* border: 2px solid red; */
+}
+
+/* 确保滚动条始终可见（Windows） */
+.preview-with-margins::-webkit-scrollbar {
+  width: 12px;
+}
+
+.preview-with-margins::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.preview-with-margins::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+.preview-with-margins::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 [data-theme='dark'] .preview-with-margins {
