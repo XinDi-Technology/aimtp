@@ -177,13 +177,15 @@ test.describe('Aimtp Application', () => {
   });
 
   test.describe('Preview Rendering', () => {
-    test('should show A4 page in preview', async ({ page }) => {
+    test('should show A4 page in preview and pagination metadata is present', async ({ page }) => {
       // 新布局：检查 Word 风格的 A4 页面容器（可能有多个页面）
       const a4Pages = page.locator('.preview-panel .a4-page');
       await expect(a4Pages.first()).toBeVisible({ timeout: UI_TIMEOUT });
       // 验证至少有一个页面
       const count = await a4Pages.count();
       expect(count).toBeGreaterThanOrEqual(1);
+      // 新增：检查分页元数据存在，支持结构化断言
+      await expect(page.locator('[data-total-pages]')).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
 

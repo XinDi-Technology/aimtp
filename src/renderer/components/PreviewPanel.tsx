@@ -4,6 +4,7 @@ import { resetMarkdownIt } from '../utils/markdown';
 import { renderMermaid } from '../utils/mermaidPlugin';
 import { typesetMath } from '../utils/mathjaxPlugin';
 import { getHljsTheme, getHljsBaseStyles } from '../utils/hljsThemes';
+import { logger } from '../utils/logger';
 import { splitMarkdownByH2 } from '../utils/pageSplitter';
 import { parseFrontMatter, formatDate } from '../utils/frontMatter';
 import { getCalibratedDPI, getPageDimensionsPixels } from '../utils/dpi';
@@ -24,6 +25,10 @@ interface PagedContent {
   pageNumber: number;
   contentList: PageContent[];
   isCover: boolean;
+  // Optional metadata for pagination tracing
+  sectionIndex?: number;
+  pageIndex?: number;
+  totalPages?: number;
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
@@ -145,7 +150,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     `;
   }, [font.baseSize, font.headingScale]);
 
-  // 核心分页算法
+  // 核心分页算法：基于逐段测量的分页实现（方案A）
   const calculatePagination = useCallback(async () => {
     if (sectionHtmlList.length === 0 && !cover.enabled) {
       setPagedContents([]);
@@ -168,51 +173,111 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       pageNumber++;
     }
 
-    // 对每个章节进行分页
-    for (let sectionIndex = 0; sectionIndex < sectionHtmlList.length; sectionIndex++) {
-      const section = sectionHtmlList[sectionIndex];
-      
-      // 创建临时容器测量内容高度
-      const tempDiv = document.createElement('div');
-      tempDiv.className = 'preview-markdown';
-      tempDiv.style.cssText = `
-        position: absolute;
-        visibility: hidden;
-        width: ${pageDimensions.width - mmToPx(page.margins.left) - mmToPx(page.margins.right)}px;
-        font-size: ${font.baseSize}px;
-        line-height: ${font.lineHeight};
-        font-family: ${font.body};
-        padding: ${mmToPx(page.margins.top)}px ${mmToPx(page.margins.right)}px ${mmToPx(page.margins.bottom)}px ${mmToPx(page.margins.left)}px;
-        box-sizing: border-box;
-      `;
-      tempDiv.innerHTML = section.html;
-      // [TODO: 问题1] 内存泄漏风险：如果后续代码抛异常，removeChild 不会执行
-      // 修复：使用 try-finally 确保清理
-      document.body.appendChild(tempDiv);
+    // 计算可用高度
+    const contentWidth = pageDimensions.width - mmToPx(page.margins.left) - mmToPx(page.margins.right);
 
-      // 等待渲染
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const totalHeight = tempDiv.offsetHeight;
-      // [TODO] 问题1：需要 wrap 在 try-finally 中确保清理
-      document.body.removeChild(tempDiv);
+    // 隐藏测量容器，用于逐段分页
+    const measureHost = document.createElement('div');
+    measureHost.style.position = 'absolute';
+    measureHost.style.visibility = 'hidden';
+    measureHost.style.width = `${contentWidth}px`;
+    measureHost.style.padding = `${mmToPx(page.margins.top)}px ${mmToPx(page.margins.right)}px ${mmToPx(page.margins.bottom)}px ${mmToPx(page.margins.left)}px`;
+    measureHost.style.boxSizing = 'border-box';
+    measureHost.className = 'preview-pager-measure';
+    document.body.appendChild(measureHost);
 
-      // 计算需要的页数
-      const neededPages = Math.max(1, Math.ceil(totalHeight / availableContentHeight));
+    // 当前正在拼装的页
+    const currentPageDiv = document.createElement('div');
+    currentPageDiv.className = 'preview-markdown';
+    measureHost.appendChild(currentPageDiv);
 
-      // 将内容分成多个页面
-      for (let page = 0; page < neededPages; page++) {
-        result.push({
-          id: `section-${sectionIndex}-page-${page}`,
-          pageNumber: pageNumber,
-          contentList: [section],
-          isCover: false,
-          sectionIndex,
-          pageIndex: page,
-          totalPages: neededPages,
-        });
-        pageNumber++;
+    try {
+      // 遍历章节，逐段分页
+      for (let si = 0; si < sectionHtmlList.length; si++) {
+        const section = sectionHtmlList[si];
+        const sectionStartIndex = result.length;
+        const container = document.createElement('div');
+        container.innerHTML = section.html;
+        let currentHTML = '';
+        let sectionPageIndex = 0;
+
+        // 将章节内容逐段放入当前页，遇到溢出即切页
+        while (container.firstChild) {
+          const node = container.firstChild as HTMLElement;
+          const candidateHTML = currentHTML + (node.outerHTML || node.textContent || '');
+          currentPageDiv.innerHTML = candidateHTML;
+          const fits = currentPageDiv.offsetHeight <= availableContentHeight;
+          if (fits) {
+            currentHTML = candidateHTML;
+            container.removeChild(node);
+          } else {
+            // 处理溢出
+            if (currentHTML.trim() === '') {
+              // 单个块就超过页面高度，强制单页
+              const singleChunk = node.outerHTML || '';
+              result.push({
+                id: `section-${si}-page-${sectionPageIndex}`,
+                pageNumber: pageNumber,
+                contentList: [{ html: singleChunk, themeCss: section.themeCss }],
+                isCover: false,
+                sectionIndex: si,
+                pageIndex: sectionPageIndex,
+                totalPages: 1
+              });
+              sectionPageIndex++;
+              pageNumber++;
+              container.removeChild(node);
+              currentHTML = '';
+              currentPageDiv.innerHTML = '';
+            } else {
+              // 保存当前页
+              const pageHTML = currentHTML;
+              result.push({
+                id: `section-${si}-page-${sectionPageIndex}`,
+                pageNumber: pageNumber,
+                contentList: [{ html: pageHTML, themeCss: section.themeCss }],
+                isCover: false,
+                sectionIndex: si,
+                pageIndex: sectionPageIndex,
+                totalPages: 0
+              });
+              sectionPageIndex++;
+              pageNumber++;
+              currentHTML = node.outerHTML || '';
+              currentPageDiv.innerHTML = currentHTML;
+              container.removeChild(node);
+            }
+          }
+        }
+
+        if (currentHTML.trim()) {
+          result.push({
+            id: `section-${si}-page-${sectionPageIndex}`,
+            pageNumber: pageNumber,
+            contentList: [{ html: currentHTML, themeCss: section.themeCss }],
+            isCover: false,
+            sectionIndex: si,
+            pageIndex: sectionPageIndex,
+            totalPages: 0
+          });
+          sectionPageIndex++;
+          pageNumber++;
+        }
+        // 回填该章节的总页数到本章节所有页
+        const totalForThisSection = sectionPageIndex;
+        if (typeof sectionStartIndex !== 'undefined' && sectionStartIndex < result.length) {
+          for (let idx = sectionStartIndex; idx < result.length; idx++) {
+            const item = result[idx];
+            if (item.sectionIndex === si) {
+              item.totalPages = totalForThisSection;
+            }
+          }
+        }
       }
+    } catch (err) {
+      logger.error('Pagination error (方案A):', err);
+    } finally {
+      if (measureHost.parentNode) measureHost.parentNode.removeChild(measureHost);
     }
 
     setPagedContents(result);
@@ -359,7 +424,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               <div className="page-wrapper">
                 {pageContent.isCover ? (
                   // 封面页
-                  <div className="a4-page cover-page">
+                  <div className="a4-page cover-page" data-is-cover="true" data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
                     <div className="cover-content" style={{ textAlign: 'center' }}>
                       <h1 style={{ fontSize: `${font.baseSize * 2.5}px`, marginBottom: '20px', fontFamily: font.heading }}>{coverTitle}</h1>
                       {coverAuthor && (
@@ -372,7 +437,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   </div>
                 ) : (
                   // 内容页
-                  <div className="a4-page content-page">
+                  <div className="a4-page content-page" data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
                     {pageContent.contentList.map((content, cIndex) => (
                       <React.Fragment key={`${pageContent.id}-${cIndex}`}>
                         <style>{content.themeCss}{headingStyles}</style>
