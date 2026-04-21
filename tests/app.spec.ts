@@ -185,7 +185,8 @@ test.describe('Aimtp Application', () => {
       const count = await a4Pages.count();
       expect(count).toBeGreaterThanOrEqual(1);
       // 新增：检查分页元数据存在，支持结构化断言
-      await expect(page.locator('[data-total-pages]')).toBeVisible({ timeout: UI_TIMEOUT });
+      // 由于文档中可能存在多个分页页，取第一个作为断言目标以避免强制单元素断言
+      await expect(page.locator('[data-total-pages]').first()).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
 
