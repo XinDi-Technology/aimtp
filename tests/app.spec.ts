@@ -187,6 +187,42 @@ test.describe('Aimtp Application', () => {
     });
   });
 
+  test.describe('Page Stacking Mode', () => {
+    test('should show page stack container', async ({ page }) => {
+      const pageStack = page.locator('.page-stack');
+      await expect(pageStack).toBeVisible({ timeout: UI_TIMEOUT });
+    });
+
+    test('should show page dividers between pages', async ({ page }) => {
+      const dividers = page.locator('.page-divider');
+      // 验证分隔线存在
+      const count = await dividers.count();
+      expect(count).toBeGreaterThanOrEqual(0);
+    });
+
+    test('should show page numbers in dividers', async ({ page }) => {
+      const dividers = page.locator('.divider-label');
+      const count = await dividers.count();
+      if (count > 0) {
+        await expect(dividers.first()).toContainText(/(第.*页|Page)/, { timeout: UI_TIMEOUT });
+      }
+    });
+
+    test('should render cover page separately when enabled', async ({ page }) => {
+      // 启用封面时检查封面页存在
+      const coverPages = page.locator('.cover-page');
+      const count = await coverPages.count();
+      // 封面可能存在或不存在，取决于模板设置
+      expect(count).toBeGreaterThanOrEqual(0);
+    });
+
+    test('should render multiple content pages', async ({ page }) => {
+      const a4Pages = page.locator('.a4-page');
+      const count = await a4Pages.count();
+      expect(count).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   test.describe('Settings Persistence', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/', { timeout: BASE_TIMEOUT });

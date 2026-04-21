@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { resetMarkdownIt } from '../utils/markdown';
 import { renderMermaid } from '../utils/mermaidPlugin';
@@ -14,205 +14,81 @@ interface PreviewPanelProps {
   className?: string;
 }
 
+/**
+ * 渲染后的页面接口
+ */
+interface RenderedPage {
+  id: string;
+  content: React.ReactNode;
+  pageNumber: number;
+  hasTopMargin: boolean;
+}
+
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
   const { markdown, font, extensions, page, locale, cover, headerFooter, preview } = useAppStore();
-  const contentRefs = useRef<(HTMLDivElement | null)[]>([]); // 多个页面的引用
-  const containerRef = useRef<HTMLDivElement>(null); // 容器引用
-  const [zoomMode, setZoomMode] = React.useState<'fit-width' | 'fit-height' | 'actual'>('fit-width'); // 缩放模式
-  const [actualZoom, setActualZoom] = React.useState<number>(100); // 实际缩放比例
-  
+  const contentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const measureRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [zoomMode, setZoomMode] = React.useState<'fit-width' | 'fit-height' | 'actual'>('fit-width');
+  const [actualZoom, setActualZoom] = React.useState<number>(100);
+  const [renderedPages, setRenderedPages] = useState<RenderedPage[]>([]);
+  const [isCalculating, setIsCalculating] = useState(false);
+
   // 从 Front Matter 提取封面元数据
   const frontMatterData = useMemo(() => {
     const { data } = parseFrontMatter(markdown);
     return data;
   }, [markdown]);
-  
-  // 封面标题：优先使用 Front Matter 的 title，其次 H1，最后默认文本
+
+  // 封面标题
   const coverTitle = useMemo(() => {
     if (frontMatterData.title) {
       return String(frontMatterData.title);
     }
-    // 尝试从 Markdown 中提取第一个 H1 标题
     const h1Match = markdown.match(/^#\s+(.+)$/m);
     if (h1Match) {
       return h1Match[1].trim();
     }
     return locale === 'zh' ? '文档标题' : 'Document Title';
   }, [frontMatterData.title, markdown, locale]);
-  
+
   // 封面作者
   const coverAuthor = useMemo(() => {
     return frontMatterData.author ? String(frontMatterData.author) : '';
   }, [frontMatterData.author]);
-  
+
   // 封面日期
   const coverDate = useMemo(() => {
     return formatDate(frontMatterData.date, locale);
   }, [frontMatterData.date, locale]);
-  
-  // 获取页眉内容（从 Front Matter 提取）
-  const getHeaderContent = useMemo(() => {
-    if (!headerFooter.enabled || !headerFooter.header.content) return '';
-    
-    switch (headerFooter.header.content) {
-      case 'title':
-        return coverTitle;
-      case 'author':
-        return coverAuthor;
-      case 'date':
-        return coverDate;
-      default:
-        return '';
-    }
-  }, [headerFooter.enabled, headerFooter.header.content, coverTitle, coverAuthor, coverDate]);
-  
-  // 获取页脚内容（从 Front Matter 提取或页码）
-  const getFooterContent = useMemo(() => {
-    if (!headerFooter.enabled) return '';
-    
-    const content = headerFooter.footer.content;
-    if (content === 'pageNumber' || content === 'pageNumberTotal') {
-      return content; // 返回特殊标记，稍后处理
-    }
-    
-    switch (content) {
-      case 'title':
-        return coverTitle;
-      case 'author':
-        return coverAuthor;
-      case 'date':
-        return coverDate;
-      default:
-        return '';
-    }
-  }, [headerFooter.enabled, headerFooter.footer.content, coverTitle, coverAuthor, coverDate]);
-  
+
   // 获取校准后的 DPI 和页面像素尺寸
   const dpi = useMemo(() => getCalibratedDPI(preview.calibration), [preview.calibration]);
-  
+
   const pageDimensions = useMemo(() => {
     return getPageDimensionsPixels(page.size, page.orientation, dpi);
   }, [page.size, page.orientation, dpi]);
-  
-  // TODO: [P1] 计算页数（基于 H2 标题分割）
+
+  // 计算页面可用内容高度（排除页眉页脚）
+  const availableContentHeight = useMemo(() => {
+    const mmToPx = (mm: number) => mm * (dpi / 25.4);
+    const topMargin = mmToPx(page.margins.top);
+    const bottomMargin = mmToPx(page.margins.bottom);
+    const headerHeight = headerFooter.enabled ? topMargin : 0;
+    const footerHeight = headerFooter.enabled ? bottomMargin : 0;
+    return pageDimensions.height - topMargin - bottomMargin - headerHeight - footerHeight;
+  }, [pageDimensions, page.margins, dpi, headerFooter.enabled]);
+
+  // 章节分割
   const pages = useMemo(() => {
     return splitMarkdownByH2(markdown);
   }, [markdown]);
-  
-  const totalPages = Math.max(1, pages.length);
-  
-  // 组件挂载后，确保滚动到顶部
-  useEffect(() => {
-    if (containerRef.current) {
-      // 延迟一小段时间，确保内容已渲染
-      setTimeout(() => {
-        containerRef.current?.scrollTo(0, 0);
-      }, 100);
-    }
-  }, [markdown, cover.enabled, pages.length]);
-  
-  // 处理缩放模式切换
-  const handleZoomModeChange = (mode: 'fit-width' | 'fit-height' | 'actual') => {
-    setZoomMode(mode);
-  };
-  
-  // 监听窗口大小变化，自动调整缩放比例
-  React.useEffect(() => {
-    const calculateZoom = () => {
-      if (!containerRef.current) return;
-      
-      // 关键修复：使用 clientWidth/clientHeight 而不是 offsetWidth/offsetHeight
-      // clientWidth/clientHeight 不包含 padding，更准确地反映可用空间
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      
-      // 页面实际像素尺寸（已通过 DPI 工具函数计算）
-      const pageWidthPx = pageDimensions.width;
-      const pageHeightPx = pageDimensions.height;
-      
-      let newZoom = 100;
-      
-      if (zoomMode === 'fit-width') {
-        // 适应宽度：留出 80px 的边距（左右各 40px）
-        const availableWidth = containerWidth - 80;
-        newZoom = (availableWidth / pageWidthPx) * 100;
-        // 限制在 50% - 150% 之间
-        newZoom = Math.max(50, Math.min(150, newZoom));
-      } else if (zoomMode === 'fit-height') {
-        // 适应高度：留出 120px 的空间（头部 + 底部边距）
-        const availableHeight = containerHeight - 120;
-        newZoom = (availableHeight / pageHeightPx) * 100;
-        // 限制在 50% - 150% 之间
-        newZoom = Math.max(50, Math.min(150, newZoom));
-      } else {
-        // 实际大小
-        newZoom = 100;
-      }
-      
-      setActualZoom(Math.round(newZoom));
-    };
-    
-    // 初始计算
-    calculateZoom();
-    
-    // 监听窗口大小变化
-    window.addEventListener('resize', calculateZoom);
-    
-    // 使用 ResizeObserver 监听容器大小变化
-    const observer = new ResizeObserver(calculateZoom);
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-    
-    return () => {
-      window.removeEventListener('resize', calculateZoom);
-      observer.disconnect();
-    };
-  }, [zoomMode, pageDimensions]);
-  
-  // 渲染 Mermaid 图表和 MathJax 公式
-  useEffect(() => {
-    let hasChanges = false;
-    
-    // 遍历所有页面内容进行渲染
-    contentRefs.current.forEach(async (contentRef, pageIndex) => {
-      if (!contentRef) return;
 
-      // 渲染 Mermaid 图表（如果启用）
-      if (extensions.mermaid) {
-        try {
-          await renderMermaid(contentRef, { suppressErrors: true, resetMmdId: true });
-          hasChanges = true;
-        } catch (error) {
-          console.error(`Mermaid rendering error on page ${pageIndex + 1}:`, error);
-        }
-      }
-
-      // 渲染 MathJax 公式（如果启用）
-      if (extensions.mathJax) {
-        try {
-          await typesetMath(contentRef);
-          hasChanges = true;
-        } catch (error) {
-          console.error(`MathJax rendering error on page ${pageIndex + 1}:`, error);
-        }
-      }
-    });
-    
-    // 如果内容有变化，延迟重新计算缩放比例
-    if (hasChanges) {
-      setTimeout(() => {
-        // 触发窗口 resize 事件，重新计算缩放
-        window.dispatchEvent(new Event('resize'));
-      }, 300); // 等待渲染完成
-    }
-  }, [markdown, extensions, pages.length]);
-  
-  // 为每个页面生成 HTML 和样式
+  // 生成单个页面的HTML内容
   const pageHtmlList = useMemo(() => {
     const currentTheme = extensions.codeTheme || 'github';
     const themeCss = `${getHljsBaseStyles()}${getHljsTheme(currentTheme)}`;
-    
+
     return pages.map((pageSection) => {
       try {
         const md = resetMarkdownIt({
@@ -228,9 +104,9 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           sup: extensions.sup,
           codeTheme: extensions.codeTheme,
         });
-        
+
         let result = md.render(pageSection.content);
-        
+
         if (extensions.githubAlerts) {
           result = result.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, content) => {
             const icons: Record<string, string> = {
@@ -246,7 +122,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             </div>`;
           });
         }
-        
+
         return { html: result, themeCss };
       } catch (error) {
         console.error('Preview markdown parsing error:', error);
@@ -254,23 +130,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }
     });
   }, [pages, extensions]);
-  
-  const previewStyle: React.CSSProperties = useMemo(() => {
-    // 毫米转像素
-    const mmToPx = (mm: number) => mm * (dpi / 25.4);
-    
-    return {
-      fontSize: `${font.baseSize}px`,
-      lineHeight: font.lineHeight,
-      width: `${pageDimensions.width}px`,
-      maxWidth: `${pageDimensions.width}px`,
-      margin: '0 auto',
-    };
-  }, [font.baseSize, font.lineHeight, font.body, font.heading, font.code, pageDimensions, dpi]);
-  
-  // 生成动态标题样式（基于 headingScale）
+
+  // 生成动态标题样式
   const headingStyles = useMemo(() => {
-    const scale = font.headingScale || 1.2; // 默认值 1.2
+    const scale = font.headingScale || 1.2;
     return `
       .markdown-preview h1 { font-size: ${font.baseSize * Math.pow(scale, 5)}px !important; }
       .markdown-preview h2 { font-size: ${font.baseSize * Math.pow(scale, 4)}px !important; }
@@ -280,6 +143,272 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       .markdown-preview h6 { font-size: ${font.baseSize * Math.pow(scale, 0)}px !important; }
     `;
   }, [font.baseSize, font.headingScale]);
+
+  // 计算分页
+  const calculatePagination = useCallback(() => {
+    setIsCalculating(true);
+
+    const newPages: RenderedPage[] = [];
+    let pageIndex = 1;
+
+    // 计算页码
+    const totalContentPages = pages.length || 1;
+    const totalPages = totalContentPages + (cover.enabled ? 1 : 0);
+
+    // 生成页眉内容
+    const getHeaderContent = () => {
+      if (!headerFooter.enabled || !headerFooter.header.content) return '';
+      switch (headerFooter.header.content) {
+        case 'title': return coverTitle;
+        case 'author': return coverAuthor;
+        case 'date': return coverDate;
+        default: return '';
+      }
+    };
+
+    // 生成页脚内容
+    const getFooterContent = (currentPage: number) => {
+      if (!headerFooter.enabled || !headerFooter.footer.content) return null;
+      const content = headerFooter.footer.content;
+      if (content === 'pageNumber') {
+        return String(currentPage);
+      } else if (content === 'pageNumberTotal') {
+        return `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+      }
+      switch (content) {
+        case 'title': return coverTitle;
+        case 'author': return coverAuthor;
+        case 'date': return coverDate;
+        default: return null;
+      }
+    };
+
+    // 毫米转像素
+    const mmToPx = (mm: number) => mm * (dpi / 25.4);
+
+    // 封面页
+    if (cover.enabled) {
+      newPages.push({
+        id: `cover`,
+        content: (
+          <div className="a4-page cover-page">
+            <div className="cover-content" style={{ textAlign: 'center' }}>
+              <h1 style={{
+                fontSize: `${font.baseSize * 2.5}px`,
+                marginBottom: '20px',
+                fontFamily: font.heading,
+              }}>
+                {coverTitle}
+              </h1>
+              {coverAuthor && (
+                <p className="cover-author" style={{
+                  fontSize: `${font.baseSize * 1.5}px`,
+                  color: '#666',
+                  marginBottom: '10px',
+                  fontFamily: font.body,
+                }}>
+                  {coverAuthor}
+                </p>
+              )}
+              {coverDate && (
+                <p className="cover-date" style={{
+                  fontSize: `${font.baseSize * 1.2}px`,
+                  color: '#999',
+                  fontFamily: font.body,
+                }}>
+                  {coverDate}
+                </p>
+              )}
+            </div>
+          </div>
+        ),
+        pageNumber: pageIndex,
+        hasTopMargin: false,
+      });
+      pageIndex++;
+    }
+
+    // 内容页
+    pages.forEach((section, sectionIndex) => {
+      // 计算当前页码
+      const currentPageNumber = pageIndex;
+      const displayPageNumber = pageIndex;
+
+      // 创建页面内容
+      const pageContent = (
+        <div className="a4-page content-page">
+          {/* 页眉 */}
+          {headerFooter.enabled && headerFooter.header.content && (
+            <div
+              className="page-header"
+              style={{
+                position: 'absolute',
+                top: `${mmToPx(page.margins.top / 2)}px`,
+                left: `${mmToPx(page.margins.left)}px`,
+                right: `${mmToPx(page.margins.right)}px`,
+                textAlign: headerFooter.header.alignment,
+                fontFamily: headerFooter.header.font,
+                fontSize: `${font.baseSize * 0.9}px`,
+                color: '#666',
+              }}
+            >
+              {getHeaderContent()}
+            </div>
+          )}
+
+          {/* 内容区域 */}
+          <div
+            ref={(el) => {
+              if (el) contentRefs.current.set(`section-${sectionIndex}`, el);
+            }}
+            className="markdown-preview section-content"
+            data-section-index={sectionIndex}
+            style={{
+              position: 'relative',
+              padding: `${mmToPx(page.margins.top)}px ${mmToPx(page.margins.right)}px ${mmToPx(page.margins.bottom)}px ${mmToPx(page.margins.left)}px`,
+              fontFamily: font.body,
+            }}
+          >
+            <style>
+              {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
+               .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
+                font-family: ${font.heading} !important;
+              }
+              .markdown-preview pre, .markdown-preview code {
+                font-family: ${font.code}, monospace !important;
+                font-size: inherit !important;
+              }
+              ${pageHtmlList[sectionIndex]?.themeCss || ''}
+              ${headingStyles}`}
+            </style>
+            <div dangerouslySetInnerHTML={{ __html: pageHtmlList[sectionIndex]?.html || '' }} />
+          </div>
+
+          {/* 页脚 */}
+          {headerFooter.enabled && headerFooter.footer.content && (
+            <div
+              className="page-footer"
+              style={{
+                position: 'absolute',
+                bottom: `${mmToPx(page.margins.bottom / 2)}px`,
+                left: `${mmToPx(page.margins.left)}px`,
+                right: `${mmToPx(page.margins.right)}px`,
+                textAlign: headerFooter.footer.alignment,
+                fontFamily: headerFooter.footer.font,
+                fontSize: `${font.baseSize * 0.9}px`,
+                color: '#666',
+              }}
+            >
+              {getFooterContent(displayPageNumber)}
+            </div>
+          )}
+        </div>
+      );
+
+      newPages.push({
+        id: `section-${sectionIndex}`,
+        content: pageContent,
+        pageNumber: displayPageNumber,
+        hasTopMargin: true,
+      });
+
+      pageIndex++;
+    });
+
+    setRenderedPages(newPages);
+    setIsCalculating(false);
+  }, [markdown, pages, cover, coverTitle, coverAuthor, coverDate, font, page, headerFooter, dpi, pageHtmlList, headingStyles]);
+
+  // 当内容变化时重新计算分页
+  useEffect(() => {
+    calculatePagination();
+  }, [calculatePagination]);
+
+  // 渲染 Mermaid 和 MathJax 后重新计算
+  useEffect(() => {
+    if (renderedPages.length === 0) return;
+
+    const renderDeferredContent = async () => {
+      let hasChanges = false;
+
+      for (const [key, ref] of contentRefs.current.entries()) {
+        if (!ref) continue;
+
+        if (extensions.mermaid) {
+          try {
+            await renderMermaid(ref, { suppressErrors: true, resetMmdId: true });
+            hasChanges = true;
+          } catch (error) {
+            console.error(`Mermaid rendering error:`, error);
+          }
+        }
+
+        if (extensions.mathJax) {
+          try {
+            await typesetMath(ref);
+            hasChanges = true;
+          } catch (error) {
+            console.error(`MathJax rendering error:`, error);
+          }
+        }
+      }
+
+      if (hasChanges) {
+        // 等待渲染完成后再重新计算分页
+        setTimeout(() => {
+          calculatePagination();
+        }, 300);
+      }
+    };
+
+    renderDeferredContent();
+  }, [markdown, extensions.mermaid, extensions.mathJax, calculatePagination]);
+
+  // 处理缩放模式切换
+  const handleZoomModeChange = (mode: 'fit-width' | 'fit-height' | 'actual') => {
+    setZoomMode(mode);
+  };
+
+  // 监听窗口大小变化
+  React.useEffect(() => {
+    const calculateZoom = () => {
+      if (!containerRef.current) return;
+
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      const pageWidthPx = pageDimensions.width;
+      const pageHeightPx = pageDimensions.height;
+
+      let newZoom = 100;
+
+      if (zoomMode === 'fit-width') {
+        const availableWidth = containerWidth - 80;
+        newZoom = (availableWidth / pageWidthPx) * 100;
+        newZoom = Math.max(50, Math.min(150, newZoom));
+      } else if (zoomMode === 'fit-height') {
+        const availableHeight = containerHeight - 120;
+        newZoom = (availableHeight / pageHeightPx) * 100;
+        newZoom = Math.max(50, Math.min(150, newZoom));
+      } else {
+        newZoom = 100;
+      }
+
+      setActualZoom(Math.round(newZoom));
+    };
+
+    calculateZoom();
+
+    window.addEventListener('resize', calculateZoom);
+    const observer = new ResizeObserver(calculateZoom);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', calculateZoom);
+      observer.disconnect();
+    };
+  }, [zoomMode, pageDimensions]);
 
   return (
     <div className={`preview-panel ${className || ''}`}>
@@ -309,219 +438,34 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           </button>
         </div>
       </div>
-      
-      {/* 根据 zoomMode 计算 actualZoom */}
-      
+
       <div className="preview-with-margins" ref={containerRef}>
-        {/* 在容器级别应用缩放，而不是每个页面 */}
-        <div 
-          className="page-container"
+        <div
+          className="page-stack"
           style={{
             transform: `scale(${actualZoom / 100})`,
             transformOrigin: 'top center',
           }}
         >
-          {/* 如果启用封面，显示封面页 */}
-          {cover.enabled && (
-            <div 
-              className="a4-page cover-page"
-              style={{
-                width: `${pageDimensions.width}px`,
-                height: `${pageDimensions.height}px`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <div className="cover-content" style={{ textAlign: 'center' }}>
-                <h1 style={{ 
-                  fontSize: `${font.baseSize * 2.5}px`, // 使用基础字号的 2.5 倍
-                  marginBottom: '20px',
-                  fontFamily: font.heading,
-                }}>
-                  {coverTitle}
-                </h1>
-                {coverAuthor && (
-                  <p className="cover-author" style={{ 
-                    fontSize: `${font.baseSize * 1.5}px`, // 使用基础字号的 1.5 倍
-                    color: '#666',
-                    marginBottom: '10px',
-                    fontFamily: font.body,
-                  }}>
-                    {coverAuthor}
-                  </p>
-                )}
-                {coverDate && (
-                  <p className="cover-date" style={{ 
-                    fontSize: `${font.baseSize * 1.2}px`, // 使用基础字号的 1.2 倍
-                    color: '#999',
-                    fontFamily: font.body,
-                  }}>
-                    {coverDate}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* 内容区域 - 连续显示，用分页标记分隔 */}
-          <div 
-            className="a4-page content-pages"
-            style={{
-              width: `${pageDimensions.width}px`,
-              // 关键修复：使用 auto 而不是固定高度，允许内容自然展开
-              minHeight: 'auto',
-              height: 'auto',
-              position: 'relative',
-            }}
-          >
-            {/* 渲染所有页面内容，连续显示 */}
-            {pages.map((pageSection, pageIndex) => {
-              // 计算当前页码（考虑封面）
-              const currentPageNumber = pageIndex + (cover.enabled ? 2 : 1);
-              const totalPagesCount = pages.length + (cover.enabled ? 1 : 0);
-              
-              // 生成页眉 HTML
-              const renderHeader = () => {
-                if (!headerFooter.enabled || !headerFooter.header.content) return null;
-                
-                let headerText = '';
-                switch (headerFooter.header.content) {
-                  case 'title':
-                    headerText = coverTitle;
-                    break;
-                  case 'author':
-                    headerText = coverAuthor;
-                    break;
-                  case 'date':
-                    headerText = coverDate;
-                    break;
-                  default:
-                    return null;
-                }
-                
-                // 毫米转像素
-                const mmToPx = (mm: number) => mm * (dpi / 25.4);
-                
-                return (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: `${mmToPx(page.margins.top / 2)}px`,
-                      left: `${mmToPx(page.margins.left)}px`,
-                      right: `${mmToPx(page.margins.right)}px`,
-                      textAlign: headerFooter.header.alignment,
-                      fontFamily: headerFooter.header.font,
-                      fontSize: `${font.baseSize * 0.9}px`,
-                      color: '#666',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    {headerText}
-                  </div>
-                );
-              };
-              
-              // 生成页脚 HTML
-              const renderFooter = () => {
-                if (!headerFooter.enabled || !headerFooter.footer.content) return null;
-                
-                let footerText = '';
-                const content = headerFooter.footer.content;
-                
-                if (content === 'pageNumber') {
-                  footerText = String(currentPageNumber);
-                } else if (content === 'pageNumberTotal') {
-                  footerText = `第 ${currentPageNumber} 页 / 共 ${totalPagesCount} 页`;
-                } else {
-                  switch (content) {
-                    case 'title':
-                      footerText = coverTitle;
-                      break;
-                    case 'author':
-                      footerText = coverAuthor;
-                      break;
-                    case 'date':
-                      footerText = coverDate;
-                      break;
-                    default:
-                      return null;
-                  }
-                }
-                
-                // 毫米转像素
-                const mmToPx = (mm: number) => mm * (dpi / 25.4);
-                
-                return (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: `${mmToPx(page.margins.bottom / 2)}px`,
-                      left: `${mmToPx(page.margins.left)}px`,
-                      right: `${mmToPx(page.margins.right)}px`,
-                      textAlign: headerFooter.footer.alignment,
-                      fontFamily: headerFooter.footer.font,
-                      fontSize: `${font.baseSize * 0.9}px`,
-                      color: '#666',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    {footerText}
-                  </div>
-                );
-              };
-              
-              return (
-                <div key={pageIndex} className="page-section" style={{ position: 'relative' }}>
-                  {/* 如果不是第一个章节，添加分页标记 */}
-                  {pageIndex > 0 && (
-                    <div className="page-break-marker">
-                      <span className="marker-line"></span>
-                      <span className="marker-text">
-                        {locale === 'zh' ? `第 ${currentPageNumber} 页` : `Page ${currentPageNumber}`}
-                      </span>
-                      <span className="marker-line"></span>
-                    </div>
-                  )}
-                  
-                  {/* 页眉 */}
-                  {renderHeader()}
-                  
-                  {/* 章节内容 */}
-                  <div 
-                    ref={(el) => {
-                      contentRefs.current[pageIndex] = el;
-                    }}
-                    className="markdown-preview"
-                    style={{
-                      ...previewStyle,
-                      padding: `${page.margins.top * (dpi / 25.4)}px ${page.margins.right * (dpi / 25.4)}px ${page.margins.bottom * (dpi / 25.4)}px ${page.margins.left * (dpi / 25.4)}px`,
-                      fontFamily: font.body,
-                    }}
-                  >
-                    <style key={`hljs-theme-${extensions.codeTheme}`}>
-                      {`.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, 
-                      .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
-                        font-family: ${font.heading} !important;
-                      }
-                      .markdown-preview pre, .markdown-preview code {
-                        font-family: ${font.code}, monospace !important;
-                        font-size: inherit !important; /* 继承父元素的 font-size */
-                      }
-                      /* 代码高亮主题样式 */
-                      ${pageHtmlList[pageIndex]?.themeCss || ''}
-                      /* 动态标题大小（基于 headingScale） */
-                      ${headingStyles}`}
-                    </style>
-                    <div dangerouslySetInnerHTML={{ __html: pageHtmlList[pageIndex]?.html || '' }} />
-                  </div>
-                  
-                  {/* 页脚 */}
-                  {renderFooter()}
+          {/* 渲染所有页面 */}
+          {renderedPages.map((renderedPage, index) => (
+            <React.Fragment key={renderedPage.id}>
+              {/* 页面分隔标记 */}
+              {index > 0 && (
+                <div className="page-divider">
+                  <span className="divider-line"></span>
+                  <span className="divider-label">
+                    {locale === 'zh' ? `第 ${renderedPage.pageNumber} 页` : `Page ${renderedPage.pageNumber}`}
+                  </span>
+                  <span className="divider-line"></span>
                 </div>
-              );
-            })}
-          </div>
+              )}
+              {/* 页面内容 */}
+              <div className="page-wrapper">
+                {renderedPage.content}
+              </div>
+            </React.Fragment>
+          ))}
         </div>
       </div>
     </div>

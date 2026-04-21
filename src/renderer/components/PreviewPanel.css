@@ -589,21 +589,140 @@ pre.with-line-numbers {
 }
 
 /* ========================================
-   分页标记样式（连续滚动模式）
+   页面堆叠模式样式
    ======================================== */
 
-/* 内容页面容器 - 关键修复：允许溢出以支持 transform scale */
-.content-pages {
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 0;
-  transform-origin: top center;
-  /* 核心修复：必须设置为 visible，否则 transform scale 会被裁剪 */
+/* 页面堆叠容器 */
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
   overflow: visible !important;
+  padding-bottom: 100px;
+  padding-top: 20px;
 }
 
-[data-theme='dark'] .content-pages {
+/* 页面包装器 */
+.page-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* 页面分隔标记 */
+.page-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 794px; /* A4宽度 */
+  padding: 20px 0;
+  margin: 0 auto;
+}
+
+/* 分隔线 */
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 0, 0, 0.15) 20%,
+    rgba(0, 0, 0, 0.15) 80%,
+    transparent
+  );
+}
+
+[data-theme='dark'] .divider-line {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0.15) 80%,
+    transparent
+  );
+}
+
+/* 分隔标签 */
+.divider-label {
+  font-size: 11px;
+  color: #999;
+  font-family: var(--font-code), monospace;
+  white-space: nowrap;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .divider-label {
+  color: #666;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* A4 页面 - 堆叠模式 (210mm x 297mm = 794px x 1123px @ 96dpi) */
+.a4-page {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  /* A4 尺寸 */
+  width: 794px;
+  height: 1123px;
+  max-width: 100%;
+}
+
+[data-theme='dark'] .a4-page {
   background: #ffffff;
+}
+
+/* 封面页 */
+.cover-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-page .cover-content {
+  width: 100%;
+  padding: 0 40px;
+  box-sizing: border-box;
+}
+
+/* 内容页面内部布局 */
+.content-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* 章节内容区域 */
+.section-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* 页面页眉 */
+.page-header {
+  pointer-events: none;
+}
+
+/* 页面页脚 */
+.page-footer {
+  pointer-events: none;
+}
+
+/* 旧样式保留兼容性 - 隐藏连续滚动模式 */
+.content-pages {
+  display: none;
 }
 
 /* 章节容器 */

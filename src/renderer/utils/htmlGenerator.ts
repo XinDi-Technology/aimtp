@@ -21,8 +21,8 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
   const { markdown, locale, page, font, extensions, headerFooter, cover } = options;
   
   try {
-    // 从 Front Matter 提取元数据
-    const { data: frontMatter } = parseFrontMatter(markdown);
+    // 从 Front Matter 提取元数据，并获取去除 Front Matter 后的内容
+    const { data: frontMatter, content: markdownWithoutFrontMatter } = parseFrontMatter(markdown);
     
     // 获取页眉内容
     const getHeaderContent = () => {
@@ -73,7 +73,8 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       sup: extensions.sup,
     });
     
-    let content = md.render(markdown);
+    // 使用去除 Front Matter 后的内容进行渲染，避免 YAML 内容出现在正文中
+    let content = md.render(markdownWithoutFrontMatter);
     
     if (extensions.githubAlerts) {
       content = content.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, alertContent) => {
@@ -243,24 +244,47 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       align-items: center;
       justify-content: center;
       height: 100vh;
-      text-align: center;
-      padding: 0;
+      padding: 0 ${page.margins.left}mm ${page.margins.right}mm;
+      box-sizing: border-box;
     }
-    .cover-title {
+    .cover-content {
+      text-align: center;
+      display: block;
+      width: 100%;
+      max-width: calc(100% - ${page.margins.left + page.margins.right}mm);
+      margin: 0 auto;
+    }
+    .cover-content h1 {
+      display: block;
       font-size: ${font.baseSize * 2.5}px;
       font-weight: bold;
-      margin-bottom: 20px;
+      margin: 0 0 20px 0;
+      padding: 0;
       font-family: ${font.heading}, sans-serif;
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     .cover-author {
+      display: block;
       font-size: ${font.baseSize * 1.5}px;
-      margin-bottom: 20px;
+      color: #666;
+      margin: 0 0 10px 0;
+      padding: 0;
       font-family: ${font.body}, sans-serif;
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
     }
     .cover-date {
+      display: block;
       font-size: ${font.baseSize * 1.2}px;
-      color: #666;
+      color: #999;
+      margin: 0;
+      padding: 0;
       font-family: ${font.body}, sans-serif;
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
     }
     /* Mermaid 图表样式 */
     .mermaid {
@@ -338,27 +362,29 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
 <body>
   ${cover.enabled ? `
     <div class="cover-page">
-      ${(() => {
-        // 从 Front Matter 提取封面元数据
-        const { data: frontMatter } = parseFrontMatter(markdown);
-        
-        // 智能提取封面标题
-        let titleText = frontMatter.title;
-        if (!titleText) {
-          // 尝试从 Markdown 中提取第一个 H1 标题
-          const h1Match = markdown.match(/^#\s+(.+)$/m);
-          titleText = h1Match ? h1Match[1].trim() : (locale === 'zh' ? '文档标题' : 'Document Title');
-        }
-        
-        const authorText = frontMatter.author || '';
-        const dateText = formatDate(frontMatter.date, locale);
-        
-        return `
-          <div class="cover-title">${DOMPurify.sanitize(String(titleText))}</div>
-          ${authorText ? `<div class="cover-author">${DOMPurify.sanitize(authorText)}</div>` : ''}
-          ${dateText ? `<div class="cover-date">${dateText}</div>` : ''}
-        `;
-      })()}
+      <div class="cover-content">
+        ${(() => {
+          // 从 Front Matter 提取封面元数据
+          const { data: frontMatter } = parseFrontMatter(markdown);
+          
+          // 智能提取封面标题
+          let titleText = frontMatter.title;
+          if (!titleText) {
+            // 尝试从 Markdown 中提取第一个 H1 标题
+            const h1Match = markdown.match(/^#\s+(.+)$/m);
+            titleText = h1Match ? h1Match[1].trim() : (locale === 'zh' ? '文档标题' : 'Document Title');
+          }
+          
+          const authorText = frontMatter.author || '';
+          const dateText = formatDate(frontMatter.date, locale);
+          
+          return `
+            <h1>${DOMPurify.sanitize(String(titleText))}</h1>
+            ${authorText ? `<p class="cover-author">${DOMPurify.sanitize(authorText)}</p>` : ''}
+            ${dateText ? `<p class="cover-date">${dateText}</p>` : ''}
+          `;
+        })()}
+      </div>
     </div>
   ` : ''}
   ${content}
