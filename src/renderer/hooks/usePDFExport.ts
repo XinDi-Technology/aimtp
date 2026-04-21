@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 import { generateHtml } from '../utils/htmlGenerator';
 import { t } from '../../shared/i18n';
 
-// TODO: 待功能完善后替换为自定义提示组件，避免使用原生 alert()
+// [TODO] 问题4：使用原生 alert()，应替换为 Toast 组件
 export const usePDFExport = () => {
   const { 
     setIsGenerating, 

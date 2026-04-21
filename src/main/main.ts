@@ -32,7 +32,7 @@ function createWindow() {
   }
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
+    // [TODO] 问题5：与下方保持一致，应统一使用 logger.error
     console.error('Window failed to load:', errorCode, errorDescription);
   });
 }
@@ -52,7 +52,7 @@ ipcMain.handle('select-file', async () => {
     const content = fs.readFileSync(filePath, 'utf-8');
     return { path: filePath, content };
   } catch (error) {
-    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
+    // [TODO] 问题5：应统一使用 logger.error
     console.error('Error selecting file:', error);
     throw new Error(t('file-read-error'));
   }
@@ -69,7 +69,7 @@ ipcMain.handle('select-save-path', async (_) => {
     }
     return result.filePath;
   } catch (error) {
-    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
+    // [TODO] 问题5：应统一使用 logger.error
     console.error('Error selecting save path:', error);
     throw error;
   }
@@ -83,7 +83,7 @@ ipcMain.handle('save-pdf-to-path', async (_, data: Uint8Array, filePath: string)
     fs.writeFileSync(filePath, Buffer.from(data));
     return filePath;
   } catch (error) {
-    // TODO: [P1-问题3] 应使用 logger.error 而非 console.error
+    // [TODO] 问题5：应统一使用 logger.error
     console.error('Error saving PDF:', error);
     throw new Error(t('file-write-error'));
   }
@@ -145,11 +145,12 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
       // 等待页面完全加载
       pdfWindow!.webContents.once('did-finish-load', resolveOnce);
       pdfWindow!.webContents.once('did-fail-load', resolveOnce);
-      // 额外等待时间确保 Mermaid/MathJax 渲染完成
-      setTimeout(resolveOnce, 3000);
+      // [TODO] 问题3：PDF生成性能
+    // htmlGenerator.ts 已预渲染 Mermaid/MathJax 为 SVG，此处等待3秒不必要
+    setTimeout(resolveOnce, 3000);
     });
-    
-    // 额外等待以确保动态内容渲染完成
+
+    // [TODO] 问题3：预渲染已完成，此处1秒延迟可移除或大幅缩短
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const pdfData = await pdfWindow.webContents.printToPDF({
