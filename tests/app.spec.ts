@@ -150,13 +150,12 @@ test.describe('Aimtp Application', () => {
     });
   });
 
-  test.describe('App Settings', () => {
-    test('should have app settings section', async ({ page }) => {
-      await expect(page.locator('[data-testid="settings-panel"]')).toContainText(/应用设置|App Settings/, { timeout: UI_TIMEOUT });
-    });
-
-    test('should have auto save toggle', async ({ page }) => {
-      await expect(page.locator('[data-testid="settings-panel"]')).toContainText(/启用自动保存|Enable Auto Save/, { timeout: UI_TIMEOUT });
+  test.describe('Preview Calibration', () => {
+    test('should have preview calibration control', async ({ page }) => {
+      await expect(page.locator('[data-testid="settings-panel"]'))
+        .toContainText(/预览校准|Preview Calibration/, { timeout: UI_TIMEOUT });
+      const slider = page.locator('input[type="range"]').first();
+      await expect(slider).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
 
