@@ -1,23 +1,5 @@
 /* Global Component Styles */
 
-/* Editor Panel */
-.editor-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.editor-textarea {
-  flex: 1;
-  padding: 16px;
-  border: none;
-  resize: none;
-  font-family: 'JetBrains Mono', 'Consolas', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  background: #fafafa;
-}
-
 /* Settings Panel */
 .settings-panel {
   width: 300px;

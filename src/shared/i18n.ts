@@ -24,13 +24,7 @@ export const translations: I18nData = {
     'pdf-export-failed': 'PDF 生成失败: ',
     'pdf-export-no-content': '请先输入 Markdown 内容',
     'pdf-export-invalid-settings': '页面设置无效',
-    'editor-panel-title': 'Markdown 编辑器',
-    'preview-panel-title': 'PDF 预览',
-    'auto-save-saved-at': '已保存于 ',
-    'auto-save-restore-dialog-title': '发现自动保存的内容',
-    'auto-save-restore-dialog-message': '是否要恢复之前保存的内容？',
-    'auto-save-restore-dialog-ignore': '忽略',
-    'auto-save-restore-dialog-restore': '恢复',
+
   },
   en: {
     'save-cancelled': 'Save cancelled',
@@ -48,13 +42,7 @@ export const translations: I18nData = {
     'pdf-export-failed': 'PDF generation failed: ',
     'pdf-export-no-content': 'Please enter Markdown content first',
     'pdf-export-invalid-settings': 'Invalid page settings',
-    'editor-panel-title': 'Markdown Editor',
-    'preview-panel-title': 'PDF Preview',
-    'auto-save-saved-at': 'Saved at ',
-    'auto-save-restore-dialog-title': 'Auto-saved content found',
-    'auto-save-restore-dialog-message': 'Would you like to restore your previously saved content?',
-    'auto-save-restore-dialog-ignore': 'Ignore',
-    'auto-save-restore-dialog-restore': 'Restore',
+
   },
 };
 

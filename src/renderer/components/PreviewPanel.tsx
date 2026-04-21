@@ -6,6 +6,7 @@ import { typesetMath } from '../utils/mathjaxPlugin';
 import { getHljsTheme, getHljsBaseStyles } from '../utils/hljsThemes';
 import { splitMarkdownByH2, PageSection } from '../utils/pageSplitter';
 import { parseFrontMatter, formatDate } from '../utils/frontMatter';
+import { getCalibratedDPI, getPageDimensionsPixels } from '../utils/dpi';
 import { t } from '../../shared/i18n';
 import './PreviewPanel.css';
 
@@ -14,7 +15,7 @@ interface PreviewPanelProps {
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
-  const { markdown, font, extensions, page, locale, cover, headerFooter } = useAppStore();
+  const { markdown, font, extensions, page, locale, cover, headerFooter, preview } = useAppStore();
   const contentRefs = useRef<(HTMLDivElement | null)[]>([]); // 多个页面的引用
   const containerRef = useRef<HTMLDivElement>(null); // 容器引用
   const [zoomMode, setZoomMode] = React.useState<'fit-width' | 'fit-height' | 'actual'>('fit-width'); // 缩放模式
@@ -86,29 +87,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     }
   }, [headerFooter.enabled, headerFooter.footer.content, coverTitle, coverAuthor, coverDate]);
   
-  // A4 纸张尺寸（毫米）
-  const A4_WIDTH_MM = 210;
-  const A4_HEIGHT_MM = 297;
+  // 获取校准后的 DPI 和页面像素尺寸
+  const dpi = useMemo(() => getCalibratedDPI(preview.calibration), [preview.calibration]);
   
-  // 根据设置动态计算页面尺寸
-  const getPageDimensions = () => {
-    const isPortrait = page.orientation === 'portrait';
-    
-    if (page.size === 'A3') {
-      return {
-        width: isPortrait ? 297 : 420,
-        height: isPortrait ? 420 : 297,
-      };
-    }
-    
-    // 默认 A4
-    return {
-      width: isPortrait ? 210 : 297,
-      height: isPortrait ? 297 : 210,
-    };
-  };
-  
-  const pageDimensions = getPageDimensions();
+  const pageDimensions = useMemo(() => {
+    return getPageDimensionsPixels(page.size, page.orientation, dpi);
+  }, [page.size, page.orientation, dpi]);
   
   // TODO: [P1] 计算页数（基于 H2 标题分割）
   const pages = useMemo(() => {
@@ -142,9 +126,9 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
       
-      // 页面实际像素尺寸（96 DPI）
-      const pageWidthPx = pageDimensions.width * (96 / 25.4);
-      const pageHeightPx = pageDimensions.height * (96 / 25.4);
+      // 页面实际像素尺寸（已通过 DPI 工具函数计算）
+      const pageWidthPx = pageDimensions.width;
+      const pageHeightPx = pageDimensions.height;
       
       let newZoom = 100;
       
@@ -272,22 +256,17 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   }, [pages, extensions]);
   
   const previewStyle: React.CSSProperties = useMemo(() => {
-    const isPortrait = page.orientation === 'portrait';
-    let maxWidth = '100%';
-    
-    if (page.size === 'A4') {
-      maxWidth = isPortrait ? '210mm' : '297mm';
-    } else if (page.size === 'A3') {
-      maxWidth = isPortrait ? '297mm' : '420mm';
-    }
+    // 毫米转像素
+    const mmToPx = (mm: number) => mm * (dpi / 25.4);
     
     return {
       fontSize: `${font.baseSize}px`,
       lineHeight: font.lineHeight,
-      maxWidth: maxWidth,
+      width: `${pageDimensions.width}px`,
+      maxWidth: `${pageDimensions.width}px`,
       margin: '0 auto',
     };
-  }, [font.baseSize, font.lineHeight, font.body, font.heading, font.code, page.size, page.orientation, page.margins]);
+  }, [font.baseSize, font.lineHeight, font.body, font.heading, font.code, pageDimensions, dpi]);
   
   // 生成动态标题样式（基于 headingScale）
   const headingStyles = useMemo(() => {
@@ -301,11 +280,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       .markdown-preview h6 { font-size: ${font.baseSize * Math.pow(scale, 0)}px !important; }
     `;
   }, [font.baseSize, font.headingScale]);
-  
-  const isA4 = page.size === 'A4';
-  const isPortrait = page.orientation === 'portrait';
-  const width = isPortrait ? '210mm' : '297mm';
-  const height = isPortrait ? '297mm' : '210mm';
 
   return (
     <div className={`preview-panel ${className || ''}`}>
@@ -352,8 +326,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             <div 
               className="a4-page cover-page"
               style={{
-                width: `${pageDimensions.width}mm`,
-                height: `${pageDimensions.height}mm`,
+                width: `${pageDimensions.width}px`,
+                height: `${pageDimensions.height}px`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -394,7 +368,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           <div 
             className="a4-page content-pages"
             style={{
-              width: `${pageDimensions.width}mm`,
+              width: `${pageDimensions.width}px`,
               // 关键修复：使用 auto 而不是固定高度，允许内容自然展开
               minHeight: 'auto',
               height: 'auto',
@@ -426,13 +400,16 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                     return null;
                 }
                 
+                // 毫米转像素
+                const mmToPx = (mm: number) => mm * (dpi / 25.4);
+                
                 return (
                   <div
                     style={{
                       position: 'absolute',
-                      top: `${page.margins.top / 2}mm`,
-                      left: page.margins.left + 'mm',
-                      right: page.margins.right + 'mm',
+                      top: `${mmToPx(page.margins.top / 2)}px`,
+                      left: `${mmToPx(page.margins.left)}px`,
+                      right: `${mmToPx(page.margins.right)}px`,
                       textAlign: headerFooter.header.alignment,
                       fontFamily: headerFooter.header.font,
                       fontSize: `${font.baseSize * 0.9}px`,
@@ -472,13 +449,16 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   }
                 }
                 
+                // 毫米转像素
+                const mmToPx = (mm: number) => mm * (dpi / 25.4);
+                
                 return (
                   <div
                     style={{
                       position: 'absolute',
-                      bottom: `${page.margins.bottom / 2}mm`,
-                      left: page.margins.left + 'mm',
-                      right: page.margins.right + 'mm',
+                      bottom: `${mmToPx(page.margins.bottom / 2)}px`,
+                      left: `${mmToPx(page.margins.left)}px`,
+                      right: `${mmToPx(page.margins.right)}px`,
                       textAlign: headerFooter.footer.alignment,
                       fontFamily: headerFooter.footer.font,
                       fontSize: `${font.baseSize * 0.9}px`,
@@ -515,7 +495,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                     className="markdown-preview"
                     style={{
                       ...previewStyle,
-                      padding: `${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm`,
+                      padding: `${page.margins.top * (dpi / 25.4)}px ${page.margins.right * (dpi / 25.4)}px ${page.margins.bottom * (dpi / 25.4)}px ${page.margins.left * (dpi / 25.4)}px`,
                       fontFamily: font.body,
                     }}
                   >

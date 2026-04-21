@@ -240,12 +240,11 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     .cover-page {
       page-break-after: always;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
       text-align: center;
-      padding: 40px;
+      padding: 0;
     }
     .cover-title {
       font-size: ${font.baseSize * 2.5}px;
@@ -306,6 +305,11 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       vertical-align: middle;
     }
     ${headerFooter.enabled ? `
+    /* 封面页（第一页）：不显示页眉页脚 */
+    @page :first {
+      margin: 0;
+    }
+    /* 后续页面：显示页眉页脚 */
     @page {
       margin: ${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm;
       

@@ -1,5 +1,5 @@
-import React from 'react';
-import { useAppStore, TEMPLATES } from '../store/useAppStore';
+import type { FC } from 'react';
+import { useAppStore } from '../store/useAppStore';
 import './styles.css';
 
 const templateList = [
@@ -9,7 +9,7 @@ const templateList = [
   { key: 'documentation', name: 'API文档', nameEn: 'API Doc', icon: '📚', desc: '技术文档格式', descEn: 'Technical documentation' },
 ];
 
-export const TemplateSelectionPanel: React.FC = () => {
+export const TemplateSelectionPanel: FC = () => {
   const { 
     locale, 
     customTemplates, 

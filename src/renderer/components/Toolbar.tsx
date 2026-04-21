@@ -8,20 +8,8 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
-  const { showEditor, setShowEditor, showTemplateSelection, setShowTemplateSelection, locale, setLocale, theme, setTheme, isGenerating } = useAppStore();
+  const { showTemplateSelection, setShowTemplateSelection, locale, setLocale, theme, setTheme, isGenerating } = useAppStore();
   const { handleImportFile } = useFileImport();
-
-  // 处理布局切换按钮点击
-  const handleToggleLayout = () => {
-    if (showTemplateSelection) {
-      // 如果正在显示模板选择，直接关闭并隐藏编辑器（预览全宽）
-      setShowTemplateSelection(false);
-      setShowEditor(false);
-    } else {
-      // 否则切换编辑器显示/隐藏
-      setShowEditor(!showEditor);
-    }
-  };
 
   // 处理主题切换
   const handleToggleTheme = () => {
@@ -43,8 +31,6 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
       template: '模板',
       generating: '生成中...',
       exportPdf: '导出 PDF',
-      focusPreview: '专注预览',
-      showEditor: '显示编辑器',
       importFile: '导入文件',
       language: '语言',
       export: '导出',
@@ -53,8 +39,6 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
       template: 'Template',
       generating: 'Generating...',
       exportPdf: 'Export PDF',
-      focusPreview: 'Focus Preview',
-      showEditor: 'Show Editor',
       importFile: 'Import File',
       language: 'Language',
       export: 'Export',
@@ -72,17 +56,6 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
         data-testid="import-file-btn"
       >
         <span aria-hidden="true">📁</span> {locale === 'zh' ? '导入文件' : 'Import'}
-      </button>
-      <button 
-        className="btn btn-toolbar"
-        onClick={handleToggleLayout}
-        title={showEditor ? t('focusPreview') : t('showEditor')}
-        aria-label={showEditor ? t('focusPreview') : t('showEditor')}
-        aria-pressed={showEditor}
-        data-testid="toggle-editor-btn"
-      >
-        <span aria-hidden="true">{showEditor ? '🔍' : '✏️'}</span>
-        <span className="btn-text">{showEditor ? t('focusPreview') : t('showEditor')}</span>
       </button>
       <div className="toolbar-spacer"></div>
       <button 

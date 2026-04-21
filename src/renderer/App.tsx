@@ -1,6 +1,5 @@
 import React from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { EditorPanel } from './components/EditorPanel';
 import { PreviewPanel } from './components/PreviewPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { Toolbar } from './components/Toolbar';
@@ -10,7 +9,7 @@ import { useAppStore } from './store/useAppStore';
 import { usePDFExport, useFontLoading } from './hooks';
 
 function App() {
-  const { locale, showEditor, showTemplateSelection } = useAppStore();
+  const { locale, showTemplateSelection } = useAppStore();
   const { handleExportPdf } = usePDFExport();
 
   useFontLoading();
@@ -23,15 +22,13 @@ function App() {
         </aside>
         <main className="main-content">
           <Toolbar onExportPdf={handleExportPdf} />
-          <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '编辑器和预览' : 'Editor and Preview'}>
-            {showTemplateSelection ? (
+          <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '预览' : 'Preview'}>
+            {showTemplateSelection && (
               <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
                 <TemplateSelectionPanel />
               </section>
-            ) : (
-              showEditor && <EditorPanel />
             )}
-            <PreviewPanel className={!showEditor || showTemplateSelection ? 'preview-full-width' : ''} />
+            <PreviewPanel className="preview-full-width" />
           </div>
           <StatusBar />
         </main>

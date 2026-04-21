@@ -93,6 +93,10 @@ export interface CustomTemplate {
   createdAt: number;
 }
 
+export interface PreviewSettings {
+  calibration: number; // 预览校准系数（0.9 - 1.1）
+}
+
 export interface AppState {
   markdown: string;
   setMarkdown: (markdown: string) => void;
@@ -121,14 +125,14 @@ export interface AppState {
   headerFooter: HeaderFooterSettings;
   setHeaderFooter: (headerFooter: Partial<HeaderFooterSettings>) => void;
   
+  preview: PreviewSettings;
+  setPreview: (preview: Partial<PreviewSettings>) => void;
+  
   isGenerating: boolean;
   setIsGenerating: (isGenerating: boolean) => void;
   
   generatedHtml: string;
   setGeneratedHtml: (html: string) => void;
-  
-  showEditor: boolean;
-  setShowEditor: (showEditor: boolean) => void;
   
   showTemplateSelection: boolean;
   setShowTemplateSelection: (show: boolean) => void;
@@ -337,6 +341,10 @@ const defaultHeaderFooter: HeaderFooterSettings = {
   },
 };
 
+const defaultPreview: PreviewSettings = {
+  calibration: 1.0, // 默认不校准
+};
+
 const STORAGE_KEY = 'aimtp-custom-templates';
 const AUTOSAVE_KEY = 'aimtp-autosave';
 const AUTOSAVE_ENABLED_KEY = 'aimtp-autosave-enabled';
@@ -442,6 +450,19 @@ const validateHeaderFooterSettings = (data: any): HeaderFooterSettings => {
       content: isValidString(data.footer?.content) ? data.footer.content : defaults.footer.content,
     },
   };
+};
+
+const validatePreviewSettings = (data: any): PreviewSettings => {
+  const defaults = { ...defaultPreview };
+  if (!data || typeof data !== 'object') return defaults;
+  
+  // 校准值范围：0.9 - 1.1
+  let calibration = defaults.calibration;
+  if (isValidNumber(data.calibration)) {
+    calibration = Math.max(0.9, Math.min(1.1, data.calibration));
+  }
+  
+  return { calibration };
 };
 
 const validateTemplateSettings = (data: any): TemplateSettings => {
@@ -595,17 +616,17 @@ export const useAppStore = create<AppState>()(
       headerFooter: defaultHeaderFooter,
       setHeaderFooter: (headerFooter) => set((state) => ({ headerFooter: { ...state.headerFooter, ...headerFooter } })),
       
+      preview: defaultPreview,
+      setPreview: (preview) => set((state) => ({ preview: { ...state.preview, ...preview } })),
+      
       isGenerating: false,
       setIsGenerating: (isGenerating) => set({ isGenerating }),
       
       generatedHtml: '',
       setGeneratedHtml: (generatedHtml) => set({ generatedHtml }),
       
-      showEditor: true,
-      setShowEditor: (showEditor) => set({ showEditor }),
-      
       showTemplateSelection: false,
-      setShowTemplateSelection: (show) => set({ showTemplateSelection: show, showEditor: !show }),
+      setShowTemplateSelection: (show) => set({ showTemplateSelection: show }),
       
       customTemplates: loadCustomTemplates(),
       
@@ -653,7 +674,6 @@ export const useAppStore = create<AppState>()(
             headerFooter: { ...template.settings.headerFooter },
             cover: { ...template.settings.cover },
             showTemplateSelection: false,
-            showEditor: true,
           });
         }
       },
@@ -674,7 +694,6 @@ export const useAppStore = create<AppState>()(
             markdown: template,
             currentTemplate: templateKey,
             showTemplateSelection: false, // 关闭模板选择面板
-            showEditor: true, // 恢复编辑器显示
           });
         }
       },
@@ -738,6 +757,7 @@ export const useAppStore = create<AppState>()(
         extensions: state.extensions,
         cover: state.cover,
         headerFooter: state.headerFooter,
+        preview: state.preview,
         autoSaveEnabled: state.autoSaveEnabled,
         customTemplates: state.customTemplates,
         currentTemplate: state.currentTemplate,
@@ -758,6 +778,7 @@ export const useAppStore = create<AppState>()(
               rehydratedState.extensions = validateExtensionSettings(rehydratedState.extensions);
               rehydratedState.cover = validateCoverSettings(rehydratedState.cover);
               rehydratedState.headerFooter = validateHeaderFooterSettings(rehydratedState.headerFooter);
+              rehydratedState.preview = validatePreviewSettings(rehydratedState.preview);
               rehydratedState.customTemplates = validateCustomTemplates(rehydratedState.customTemplates);
             } catch (e) {
               logger.warn('Validation during rehydration failed, using some default values:', e);

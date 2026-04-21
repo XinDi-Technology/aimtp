@@ -71,7 +71,6 @@ test.describe('Aimtp Application', () => {
 
     test('should have all core components visible', async ({ page }) => {
       await expect(page.locator('[data-testid="toolbar"]')).toBeVisible({ timeout: UI_TIMEOUT });
-      await expect(page.locator('[data-testid="editor-panel"]')).toBeVisible({ timeout: UI_TIMEOUT });
       await expect(page.locator('.preview-panel')).toBeVisible({ timeout: UI_TIMEOUT });
       await expect(page.locator('[data-testid="settings-panel"]')).toBeVisible({ timeout: UI_TIMEOUT });
       await expect(page.locator('.status-bar')).toBeVisible({ timeout: UI_TIMEOUT });
@@ -82,51 +81,30 @@ test.describe('Aimtp Application', () => {
     });
   });
 
-  test.describe('Editor Functionality', () => {
-    test.beforeEach(async ({ page }) => {
-      try {
-        await page.evaluate(() => localStorage.removeItem('aimtp-autosave'));
-      } catch (e) {
-        console.log('localStorage not available in this context');
-      }
+  test.describe('Template System', () => {
+    test('should open template selection panel', async ({ page }) => {
+      await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
+      await expect(page.locator('.template-selection-inline')).toBeVisible({ timeout: UI_TIMEOUT });
     });
 
-    test('should edit markdown content and see preview', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill('# Test Heading\n\nThis is a test paragraph.', { timeout: UI_TIMEOUT });
+    test('should show preset templates in selection panel', async ({ page }) => {
+      await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
+      await expect(page.locator('.template-selection-inline')).toContainText(/(预设模板|Preset Templates)/, { timeout: UI_TIMEOUT });
+    });
 
+    test('should select report template and update preview', async ({ page }) => {
+      await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
+      // 选择项目报告模板 (索引为1)
+      const reportTemplateRow = page.locator('.template-row').nth(1);
+      await reportTemplateRow.locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
+      
+      // 等待模板选择面板关闭
+      await page.waitForTimeout(500);
+      await expect(page.locator('.template-selection-inline')).not.toBeVisible({ timeout: UI_TIMEOUT });
+      
+      // 验证预览内容已更新
       const preview = page.locator('.preview-panel');
-      await expect(preview).toContainText('Test Heading', { timeout: UI_TIMEOUT });
-      await expect(preview).toContainText('This is a test paragraph', { timeout: UI_TIMEOUT });
-    });
-
-    test('should toggle editor visibility', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-panel"]');
-      await expect(editor).toBeVisible({ timeout: UI_TIMEOUT });
-
-      const toggleBtn = page.locator('[data-testid="toggle-editor-btn"]');
-      await toggleBtn.click({ timeout: UI_TIMEOUT });
-      await expect(editor).toBeHidden({ timeout: UI_TIMEOUT });
-
-      await toggleBtn.click({ timeout: UI_TIMEOUT });
-      await expect(editor).toBeVisible({ timeout: UI_TIMEOUT });
-    });
-
-    test('should update word count when editing', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill('Hello World\nThis is a test', { timeout: UI_TIMEOUT });
-
-      const statusBar = page.locator('.status-bar');
-      await expect(statusBar).toContainText(/(字 数|word)/, { timeout: UI_TIMEOUT });
-      await expect(statusBar).toContainText(/(行数|line)/, { timeout: UI_TIMEOUT });
-    });
-
-    test('should handle empty markdown', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill('', { timeout: UI_TIMEOUT });
-
-      const statusBar = page.locator('.status-bar');
-      await expect(statusBar).toContainText('字 数: 0', { timeout: UI_TIMEOUT });
+      await expect(preview).toContainText(/(项目报告|Project Report)/, { timeout: UI_TIMEOUT });
     });
   });
 
@@ -182,29 +160,6 @@ test.describe('Aimtp Application', () => {
     });
   });
 
-  test.describe('Template System', () => {
-    test('should open template selection panel', async ({ page }) => {
-      await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      await expect(page.locator('.template-selection-inline')).toBeVisible({ timeout: UI_TIMEOUT });
-    });
-
-    test('should show preset templates in selection panel', async ({ page }) => {
-      await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      await expect(page.locator('.template-selection-inline')).toContainText(/(预设模板|Preset Templates)/, { timeout: UI_TIMEOUT });
-    });
-
-    test('should select blank template', async ({ page }) => {
-      await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      // 新布局：使用 .template-row 和 .template-select-btn
-      await page.locator('.template-row').first().locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
-      // 等待模板选择面板关闭（可能需要短暂延迟）
-      await page.waitForTimeout(500);
-      await expect(page.locator('.template-selection-inline')).not.toBeVisible({ timeout: UI_TIMEOUT });
-      // 验证编辑器可见
-      await expect(page.locator('[data-testid="editor-textarea"]')).toBeVisible({ timeout: UI_TIMEOUT });
-    });
-  });
-
   test.describe('Internationalization', () => {
     test('should switch locale between zh and en', async ({ page }) => {
       const langToggle = page.locator('[data-testid="lang-toggle-btn"]');
@@ -223,13 +178,6 @@ test.describe('Aimtp Application', () => {
   });
 
   test.describe('Preview Rendering', () => {
-    test('should render GitHub Alerts in preview', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill(':::note\nThis is a note\n:::', { timeout: UI_TIMEOUT });
-
-      await expect(page.locator('.preview-panel')).toContainText('This is a note', { timeout: UI_TIMEOUT });
-    });
-
     test('should show A4 page in preview', async ({ page }) => {
       // 新布局：检查 Word 风格的 A4 页面容器（可能有多个页面）
       const a4Pages = page.locator('.preview-panel .a4-page');
@@ -259,40 +207,6 @@ test.describe('Aimtp Application', () => {
       await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
 
       await expect(pageSizeSelect).toHaveValue('A3', { timeout: UI_TIMEOUT });
-    });
-  });
-
-  test.describe('Edge Cases', () => {
-    test.beforeEach(async ({ page }) => {
-      try {
-        await page.evaluate(() => localStorage.clear());
-      } catch (e) {
-        console.log('localStorage not available in this context');
-      }
-    });
-
-    test('should handle special characters in markdown', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill('# Test & < > "characters"\n\n```js\nconst x = 1;\n```', { timeout: UI_TIMEOUT });
-
-      const preview = page.locator('.preview-panel');
-      await expect(preview).toContainText('Test', { timeout: UI_TIMEOUT });
-    });
-
-    test('should handle code block with language', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill('```javascript\nconst x = 1;\nconsole.log(x);\n```', { timeout: UI_TIMEOUT });
-
-      const preview = page.locator('.preview-panel');
-      await expect(preview).toContainText('const', { timeout: UI_TIMEOUT });
-    });
-
-    test('should handle multiline content', async ({ page }) => {
-      const editor = page.locator('[data-testid="editor-textarea"]');
-      await editor.fill('Line 1\nLine 2\nLine 3\n\n## Section\n\nMore content here.', { timeout: UI_TIMEOUT });
-
-      const statusBar = page.locator('.status-bar');
-      await expect(statusBar).toContainText(/(行数|line)/, { timeout: UI_TIMEOUT });
     });
   });
 });

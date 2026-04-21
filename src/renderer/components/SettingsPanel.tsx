@@ -3,7 +3,7 @@ import { useAppStore, PageSettings } from '../store/useAppStore';
 import './styles.css';
 
 export const SettingsPanel: React.FC = () => {
-  const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, autoSaveEnabled, setAutoSaveEnabled, locale } = useAppStore();
+  const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, preview, setPreview, locale } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
 
@@ -330,21 +330,6 @@ export const SettingsPanel: React.FC = () => {
       </div>
 
       <div className="setting-section">
-        <h3>{locale === 'zh' ? '应用设置' : 'App Settings'}</h3>
-        
-        <div className="setting-group">
-          <label className="setting-checkbox">
-            <input
-              type="checkbox"
-              checked={autoSaveEnabled}
-              onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-            />
-            {locale === 'zh' ? '启用自动保存' : 'Enable Auto Save'}
-          </label>
-        </div>
-      </div>
-
-      <div className="setting-section">
         <h3>封面设置</h3>
         
         <div className="setting-group">
@@ -514,6 +499,42 @@ date: 2024-01-01
             </div>
           </>
         )}
+      </div>
+
+      <div className="setting-section">
+        <h3>预览校准</h3>
+        
+        <div className="setting-group">
+          <label className="setting-label">
+            {locale === 'zh' ? '缩放校准' : 'Zoom Calibration'}
+            <span style={{ fontSize: '12px', color: '#999', marginLeft: '8px' }}>
+              {Math.round(preview.calibration * 100)}%
+            </span>
+          </label>
+          <input
+            type="range"
+            className="setting-input"
+            min="0.9"
+            max="1.1"
+            step="0.01"
+            value={preview.calibration}
+            onChange={(e) => setPreview({ calibration: parseFloat(e.target.value) })}
+            style={{ width: '100%' }}
+          />
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+            {locale === 'zh' 
+              ? '调整此值使预览中的 A4 纸与实际 A4 纸大小一致' 
+              : 'Adjust so that the preview matches the actual A4 paper size'}
+          </div>
+        </div>
+        
+        <button
+          className="btn btn-secondary"
+          style={{ width: '100%', marginTop: '8px' }}
+          onClick={() => setPreview({ calibration: 1.0 })}
+        >
+          🔄 重置为默认
+        </button>
       </div>
 
       <div className="setting-section">

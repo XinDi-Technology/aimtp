@@ -179,24 +179,17 @@
   pointer-events: none; /* 不干扰内容点击 */
 }
 
-/* 封面页样式 */
-.cover-page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
+/* 封面页样式 - 无特殊背景色 */
 .cover-page .cover-content h1 {
-  color: white !important;
   font-weight: bold;
-  margin-bottom: 30px !important;
 }
 
 .cover-page .cover-author {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #666;
 }
 
 .cover-page .cover-date {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: #999;
 }
 
 /* TODO: [P2] 防止元素被分页截断 */

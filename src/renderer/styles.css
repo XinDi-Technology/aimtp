@@ -387,17 +387,6 @@ body {
   overflow: hidden; /* 防止整体溢出，允许子元素独立滚动 */
 }
 
-.editor-panel {
-  flex: 1;
-  border-right: 1px solid var(--border);
-  background: var(--bg-elevated);
-  padding: var(--space-lg);
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  pointer-events: auto;
-}
-
 .preview-panel {
   flex: 1; /* 占据可用空间 */
   background: var(--bg-primary);
@@ -425,32 +414,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--space-md);
-}
-
-.editor-textarea {
-  flex: 1;
-  width: 100%;
-  border: none;
-  resize: none;
-  font-family: var(--font-code);
-  font-size: 14px;
-  line-height: 1.8;
-  color: var(--text-primary);
-  background: transparent;
-  user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  pointer-events: auto;
-  cursor: text;
-}
-
-.editor-textarea:focus {
-  outline: none;
-}
-
-.editor-textarea::placeholder {
-  color: var(--text-muted);
 }
 
 /* Markdown 预览 - 极简专业版（仅用于编辑器模式） */
