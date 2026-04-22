@@ -76,7 +76,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 使用去除 Front Matter 后的内容进行渲染
     let content = markdownWithoutFrontMatter;
     
-    if (extensions.githubAlerts) {
+if (extensions.githubAlerts) {
       // 在渲染之前处理 GitHub 语法: > [!TYPE] 后跟多行内容
       const typeLabels: Record<string, string> = {
         note: 'NOTE',
@@ -85,12 +85,10 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
         warning: 'WARNING',
         danger: 'DANGER',
       };
-      content = content.replace(/^> \[!(\w+)\]\s*([\s\S]*?)(?=\n\n|^> \[!|^[^>]|$)/gm, (_, type, alertContent) => {
-        const cleanedContent = alertContent.split('\n').map((line: string) => line.replace(/^>\s?/, '')).join('\n').trim();
-        return `<div class="github-alert">
-<div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
-<div class="alert-body">${cleanedContent}</div>
-</div>`;
+      // 匹配: > [!TYPE] 标题行和后续所有 > 开头的行
+      content = content.replace(/^> \[!(\w+)\][\s\S]*?(?=\n^[^>]|$)/gm, (_, type) => {
+        const title = typeLabels[type.toLowerCase()] || 'NOTE';
+        return `<div class="github-alert"><div class="alert-title">${title}</div></div>`;
       });
     }
     

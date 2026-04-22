@@ -134,12 +134,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             warning: 'WARNING',
             danger: 'DANGER',
           };
-          content = content.replace(/^> \[!(\w+)\]\s*([\s\S]*?)(?=\n\n|^> \[!|^[^>]|$)/gm, (_, type, alertContent) => {
-            const cleanedContent = alertContent.split('\n').map((line: string) => line.replace(/^>\s?/, '')).join('\n').trim();
-            return `<div class="github-alert">
-<div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
-<div class="alert-body">${cleanedContent}</div>
-</div>`;
+          // 匹配: > [!TYPE] 标题行和后续所有 > 开头的行
+          content = content.replace(/^> \[!(\w+)\][\s\S]*?(?=\n^[^>]|$)/gm, (_, type) => {
+            const title = typeLabels[type.toLowerCase()] || 'NOTE';
+            return `<div class="github-alert"><div class="alert-title">${title}</div></div>`;
           });
         }
 
