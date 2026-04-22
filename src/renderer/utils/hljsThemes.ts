@@ -39,8 +39,8 @@ export const getHljsTheme = (theme: string): string => {
 
   const baseStyle = themeStyles[themeKey] || themeStyles.github;
 
-  // 添加代码块边框和行号样式
-  const codeBlockCss = `.hljs{background:${codeStyle.background};border:1px solid ${codeStyle.border};border-left:4px solid ${codeStyle.borderLeft}}.code-line-numbers{background:${codeStyle.background};border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
+  // 添加代码块边框和行号样式 - 统一边框宽度
+  const codeBlockCss = `.hljs{background:${codeStyle.background};border:1px solid ${codeStyle.border}}.code-line-numbers{background:${codeStyle.background};border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
 
   return baseStyle + codeBlockCss;
 };

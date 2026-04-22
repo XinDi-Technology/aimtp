@@ -133,13 +133,13 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
     const fontsPath = isDev 
       ? path.join(appPath, 'src', 'fonts') 
       : path.join(appPath, 'dist', 'renderer', 'fonts');
+    const fontsPathUrl = `file://${fontsPath.replace(/\\/g, '/')}`;
     
     let htmlContent = options.html;
     // 替换字体 URL 为绝对路径 (同时处理单引号和双引号)
-    htmlContent = htmlContent.replace(
-      /url\(['"]fonts\//g, 
-      `url('file://${fontsPath.replace(/\\/g, '/')}/`
-    );
+    htmlContent = htmlContent.replace(/url\(['"]fonts\//g, `url('${fontsPathUrl}/`);
+    // 处理 FONTS_PATH 占位符
+    htmlContent = htmlContent.replace(/file:\/\/FONTS_PATH\//g, fontsPathUrl);
     fs.writeFileSync(tempHtmlPath, htmlContent);
     await pdfWindow.loadFile(tempHtmlPath);
 

@@ -123,26 +123,27 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           codeTheme: extensions.codeTheme,
         });
 
-        let result = md.render(section.content);
+        let content = section.content;
 
         if (extensions.githubAlerts) {
-          // 匹配 GitHub 语法: > [!TYPE] 后跟多行内容
-          result = result.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=(?:^> \[!|\n\n|\n$))/gm, (_, type, content) => {
-            const typeLabels: Record<string, string> = {
-              note: 'NOTE',
-              tip: 'TIP',
-              important: 'IMPORTANT',
-              warning: 'WARNING',
-              danger: 'DANGER',
-            };
-            // 清理内容：移除每行的 > 前缀
-            const cleanedContent = content.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
+          // 在渲染之前处理 GitHub 语法: > [!TYPE] 后跟多行内容
+          const typeLabels: Record<string, string> = {
+            note: 'NOTE',
+            tip: 'TIP',
+            important: 'IMPORTANT',
+            warning: 'WARNING',
+            danger: 'DANGER',
+          };
+          content = content.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=(?:^> \[!|\n\n|\n$))/gm, (_, type, alertContent) => {
+            const cleanedContent = alertContent.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
             return `<div class="github-alert">
-              <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
-              <div class="alert-body">${cleanedContent}</div>
-            </div>`;
+<div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
+<div class="alert-body">${cleanedContent}</div>
+</div>`;
           });
         }
+
+        let result = md.render(content);
 
         return { html: result, themeCss };
       } catch (error) {

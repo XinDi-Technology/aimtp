@@ -73,27 +73,28 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       sup: extensions.sup,
     });
     
-    // 使用去除 Front Matter 后的内容进行渲染，避免 YAML 内容出现在正文中
-    let content = md.render(markdownWithoutFrontMatter);
+    // 使用去除 Front Matter 后的内容进行渲染
+    let content = markdownWithoutFrontMatter;
     
     if (extensions.githubAlerts) {
-      // 匹配 GitHub 语法: > [!TYPE] 后跟多行内容
+      // 在渲染之前处理 GitHub 语法: > [!TYPE] 后跟多行内容
+      const typeLabels: Record<string, string> = {
+        note: 'NOTE',
+        tip: 'TIP',
+        important: 'IMPORTANT',
+        warning: 'WARNING',
+        danger: 'DANGER',
+      };
       content = content.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=(?:^> \[!|\n\n|\n$))/gm, (_, type, alertContent) => {
-        const typeLabels: Record<string, string> = {
-          note: 'NOTE',
-          tip: 'TIP',
-          important: 'IMPORTANT',
-          warning: 'WARNING',
-          danger: 'DANGER',
-        };
-        // 清理内容：移除每行的 > 前缀
         const cleanedContent = alertContent.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
         return `<div class="github-alert">
-          <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
-          <div class="alert-body">${cleanedContent}</div>
-        </div>`;
+<div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
+<div class="alert-body">${cleanedContent}</div>
+</div>`;
       });
     }
+    
+    let result = md.render(content);
     
     // 预渲染 Mermaid 图表
     if (extensions.mermaid) {
@@ -139,11 +140,11 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 获取 highlight.js 主题样式（本地化，无 CDN 依赖）
     const hljsTheme = extensions.codeTheme || 'github';
     
-    // 代码块样式配置 - 根据主题适配（与 hljsThemes.ts 保持一致）
-    const codeBlockColors: Record<string, { border: string; borderLeft: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
-      github: { border: '#8b949e', borderLeft: '#8b949e', background: '#f6f8fa', lineNumberBorder: '#8b949e', lineNumberColor: '#6a737d' },
-      monokai: { border: '#272822', borderLeft: '#272822', background: '#272822', lineNumberBorder: '#272822', lineNumberColor: '#75715e' },
-      dracula: { border: '#282a36', borderLeft: '#282a36', background: '#282a36', lineNumberBorder: '#282a36', lineNumberColor: '#6272a4' },
+    // 代码块样式配置 - 统一边框宽度
+    const codeBlockColors: Record<string, { border: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
+      github: { border: '#8b949e', background: '#f6f8fa', lineNumberBorder: '#8b949e', lineNumberColor: '#6a737d' },
+      monokai: { border: '#49483e', background: '#272822', lineNumberBorder: '#49483e', lineNumberColor: '#75715e' },
+      dracula: { border: '#44475a', background: '#282a36', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4' },
     };
     const codeColors = codeBlockColors[hljsTheme] || codeBlockColors.github;
     
@@ -151,51 +152,52 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       ? `<style>${getHljsBaseStyles(codeColors.background)}${getHljsTheme(hljsTheme)}</style>` 
       : '';
     
-    // 代码块边框样式 - 根据主题适配
-    const codeBlockStyles = `
-    pre { border: 1px solid ${codeColors.border}; border-left: 4px solid ${codeColors.borderLeft}; }
+    // 代码块边框样式 - 统一边框宽度
+    const codeBlockStyles = `<style>
+    pre { border: 1px solid ${codeColors.border}; }
     .code-line-numbers { border-right-color: ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
-    `;
+    </style>`;
 
-    const fontsCss = `@font-face {
+    // 使用绝对路径的 @font-face，确保 PDF 导出时字体能被正确加载
+const fontsCss = `
+@font-face {
   font-family: 'GWM Sans UI';
-  src: url('fonts/GWMSansUI-Regular.woff2') format('woff2');
+  src: url('file://FONTS_PATH/GWMSansUI-Regular.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
 }
 @font-face {
   font-family: 'GWM Sans UI';
-  src: url('fonts/GWMSansUI-Bold.woff2') format('woff2');
+  src: url('file://FONTS_PATH/GWMSansUI-Bold.woff2') format('woff2');
   font-weight: bold;
 }
 @font-face {
   font-family: 'JetBrains Mono';
-  src: url('fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  src: url('file://FONTS_PATH/JetBrainsMono-Regular.woff2') format('woff2');
   font-weight: normal;
 }
 @font-face {
   font-family: 'JetBrains Mono';
-  src: url('fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  src: url('file://FONTS_PATH/JetBrainsMono-Bold.woff2') format('woff2');
   font-weight: bold;
 }
 @font-face {
   font-family: 'Monaspace Argon';
-  src: url('fonts/MonaspaceArgon-Regular.woff2') format('woff2');
+  src: url('file://FONTS_PATH/MonaspaceArgon-Regular.woff2') format('woff2');
   font-weight: normal;
 }
 @font-face {
   font-family: 'Monaspace Argon';
-  src: url('fonts/MonaspaceArgon-Bold.woff2') format('woff2');
+  src: url('file://FONTS_PATH/MonaspaceArgon-Bold.woff2') format('woff2');
   font-weight: bold;
-}`;
+}
+`;
 
     return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-<style>${fontsCss}</style>
-  ${hljsStyles}
-  ${codeBlockStyles}
+<style>${fontsCss}${hljsStyles}${codeBlockStyles}</style>
   ${extensions.mermaid ? `<script>
     // Mermaid is loaded from local node_modules
   </script>` : ''}
@@ -258,7 +260,6 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       border-right: 1px solid #d0d7de;
       vertical-align: top;
       white-space: pre;
-    }
       color: #6a737d;
       user-select: none;
     }
