@@ -139,7 +139,10 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     
     // 代码块边框样式 - 统一边框宽度
     const codeBlockStyles = `<style>
-    .hljs { border: 1px solid ${codeColors.border}; }
+    .hljs { 
+      border: 1px solid ${codeColors.border}; 
+      font-family: ${font.code}, monospace;
+    }
     </style>`;
 
     // 使用绝对路径的 @font-face，确保 PDF 导出时字体能被正确加载
@@ -238,28 +241,28 @@ const fontsCss = `
     pre.hljs {
       position: relative;
       padding: 1em;
+      margin: ${font.lineHeight}em 0;
     }
     pre.hljs ol.code-lines {
-      list-style: decimal;
+      list-style: none;
       margin: 0;
-      margin-left: 3.5em;
+      margin-left: 3em;
       padding: 0;
     }
     pre.hljs ol.code-lines li {
-      list-style: decimal-leading-zero;
       position: relative;
       padding-left: 0.5em;
       line-height: 1.5;
     }
     pre.hljs ol.code-lines li .line-num {
       position: absolute;
-      left: -3.5em;
+      left: -3em;
       top: 0;
-      width: 3em;
+      width: 2.8em;
       height: 100%;
       border-right: 1px solid #d0d7de;
-      text-align: right;
-      padding-right: 0.5em;
+      text-align: center;
+      padding-right: 0;
       color: #6a737d;
       user-select: none;
     }

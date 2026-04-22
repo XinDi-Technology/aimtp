@@ -42,6 +42,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const [isCalculating, setIsCalculating] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
 
+  // 动态应用字体设置到 CSS 变量
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--font-code', font.code);
+    root.style.setProperty('--font-body', font.body);
+  }, [font.code, font.body]);
+
   // 从 Front Matter 提取封面元数据
   const frontMatterData = useMemo(() => {
     const { data } = parseFrontMatter(markdown);

@@ -62,8 +62,8 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
           // 以换行进行分割
           const lines = preCode.split(/\n/).slice(0, -1);
           
-          // 如果启用行号且行数大于1
-          if (options.showLineNumbers && lines.length > 1) {
+          // 如果启用行号（包括单行）
+          if (options.showLineNumbers && lines.length > 0) {
             // 添加自定义行号
             let html = lines.map((item, index) => {
               return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item + '</li>';
@@ -85,8 +85,8 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
       const preCode = md.utils.escapeHtml(str);
       const lines = preCode.split(/\n/).slice(0, -1);
       
-      // 如果启用行号且行数大于1
-      if (options.showLineNumbers && lines.length > 1) {
+      // 如果启用行号（包括单行）
+      if (options.showLineNumbers && lines.length > 0) {
         let html = lines.map((item, index) => {
           return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item + '</li>';
         }).join('');
