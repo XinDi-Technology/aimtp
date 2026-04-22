@@ -134,11 +134,31 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             warning: 'WARNING',
             danger: 'DANGER',
           };
-          // 匹配: > [!TYPE] 标题行和后续所有 > 开头的行
-          content = content.replace(/^> \[!(\w+)\][\s\S]*?(?=\n^[^>]|$)/gm, (_, type) => {
-            const title = typeLabels[type.toLowerCase()] || 'NOTE';
-            return `<div class="github-alert"><div class="alert-title">${title}</div></div>`;
-          });
+          
+          // 修复：正确处理GitHub Alert块，保留内部内容
+          content = content.replace(
+            /^> \[!(\w+)\]\s*(.*)\n((?:> .*\n)*)/gm,
+            (_, type, titleLine, bodyContent) => {
+              const alertType = typeLabels[type.toLowerCase()] || 'NOTE';
+              // 提取标题（如果有）
+              const alertTitle = titleLine.trim() || alertType;
+              // 处理内容：移除每行开头的 "> " 前缀，保留空行以维持段落结构
+              const alertBody = bodyContent
+                .split('\n')
+                .filter((line: string) => line === '' || line.startsWith('> '))
+                .map((line: string) => line === '' ? '' : line.slice(2))
+                .join('\n');
+              
+              // 转义HTML防止XSS
+              const escapeHtml = (text: string) => 
+                text.replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+              
+              return `<div class="github-alert"><div class="alert-title">${escapeHtml(alertTitle)}</div><div class="alert-body">${md.render(alertBody)}</div></div>`;
+            }
+          );
         }
 
         let result = md.render(content);
