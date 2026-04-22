@@ -77,34 +77,36 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 使用去除 Front Matter 后的内容进行渲染
     let content = markdownWithoutFrontMatter;
     
+    // 先渲染 Markdown 为 HTML
     let result = md.render(content);
     
-    // 预渲染 Mermaid 图表
+    // 预渲染 Mermaid 图表（在渲染后的HTML上操作）
     if (extensions.mermaid) {
       try {
-        content = await preRenderMermaid(content);
+        result = await preRenderMermaid(result);
       } catch (error) {
         logger.error('Mermaid pre-render error:', error);
       }
     }
     
-    // 预渲染 MathJax 公式
+    // 预渲染 MathJax 公式（在渲染后的HTML上操作）
     if (extensions.mathJax) {
       try {
-        content = await preRenderMathJax(content);
+        result = await preRenderMathJax(result);
       } catch (error) {
         logger.error('MathJax pre-render error:', error);
       }
     }
     
+    // 对渲染后的 HTML 进行消毒
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sanitized = DOMPurify.sanitize(content, {
+      const sanitized = DOMPurify.sanitize(result, {
         ADD_ATTR: ['target', 'id', 'data-processed'],
         ALLOW_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon'],
         ALLOW_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'id', 'data-processed', 'd', 'fill', 'stroke', 'stroke-width', 'transform', 'x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'viewBox', 'preserveAspectRatio', 'xmlns', 'font-family', 'font-size', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start'],
       } as any);
-      content = (sanitized as unknown) as string;
+      result = (sanitized as unknown) as string;
     } catch (e) {
       logger.warn('DOMPurify sanitization failed:', e);
     }
@@ -138,7 +140,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 代码块边框样式 - 统一边框宽度
     const codeBlockStyles = `<style>
     pre { border: 1px solid ${codeColors.border}; }
-    .code-line-numbers { border-right-color: ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
+    .code-line-numbers { border-right: 1px solid ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
     </style>`;
 
     // 使用绝对路径的 @font-face，确保 PDF 导出时字体能被正确加载
@@ -224,6 +226,7 @@ const fontsCss = `
       overflow-wrap: break-word;
       word-wrap: break-word;
       white-space: pre-wrap;
+      border: 1px solid #d0d7de;
     }
     code {
       padding: 2px 6px;
@@ -252,6 +255,11 @@ const fontsCss = `
     pre.with-line-numbers {
       display: flex;
       align-items: flex-start;
+      width: 100%;
+    }
+    pre.with-line-numbers code {
+      flex: 1;
+      min-width: 0;
     }
     blockquote {
       border-left: 4px solid #c43d24;
@@ -471,7 +479,7 @@ const fontsCss = `
       </div>
     </div>
   ` : ''}
-  ${content}
+  ${result}
 </body>
 </html>`.trim();
   } catch (error) {

@@ -50,9 +50,9 @@ export const getHljsTheme = (theme: string): string => {
  * @param background 代码块背景色
  */
 export const getHljsBaseStyles = (background: string = '#f6f8fa'): string => {
-  return `.hljs{background:${background};display:block;overflow-x:visible;overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap;padding:1em;border-radius:6px;font-size:14px;line-height:1.5;font-family:inherit}
+  return `.hljs{background:${background};display:block;overflow-x:visible;overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap;padding:1em;border-radius:6px;font-size:14px;line-height:1.5;font-family:inherit;border:1px solid #d0d7de}
 
-.code-line-numbers{background:${background};display:inline-block;min-width:2.5em;text-align:right;padding-right:1em;margin-right:1em;user-select:none;vertical-align:top;white-space:pre}
+.code-line-numbers{background:${background};display:inline-block;min-width:2.5em;text-align:right;padding-right:1em;margin-right:1em;border-right:1px solid #d0d7de;color:#6a737d;user-select:none;vertical-align:top;white-space:pre}
 .line-number{display:block;line-height:1.5}
 .with-line-numbers{display:flex;align-items:flex-start}`;
 };
