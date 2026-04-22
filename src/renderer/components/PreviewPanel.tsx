@@ -134,7 +134,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             warning: 'WARNING',
             danger: 'DANGER',
           };
-          content = content.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=(?:^> \[!|\n\n|\n$))/gm, (_, type, alertContent) => {
+          content = content.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=\n\n|^> \[!|^[^>]|$)/gm, (_, type, alertContent) => {
             const cleanedContent = alertContent.split('\n').map((line: string) => line.replace(/^>\s?/, '')).join('\n').trim();
             return `<div class="github-alert">
 <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
