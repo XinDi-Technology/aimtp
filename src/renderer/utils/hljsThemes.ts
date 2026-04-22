@@ -55,3 +55,4 @@ export const getHljsBaseStyles = (): string => {
 .code-line-numbers{display:inline-block;min-width:2.5em;text-align:right;padding-right:1em;margin-right:1em;user-select:none;vertical-align:top;white-space:pre}
 .line-number{display:block;line-height:1.5}
 .with-line-numbers{display:flex;align-items:flex-start}`;
+};
