@@ -9,11 +9,13 @@
 
 /**
  * 代码块边框和行号样式配置 - 根据主题适配颜色
+ * GitHub: 有蓝色左边框 + 灰色边框
+ * 其他主题: 边框颜色与背景相同
  */
-const codeBlockStyles: Record<string, { border: string; lineNumberBorder: string; lineNumberColor: string; background: string }> = {
-  github: { border: '#0969da', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d', background: '#f6f8fa' },
-  monokai: { border: '#66d9ef', lineNumberBorder: '#49483e', lineNumberColor: '#75715e', background: '#272822' },
-  dracula: { border: '#8be9fd', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4', background: '#282a36' },
+const codeBlockStyles: Record<string, { border: string; borderLeft: string; lineNumberBorder: string; lineNumberColor: string; background: string }> = {
+  github: { border: '#8b949e', borderLeft: '#8b949e', lineNumberBorder: '#8b949e', lineNumberColor: '#6a737d', background: '#f6f8fa' },
+  monokai: { border: '#272822', borderLeft: '#272822', lineNumberBorder: '#272822', lineNumberColor: '#75715e', background: '#272822' },
+  dracula: { border: '#282a36', borderLeft: '#282a36', lineNumberBorder: '#282a36', lineNumberColor: '#6272a4', background: '#282a36' },
 };
 
 /**
@@ -38,7 +40,7 @@ export const getHljsTheme = (theme: string): string => {
   const baseStyle = themeStyles[themeKey] || themeStyles.github;
 
   // 添加代码块边框和行号样式
-  const codeBlockCss = `.hljs{background:${codeStyle.background};border-left:4px solid ${codeStyle.border}}.code-line-numbers{background:${codeStyle.background};border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
+  const codeBlockCss = `.hljs{background:${codeStyle.background};border:1px solid ${codeStyle.border};border-left:4px solid ${codeStyle.borderLeft}}.code-line-numbers{background:${codeStyle.background};border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
 
   return baseStyle + codeBlockCss;
 };

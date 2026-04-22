@@ -88,7 +88,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
         };
         // 清理内容：移除每行的 > 前缀
         const cleanedContent = alertContent.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
-        return `<div class="github-alert ${type.toLowerCase()}">
+        return `<div class="github-alert">
           <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
           <div class="alert-body">${cleanedContent}</div>
         </div>`;
@@ -139,11 +139,11 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 获取 highlight.js 主题样式（本地化，无 CDN 依赖）
     const hljsTheme = extensions.codeTheme || 'github';
     
-    // 代码块样式配置 - 根据主题适配
-    const codeBlockColors: Record<string, { border: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
-      github: { border: '#0969da', background: '#f6f8fa', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d' },
-      monokai: { border: '#66d9ef', background: '#272822', lineNumberBorder: '#49483e', lineNumberColor: '#75715e' },
-      dracula: { border: '#8be9fd', background: '#282a36', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4' },
+    // 代码块样式配置 - 根据主题适配（与 hljsThemes.ts 保持一致）
+    const codeBlockColors: Record<string, { border: string; borderLeft: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
+      github: { border: '#8b949e', borderLeft: '#8b949e', background: '#f6f8fa', lineNumberBorder: '#8b949e', lineNumberColor: '#6a737d' },
+      monokai: { border: '#272822', borderLeft: '#272822', background: '#272822', lineNumberBorder: '#272822', lineNumberColor: '#75715e' },
+      dracula: { border: '#282a36', borderLeft: '#282a36', background: '#282a36', lineNumberBorder: '#282a36', lineNumberColor: '#6272a4' },
     };
     const codeColors = codeBlockColors[hljsTheme] || codeBlockColors.github;
     
@@ -153,7 +153,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     
     // 代码块边框样式 - 根据主题适配
     const codeBlockStyles = `
-    pre { border-left: 4px solid ${codeColors.border}; }
+    pre { border: 1px solid ${codeColors.border}; border-left: 4px solid ${codeColors.borderLeft}; }
     .code-line-numbers { border-right-color: ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
     `;
 
@@ -303,38 +303,16 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       border-radius: 6px;
       padding: 16px;
       margin: 16px 0;
-      border-left: 4px solid;
-    }
-    .github-alert.note {
       background: #f6f8fa;
-      border-left-color: #0969da;
-    }
-    .github-alert.tip {
-      background: #dafbe1;
-      border-left-color: #1a7f37;
-    }
-    .github-alert.important {
-      background: #fff8c5;
-      border-left-color: #9a6700;
-    }
-    .github-alert.warning {
-      background: #fff8c5;
-      border-left-color: #9a6700;
-    }
-    .github-alert.danger {
-      background: #ffebe9;
-      border-left-color: #cf222e;
+      border: 1px solid #d0d7de;
+      border-left: 4px dotted #57606a;
     }
     .github-alert .alert-title {
       font-weight: 600;
       margin-bottom: 8px;
-      font-size: 14px;
+      font-size: 13px;
+      color: #57606a;
     }
-    .github-alert.note .alert-title { color: #0969da; }
-    .github-alert.tip .alert-title { color: #1a7f37; }
-    .github-alert.important .alert-title { color: #9a6700; }
-    .github-alert.warning .alert-title { color: #9a6700; }
-    .github-alert.danger .alert-title { color: #cf222e; }
     .github-alert .alert-body {
       font-size: 14px;
       line-height: 1.5;

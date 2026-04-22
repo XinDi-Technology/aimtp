@@ -137,7 +137,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             };
             // 清理内容：移除每行的 > 前缀
             const cleanedContent = content.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
-            return `<div class="github-alert ${type.toLowerCase()}">
+            return `<div class="github-alert">
               <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
               <div class="alert-body">${cleanedContent}</div>
             </div>`;
