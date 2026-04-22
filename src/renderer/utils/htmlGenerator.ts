@@ -140,7 +140,6 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 代码块边框样式 - 统一边框宽度
     const codeBlockStyles = `<style>
     .hljs { border: 1px solid ${codeColors.border}; }
-    .code-line-numbers { border-right: 1px solid ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
     </style>`;
 
     // 使用绝对路径的 @font-face，确保 PDF 导出时字体能被正确加载
@@ -236,29 +235,43 @@ const fontsCss = `
     pre code {
       padding: 0;
     }
-    .code-line-numbers {
-      display: inline-block;
-      min-width: 2.5em;
-      text-align: right;
-      padding-right: 1em;
-      margin-right: 1em;
+    pre.hljs {
+      position: relative;
+      padding: 1em;
+    }
+    pre.hljs ol.code-lines {
+      list-style: decimal;
+      margin: 0;
+      margin-left: 3.5em;
+      padding: 0;
+    }
+    pre.hljs ol.code-lines li {
+      list-style: decimal-leading-zero;
+      position: relative;
+      padding-left: 0.5em;
+      line-height: 1.5;
+    }
+    pre.hljs ol.code-lines li .line-num {
+      position: absolute;
+      left: -3.5em;
+      top: 0;
+      width: 3em;
+      height: 100%;
       border-right: 1px solid #d0d7de;
-      vertical-align: top;
-      white-space: pre;
+      text-align: right;
+      padding-right: 0.5em;
       color: #6a737d;
       user-select: none;
     }
-    .line-number {
-      display: block;
-    }
-    pre.with-line-numbers {
-      display: flex;
-      align-items: flex-start;
-      width: 100%;
-    }
-    pre.with-line-numbers code {
-      flex: 1;
-      min-width: 0;
+    pre.hljs b.lang-name {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      z-index: 10;
+      color: #999;
+      font-size: 12px;
+      font-weight: normal;
+      pointer-events: none;
     }
     blockquote {
       border-left: 4px solid #c43d24;

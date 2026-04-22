@@ -52,19 +52,58 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
     breaks: true,
     linkify: true,
     typographer: true,
+    highlight: function (str, lang) {
+      // 如果启用代码高亮
+      if (options.codeHighlight && lang && hljs.getLanguage(lang)) {
+        try {
+          // 得到经过highlight.js之后的html代码
+          const preCode = hljs.highlight(str, { language: lang }).value;
+          
+          // 以换行进行分割
+          const lines = preCode.split(/\n/).slice(0, -1);
+          
+          // 如果启用行号且行数大于1
+          if (options.showLineNumbers && lines.length > 1) {
+            // 添加自定义行号
+            let html = lines.map((item, index) => {
+              return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item + '</li>';
+            }).join('');
+            html = '<ol class="code-lines">' + html + '</ol>';
+            // 添加代码语言标签
+            if (lines.length) {
+              html += '<b class="lang-name">' + lang + '</b>';
+            }
+            return '<pre class="hljs"><code>' + html + '</code></pre>';
+          } else {
+            // 不显示行号，返回普通高亮代码
+            return '<pre class="hljs"><code>' + preCode + '</code></pre>';
+          }
+        } catch (__) {}
+      }
+      
+      // 未启用代码高亮或未指定语言，转义后返回
+      const preCode = md.utils.escapeHtml(str);
+      const lines = preCode.split(/\n/).slice(0, -1);
+      
+      // 如果启用行号且行数大于1
+      if (options.showLineNumbers && lines.length > 1) {
+        let html = lines.map((item, index) => {
+          return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item + '</li>';
+        }).join('');
+        html = '<ol class="code-lines">' + html + '</ol>';
+        return '<pre class="hljs"><code>' + html + '</code></pre>';
+      }
+      
+      return '<pre class="hljs"><code>' + preCode + '</code></pre>';
+    }
   });
 
   if (options.codeHighlight) {
-    md.use(mdHighlightJs, {
-      auto: true,
-      hljs,
-    });
+    // 代码高亮已经在 highlight 配置函数中处理，不需要额外插件
   }
 
-  // 如果启用行号，在代码高亮之后应用
-  if (options.showLineNumbers) {
-    md.use(lineNumbersPlugin);
-  }
+  // 行号也已经在 highlight 配置函数中处理，不需要额外插件
+  // if (options.showLineNumbers) { ... }
 
   if (options.taskLists) {
     md.use(mdTaskLists);
