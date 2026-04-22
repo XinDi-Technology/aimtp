@@ -152,10 +152,9 @@ test.describe('Aimtp Application', () => {
 
   test.describe('Preview Calibration', () => {
     test('should have preview calibration control', async ({ page }) => {
-      // 找到预览校准部分的 DPI 输入框
-      const previewSection = page.locator('.setting-section:has-text(/预览校准|Preview Calibration/)');
-      await expect(previewSection).toBeVisible({ timeout: UI_TIMEOUT });
-      const dpiInput = previewSection.locator('input[type="number"]');
+      await expect(page.locator('[data-testid="settings-panel"]'))
+        .toContainText(/预览校准|Preview Calibration/, { timeout: UI_TIMEOUT });
+      const dpiInput = page.locator('[data-testid="dpi-input"]');
       await expect(dpiInput).toBeVisible({ timeout: UI_TIMEOUT });
       await expect(dpiInput).toHaveValue('96', { timeout: UI_TIMEOUT });
     });

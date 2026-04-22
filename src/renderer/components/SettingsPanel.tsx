@@ -515,6 +515,7 @@ date: 2024-01-01
               value={preview.targetDPI}
               onChange={(e) => setPreview({ targetDPI: parseInt(e.target.value) || 96 })}
               style={{ width: '80px' }}
+              data-testid="dpi-input"
             />
             <span style={{ color: '#666', fontSize: '14px' }}>DPI</span>
           </div>
