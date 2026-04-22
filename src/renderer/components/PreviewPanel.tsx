@@ -99,7 +99,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   // 生成章节HTML列表
   const sectionHtmlList = useMemo(() => {
     const currentTheme = extensions.codeTheme || 'github';
-    const themeCss = `${getHljsBaseStyles()}${getHljsTheme(currentTheme)}`;
+    const codeBackgrounds: Record<string, string> = {
+      github: '#f6f8fa',
+      monokai: '#272822',
+      dracula: '#282a36',
+    };
+    const codeBackground = codeBackgrounds[currentTheme] || codeBackgrounds.github;
+    const themeCss = `${getHljsBaseStyles(codeBackground)}${getHljsTheme(currentTheme)}`;
 
     return sections.map((section) => {
       try {
@@ -120,7 +126,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         let result = md.render(section.content);
 
         if (extensions.githubAlerts) {
-          result = result.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, content) => {
+          // 匹配 GitHub 语法: > [!TYPE] 后跟多行内容
+          result = result.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=(?:^> \[!|\n\n|\n$))/gm, (_, type, content) => {
             const typeLabels: Record<string, string> = {
               note: 'NOTE',
               tip: 'TIP',
@@ -128,9 +135,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               warning: 'WARNING',
               danger: 'DANGER',
             };
-            return `<div class="github-alert ${type}">
-              <div class="alert-title">${typeLabels[type] || 'NOTE'}</div>
-              <div class="alert-body">${content.trim()}</div>
+            // 清理内容：移除每行的 > 前缀
+            const cleanedContent = content.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
+            return `<div class="github-alert ${type.toLowerCase()}">
+              <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
+              <div class="alert-body">${cleanedContent}</div>
             </div>`;
           });
         }

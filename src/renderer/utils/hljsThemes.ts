@@ -10,10 +10,10 @@
 /**
  * 代码块边框和行号样式配置 - 根据主题适配颜色
  */
-const codeBlockStyles: Record<string, { border: string; lineNumberBorder: string; lineNumberColor: string }> = {
-  github: { border: '#0969da', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d' },
-  monokai: { border: '#66d9ef', lineNumberBorder: '#49483e', lineNumberColor: '#75715e' },
-  dracula: { border: '#8be9fd', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4' },
+const codeBlockStyles: Record<string, { border: string; lineNumberBorder: string; lineNumberColor: string; background: string }> = {
+  github: { border: '#0969da', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d', background: '#f6f8fa' },
+  monokai: { border: '#66d9ef', lineNumberBorder: '#49483e', lineNumberColor: '#75715e', background: '#272822' },
+  dracula: { border: '#8be9fd', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4', background: '#282a36' },
 };
 
 /**
@@ -38,21 +38,19 @@ export const getHljsTheme = (theme: string): string => {
   const baseStyle = themeStyles[themeKey] || themeStyles.github;
 
   // 添加代码块边框和行号样式
-  const codeBlockCss = `.hljs{border-left:4px solid ${codeStyle.border}}.code-line-numbers{border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
+  const codeBlockCss = `.hljs{background:${codeStyle.background};border-left:4px solid ${codeStyle.border}}.code-line-numbers{background:${codeStyle.background};border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
 
   return baseStyle + codeBlockCss;
 };
 
 /**
  * 获取 hljs 基础样式（.hljs 类本身的样式）
- * 包括：display、overflow、padding 等布局属性
- * 注意：font-family 使用 inherit，由上层容器控制
- * 注意：代码块边框和行号颜色由 getHljsTheme 根据主题动态注入
+ * @param background 代码块背景色
  */
-export const getHljsBaseStyles = (): string => {
-  return `.hljs{display:block;overflow-x:visible;overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap;padding:1em;background:#f6f8fa;border-radius:6px;font-size:14px;line-height:1.5;font-family:inherit}
+export const getHljsBaseStyles = (background: string = '#f6f8fa'): string => {
+  return `.hljs{background:${background};display:block;overflow-x:visible;overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap;padding:1em;border-radius:6px;font-size:14px;line-height:1.5;font-family:inherit}
 
-.code-line-numbers{display:inline-block;min-width:2.5em;text-align:right;padding-right:1em;margin-right:1em;user-select:none;vertical-align:top;white-space:pre}
+.code-line-numbers{background:${background};display:inline-block;min-width:2.5em;text-align:right;padding-right:1em;margin-right:1em;user-select:none;vertical-align:top;white-space:pre}
 .line-number{display:block;line-height:1.5}
 .with-line-numbers{display:flex;align-items:flex-start}`;
 };

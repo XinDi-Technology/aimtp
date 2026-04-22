@@ -245,9 +245,8 @@
   font-family: var(--font-code), monospace;
 }
 
-/* 代码块左边框 */
+/* 代码块左边框 - 由 hljsTheme 动态注入 */
 .preview-markdown pre {
-  border-left: 4px solid #0969da;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;

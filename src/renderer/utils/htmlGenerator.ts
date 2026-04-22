@@ -77,7 +77,8 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     let content = md.render(markdownWithoutFrontMatter);
     
     if (extensions.githubAlerts) {
-      content = content.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, alertContent) => {
+      // 匹配 GitHub 语法: > [!TYPE] 后跟多行内容
+      content = content.replace(/^> \[!(\w+)\]\s*\n([\s\S]*?)(?=(?:^> \[!|\n\n|\n$))/gm, (_, type, alertContent) => {
         const typeLabels: Record<string, string> = {
           note: 'NOTE',
           tip: 'TIP',
@@ -85,9 +86,11 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
           warning: 'WARNING',
           danger: 'DANGER',
         };
-        return `<div class="github-alert ${type}">
-          <div class="alert-title">${typeLabels[type] || 'NOTE'}</div>
-          <div class="alert-body">${alertContent.trim()}</div>
+        // 清理内容：移除每行的 > 前缀
+        const cleanedContent = alertContent.split('\n').map(line => line.replace(/^>\s?/, '')).join('\n').trim();
+        return `<div class="github-alert ${type.toLowerCase()}">
+          <div class="alert-title">${typeLabels[type.toLowerCase()] || 'NOTE'}</div>
+          <div class="alert-body">${cleanedContent}</div>
         </div>`;
       });
     }
@@ -135,9 +138,24 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
 
     // 获取 highlight.js 主题样式（本地化，无 CDN 依赖）
     const hljsTheme = extensions.codeTheme || 'github';
+    
+    // 代码块样式配置 - 根据主题适配
+    const codeBlockColors: Record<string, { border: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
+      github: { border: '#0969da', background: '#f6f8fa', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d' },
+      monokai: { border: '#66d9ef', background: '#272822', lineNumberBorder: '#49483e', lineNumberColor: '#75715e' },
+      dracula: { border: '#8be9fd', background: '#282a36', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4' },
+    };
+    const codeColors = codeBlockColors[hljsTheme] || codeBlockColors.github;
+    
     const hljsStyles = extensions.codeHighlight 
-      ? `<style>${getHljsBaseStyles()}${getHljsTheme(hljsTheme)}</style>` 
+      ? `<style>${getHljsBaseStyles(codeColors.background)}${getHljsTheme(hljsTheme)}</style>` 
       : '';
+    
+    // 代码块边框样式 - 根据主题适配
+    const codeBlockStyles = `
+    pre { border-left: 4px solid ${codeColors.border}; }
+    .code-line-numbers { border-right-color: ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
+    `;
 
     const fontsCss = `@font-face {
   font-family: 'GWM Sans UI';
@@ -175,8 +193,9 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
 <html>
 <head>
   <meta charset="UTF-8">
-  <style>${fontsCss}</style>
+<style>${fontsCss}</style>
   ${hljsStyles}
+  ${codeBlockStyles}
   ${extensions.mermaid ? `<script>
     // Mermaid is loaded from local node_modules
   </script>` : ''}
@@ -220,7 +239,6 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       overflow-wrap: break-word;
       word-wrap: break-word;
       white-space: pre-wrap;
-      border-left: 4px solid #0969da;
     }
     code {
       padding: 2px 6px;
