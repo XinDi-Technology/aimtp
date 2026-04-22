@@ -71,62 +71,11 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       ins: extensions.ins,
       sub: extensions.sub,
       sup: extensions.sup,
+      githubAlerts: extensions.githubAlerts,
     });
     
     // 使用去除 Front Matter 后的内容进行渲染
     let content = markdownWithoutFrontMatter;
-    
-    if (extensions.githubAlerts) {
-      // 在渲染之前处理 GitHub 语法: > [!TYPE] 后跟多行内容
-      const typeLabels: Record<string, string> = {
-        note: 'NOTE',
-        tip: 'TIP',
-        important: 'IMPORTANT',
-        warning: 'WARNING',
-        danger: 'DANGER',
-      };
-      
-      // 修复：正确处理GitHub Alert块，逐行处理避免正则表达式问题
-      const lines = content.split('\n');
-      const processedLines: string[] = [];
-      let i = 0;
-      
-      while (i < lines.length) {
-        const line = lines[i];
-        const alertMatch = line.match(/^> \[!(\w+)\]/i);
-        
-        if (alertMatch) {
-          // 找到Alert起始行
-          const alertType = typeLabels[alertMatch[1].toLowerCase()] || 'NOTE';
-          const alertBodyLines: string[] = [];
-          i++; // 跳过Alert标题行
-          
-          // 收集所有后续的 > 开头的行作为Alert内容
-          while (i < lines.length && lines[i].startsWith('> ')) {
-            alertBodyLines.push(lines[i].slice(2)); // 移除 "> " 前缀
-            i++;
-          }
-          
-          const alertBody = alertBodyLines.join('\n');
-          
-          // 转义HTML防止XSS
-          const escapeHtml = (text: string) => 
-            text.replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-          
-          const alertHTML = `<div class="github-alert"><div class="alert-title">${escapeHtml(alertType)}</div><div class="alert-body">${md.render(alertBody)}</div></div>`;
-          processedLines.push(alertHTML);
-        } else {
-          // 非Alert行，直接添加
-          processedLines.push(line);
-          i++;
-        }
-      }
-      
-      content = processedLines.join('\n');
-    }
     
     let result = md.render(content);
     

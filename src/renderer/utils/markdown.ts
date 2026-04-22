@@ -7,6 +7,7 @@ import mdIns from 'markdown-it-ins';
 import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
+import mdGithubAlerts from 'markdown-it-github-alerts';
 import lineNumbersPlugin from './lineNumbersPlugin';
 import { mathjaxPlugin, initMathJaxInstance } from './mathjaxPlugin';
 import { mermaidPlugin, initMermaidInstance } from './mermaidPlugin';
@@ -24,6 +25,7 @@ export interface MarkdownItOptions {
   ins: boolean;
   sub: boolean;
   sup: boolean;
+  githubAlerts: boolean;
   codeTheme?: string;
 }
 
@@ -86,6 +88,11 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
 
   if (options.sup) {
     md.use(mdSup);
+  }
+
+  if (options.githubAlerts) {
+    // 使用 GitHub Alerts 插件
+    md.use(mdGithubAlerts);
   }
 
   if (options.mathJax) {
