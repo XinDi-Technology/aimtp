@@ -86,19 +86,28 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
         danger: 'DANGER',
       };
       
-      // 修复：正确处理GitHub Alert块，保留内部内容
-      content = content.replace(
-        /^> \[!(\w+)\]\s*(.*)\n((?:> .*\n)*)/gm,
-        (_, type, titleLine, bodyContent) => {
-          const alertType = typeLabels[type.toLowerCase()] || 'NOTE';
-          // 提取标题（如果有）
-          const alertTitle = titleLine.trim() || alertType;
-          // 处理内容：移除每行开头的 "> " 前缀，保留空行以维持段落结构
-          const alertBody = bodyContent
-            .split('\n')
-            .filter((line: string) => line === '' || line.startsWith('> '))
-            .map((line: string) => line === '' ? '' : line.slice(2))
-            .join('\n');
+      // 修复：正确处理GitHub Alert块，逐行处理避免正则表达式问题
+      const lines = content.split('\n');
+      const processedLines: string[] = [];
+      let i = 0;
+      
+      while (i < lines.length) {
+        const line = lines[i];
+        const alertMatch = line.match(/^> \[!(\w+)\]/i);
+        
+        if (alertMatch) {
+          // 找到Alert起始行
+          const alertType = typeLabels[alertMatch[1].toLowerCase()] || 'NOTE';
+          const alertBodyLines: string[] = [];
+          i++; // 跳过Alert标题行
+          
+          // 收集所有后续的 > 开头的行作为Alert内容
+          while (i < lines.length && lines[i].startsWith('> ')) {
+            alertBodyLines.push(lines[i].slice(2)); // 移除 "> " 前缀
+            i++;
+          }
+          
+          const alertBody = alertBodyLines.join('\n');
           
           // 转义HTML防止XSS
           const escapeHtml = (text: string) => 
@@ -107,9 +116,16 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
           
-          return `<div class="github-alert"><div class="alert-title">${escapeHtml(alertTitle)}</div><div class="alert-body">${md.render(alertBody)}</div></div>`;
+          const alertHTML = `<div class="github-alert"><div class="alert-title">${escapeHtml(alertType)}</div><div class="alert-body">${md.render(alertBody)}</div></div>`;
+          processedLines.push(alertHTML);
+        } else {
+          // 非Alert行，直接添加
+          processedLines.push(line);
+          i++;
         }
-      );
+      }
+      
+      content = processedLines.join('\n');
     }
     
     let result = md.render(content);
