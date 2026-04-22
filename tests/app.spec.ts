@@ -154,8 +154,9 @@ test.describe('Aimtp Application', () => {
     test('should have preview calibration control', async ({ page }) => {
       await expect(page.locator('[data-testid="settings-panel"]'))
         .toContainText(/预览校准|Preview Calibration/, { timeout: UI_TIMEOUT });
-      const slider = page.locator('input[type="range"]').first();
-      await expect(slider).toBeVisible({ timeout: UI_TIMEOUT });
+      const dpiInput = page.locator('input[type="number"]').first();
+      await expect(dpiInput).toBeVisible({ timeout: UI_TIMEOUT });
+      await expect(dpiInput).toHaveValue('96', { timeout: UI_TIMEOUT });
     });
   });
 

@@ -129,7 +129,18 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
     });
 
     tempHtmlPath = path.join(app.getPath('temp'), 'aimtp-pdf-temp.html');
-    fs.writeFileSync(tempHtmlPath, options.html);
+    const appPath = app.getAppPath();
+    const fontsPath = isDev 
+      ? path.join(appPath, 'src', 'fonts') 
+      : path.join(appPath, 'dist', 'renderer', 'fonts');
+    
+    let htmlContent = options.html;
+    // 替换字体 URL 为绝对路径 (同时处理单引号和双引号)
+    htmlContent = htmlContent.replace(
+      /url\(['"]fonts\//g, 
+      `url('file://${fontsPath.replace(/\\/g, '/')}/`
+    );
+    fs.writeFileSync(tempHtmlPath, htmlContent);
     await pdfWindow.loadFile(tempHtmlPath);
 
     // 等待页面加载和脚本执行完成
@@ -147,11 +158,22 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
       pdfWindow!.webContents.once('did-fail-load', resolveOnce);
       // [TODO] 问题3：PDF生成性能
     // htmlGenerator.ts 已预渲染 Mermaid/MathJax 为 SVG，此处等待3秒不必要
-    setTimeout(resolveOnce, 3000);
+      setTimeout(resolveOnce, 3000);
     });
 
+    // 等待字体加载完成
+    await pdfWindow.webContents.executeJavaScript(`
+      new Promise((resolve) => {
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(resolve).catch(resolve);
+        } else {
+          resolve();
+        }
+      })
+    `);
+
     // [TODO] 问题3：预渲染已完成，此处1秒延迟可移除或大幅缩短
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const pdfData = await pdfWindow.webContents.printToPDF({
       pageSize,

@@ -505,36 +505,25 @@ date: 2024-01-01
         <h3>预览校准</h3>
         
         <div className="setting-group">
-          <label className="setting-label">
-            {locale === 'zh' ? '缩放校准' : 'Zoom Calibration'}
-            <span style={{ fontSize: '12px', color: '#999', marginLeft: '8px' }}>
-              {Math.round(preview.calibration * 100)}%
-            </span>
-          </label>
-          <input
-            type="range"
-            className="setting-input"
-            min="0.9"
-            max="1.1"
-            step="0.01"
-            value={preview.calibration}
-            onChange={(e) => setPreview({ calibration: parseFloat(e.target.value) })}
-            style={{ width: '100%' }}
-          />
-          <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+          <label className="setting-label">DPI</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="number"
+              className="setting-input"
+              min="48"
+              max="480"
+              value={preview.targetDPI}
+              onChange={(e) => setPreview({ targetDPI: parseInt(e.target.value) || 96 })}
+              style={{ width: '80px' }}
+            />
+            <span style={{ color: '#666', fontSize: '14px' }}>DPI</span>
+          </div>
+          <div style={{ fontSize: '11px', color: '#999', marginTop: '8px' }}>
             {locale === 'zh' 
-              ? '调整此值使预览中的 A4 纸与实际 A4 纸大小一致' 
-              : 'Adjust so that the preview matches the actual A4 paper size'}
+              ? '建议值：96 (标准) / 144 (高清屏)' 
+              : 'Suggested: 96 (standard) / 144 (Retina)'}
           </div>
         </div>
-        
-        <button
-          className="btn btn-secondary"
-          style={{ width: '100%', marginTop: '8px' }}
-          onClick={() => setPreview({ calibration: 1.0 })}
-        >
-          🔄 重置为默认
-        </button>
       </div>
 
       <div className="setting-section">

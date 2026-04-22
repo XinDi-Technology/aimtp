@@ -78,16 +78,16 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     
     if (extensions.githubAlerts) {
       content = content.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, alertContent) => {
-        const icons: Record<string, string> = {
-          note: 'ℹ️',
-          tip: '💡',
-          important: '⭐',
-          warning: '⚠️',
-          danger: '🚨',
+        const typeLabels: Record<string, string> = {
+          note: 'NOTE',
+          tip: 'TIP',
+          important: 'IMPORTANT',
+          warning: 'WARNING',
+          danger: 'DANGER',
         };
         return `<div class="github-alert ${type}">
-          <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
-          <div class="alert-content">${alertContent.trim()}</div>
+          <div class="alert-title">${typeLabels[type] || 'NOTE'}</div>
+          <div class="alert-body">${alertContent.trim()}</div>
         </div>`;
       });
     }
@@ -139,10 +139,43 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       ? `<style>${getHljsBaseStyles()}${getHljsTheme(hljsTheme)}</style>` 
       : '';
 
+    const fontsCss = `@font-face {
+  font-family: 'GWM Sans UI';
+  src: url('fonts/GWMSansUI-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'GWM Sans UI';
+  src: url('fonts/GWMSansUI-Bold.woff2') format('woff2');
+  font-weight: bold;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: normal;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  font-weight: bold;
+}
+@font-face {
+  font-family: 'Monaspace Argon';
+  src: url('fonts/MonaspaceArgon-Regular.woff2') format('woff2');
+  font-weight: normal;
+}
+@font-face {
+  font-family: 'Monaspace Argon';
+  src: url('fonts/MonaspaceArgon-Bold.woff2') format('woff2');
+  font-weight: bold;
+}`;
+
     return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <style>${fontsCss}</style>
   ${hljsStyles}
   ${extensions.mermaid ? `<script>
     // Mermaid is loaded from local node_modules
@@ -183,14 +216,40 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     pre {
       padding: 16px;
       border-radius: 8px;
-      overflow-x: auto;
+      overflow-x: visible;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      border-left: 4px solid #0969da;
     }
     code {
       padding: 2px 6px;
       border-radius: 4px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     pre code {
       padding: 0;
+    }
+    .code-line-numbers {
+      display: inline-block;
+      min-width: 2.5em;
+      text-align: right;
+      padding-right: 1em;
+      margin-right: 1em;
+      border-right: 1px solid #d0d7de;
+      vertical-align: top;
+      white-space: pre;
+    }
+      color: #6a737d;
+      user-select: none;
+    }
+    .line-number {
+      display: block;
+    }
+    pre.with-line-numbers {
+      display: flex;
+      align-items: flex-start;
     }
     blockquote {
       border-left: 4px solid #c43d24;
@@ -224,10 +283,43 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     }
     .github-alert {
       border-radius: 6px;
-      padding: 12px;
-      margin: 12px 0;
-      display: flex;
-      gap: 12px;
+      padding: 16px;
+      margin: 16px 0;
+      border-left: 4px solid;
+    }
+    .github-alert.note {
+      background: #f6f8fa;
+      border-left-color: #0969da;
+    }
+    .github-alert.tip {
+      background: #dafbe1;
+      border-left-color: #1a7f37;
+    }
+    .github-alert.important {
+      background: #fff8c5;
+      border-left-color: #9a6700;
+    }
+    .github-alert.warning {
+      background: #fff8c5;
+      border-left-color: #9a6700;
+    }
+    .github-alert.danger {
+      background: #ffebe9;
+      border-left-color: #cf222e;
+    }
+    .github-alert .alert-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .github-alert.note .alert-title { color: #0969da; }
+    .github-alert.tip .alert-title { color: #1a7f37; }
+    .github-alert.important .alert-title { color: #9a6700; }
+    .github-alert.warning .alert-title { color: #9a6700; }
+    .github-alert.danger .alert-title { color: #cf222e; }
+    .github-alert .alert-body {
+      font-size: 14px;
+      line-height: 1.5;
     }
     .task-list-item {
       list-style-type: none;

@@ -71,7 +71,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   }, [frontMatterData.date, locale]);
 
   // 获取校准后的 DPI 和页面像素尺寸
-  const dpi = useMemo(() => getCalibratedDPI(preview.calibration), [preview.calibration]);
+  const dpi = useMemo(() => getCalibratedDPI(preview.targetDPI), [preview.targetDPI]);
 
   const pageDimensions = useMemo(() => {
     return getPageDimensionsPixels(page.size, page.orientation, dpi);
@@ -121,12 +121,16 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
         if (extensions.githubAlerts) {
           result = result.replace(/:::(\w+)([\s\S]*?):::/g, (_, type, content) => {
-            const icons: Record<string, string> = {
-              note: 'ℹ️', tip: '💡', important: '⭐', warning: '⚠️', danger: '🚨',
+            const typeLabels: Record<string, string> = {
+              note: 'NOTE',
+              tip: 'TIP',
+              important: 'IMPORTANT',
+              warning: 'WARNING',
+              danger: 'DANGER',
             };
             return `<div class="github-alert ${type}">
-              <span class="alert-icon">${icons[type] || 'ℹ️'}</span>
-              <div class="alert-content">${content.trim()}</div>
+              <div class="alert-title">${typeLabels[type] || 'NOTE'}</div>
+              <div class="alert-body">${content.trim()}</div>
             </div>`;
           });
         }

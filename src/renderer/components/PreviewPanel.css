@@ -245,6 +245,36 @@
   font-family: var(--font-code), monospace;
 }
 
+/* 代码块左边框 */
+.preview-markdown pre {
+  border-left: 4px solid #0969da;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 行号样式 */
+.preview-markdown .code-line-numbers {
+  display: inline-block;
+  min-width: 2.5em;
+  text-align: right;
+  padding-right: 1em;
+  margin-right: 1em;
+  border-right: 1px solid #d0d7de;
+  color: #6a737d;
+  user-select: none;
+}
+
+.preview-markdown .line-number {
+  display: block;
+  line-height: 1.5;
+}
+
+.preview-markdown pre.with-line-numbers {
+  display: flex;
+  align-items: flex-start;
+}
+
 /* 表格样式 */
 .preview-markdown table {
   width: 100%;
@@ -280,23 +310,47 @@
 
 /* GitHub Alerts */
 .github-alert {
-  background: #f0f6fc;
-  border: 1px solid #d0deec;
   border-radius: 6px;
-  padding: 12px;
-  margin: 12px 0;
-  display: flex;
-  gap: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  border-left: 4px solid;
 }
 
-.github-alert.note { background: #f0f6fc; border-color: #d0deec; }
-.github-alert.tip { background: #dafbe1; border-color: #a8e6b1; }
-.github-alert.important { background: #fff8c5; border-color: #e3d593; }
-.github-alert.warning { background: #fff8c5; border-color: #e3d593; }
-.github-alert.danger { background: #ffebe9; border-color: #ffc1aa; }
+.github-alert.note {
+  background: #f6f8fa;
+  border-left-color: #0969da;
+}
+.github-alert.tip {
+  background: #dafbe1;
+  border-left-color: #1a7f37;
+}
+.github-alert.important {
+  background: #fff8c5;
+  border-left-color: #9a6700;
+}
+.github-alert.warning {
+  background: #fff8c5;
+  border-left-color: #9a6700;
+}
+.github-alert.danger {
+  background: #ffebe9;
+  border-left-color: #cf222e;
+}
 
-.alert-icon { font-size: 16px; margin-top: 2px; }
-.alert-content { flex: 1; }
+.github-alert .alert-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.github-alert.note .alert-title { color: #0969da; }
+.github-alert.tip .alert-title { color: #1a7f37; }
+.github-alert.important .alert-title { color: #9a6700; }
+.github-alert.warning .alert-title { color: #9a6700; }
+.github-alert.danger .alert-title { color: #cf222e; }
+.github-alert .alert-body {
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 /* Mermaid 图表 */
 .mermaid {

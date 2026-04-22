@@ -94,7 +94,7 @@ export interface CustomTemplate {
 }
 
 export interface PreviewSettings {
-  calibration: number; // 预览校准系数（0.9 - 1.1）
+  targetDPI: number; // 目标 DPI（默认 96）
 }
 
 export interface AppState {
@@ -342,7 +342,7 @@ const defaultHeaderFooter: HeaderFooterSettings = {
 };
 
 const defaultPreview: PreviewSettings = {
-  calibration: 1.0, // 默认不校准
+  targetDPI: 96, // 默认 96 DPI
 };
 
 const STORAGE_KEY = 'aimtp-custom-templates';
@@ -456,13 +456,12 @@ const validatePreviewSettings = (data: any): PreviewSettings => {
   const defaults = { ...defaultPreview };
   if (!data || typeof data !== 'object') return defaults;
   
-  // 校准值范围：0.9 - 1.1
-  let calibration = defaults.calibration;
-  if (isValidNumber(data.calibration)) {
-    calibration = Math.max(0.9, Math.min(1.1, data.calibration));
+  let targetDPI = defaults.targetDPI;
+  if (isValidNumber(data.targetDPI)) {
+    targetDPI = Math.max(48, Math.min(480, data.targetDPI)); // 限制范围 48-480
   }
   
-  return { calibration };
+  return { targetDPI };
 };
 
 const validateTemplateSettings = (data: any): TemplateSettings => {
