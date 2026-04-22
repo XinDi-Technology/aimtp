@@ -127,9 +127,9 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     
     // 代码块样式配置 - 统一边框宽度
     const codeBlockColors: Record<string, { border: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
-      github: { border: '#8b949e', background: '#f6f8fa', lineNumberBorder: '#8b949e', lineNumberColor: '#6a737d' },
-      monokai: { border: '#49483e', background: '#272822', lineNumberBorder: '#49483e', lineNumberColor: '#75715e' },
-      dracula: { border: '#44475a', background: '#282a36', lineNumberBorder: '#44475a', lineNumberColor: '#6272a4' },
+      github: { border: '#d0d7de', background: '#f6f8fa', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d' },
+      monokai: { border: '#d0d7de', background: '#272822', lineNumberBorder: '#d0d7de', lineNumberColor: '#75715e' },
+      dracula: { border: '#d0d7de', background: '#282a36', lineNumberBorder: '#d0d7de', lineNumberColor: '#6272a4' },
     };
     const codeColors = codeBlockColors[hljsTheme] || codeBlockColors.github;
     
@@ -139,7 +139,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     
     // 代码块边框样式 - 统一边框宽度
     const codeBlockStyles = `<style>
-    pre { border: 1px solid ${codeColors.border}; }
+    .hljs { border: 1px solid ${codeColors.border}; }
     .code-line-numbers { border-right: 1px solid ${codeColors.lineNumberBorder}; color: ${codeColors.lineNumberColor}; }
     </style>`;
 
@@ -226,7 +226,6 @@ const fontsCss = `
       overflow-wrap: break-word;
       word-wrap: break-word;
       white-space: pre-wrap;
-      border: 1px solid #d0d7de;
     }
     code {
       padding: 2px 6px;
@@ -291,23 +290,61 @@ const fontsCss = `
     tr {
       page-break-inside: avoid;
     }
-    .github-alert {
+    /* GitHub Alerts - 使用插件生成的标准类名 */
+    .markdown-alert {
       border-radius: 6px;
       padding: 16px;
       margin: 16px 0;
       background: #f6f8fa;
       border: 1px solid #d0d7de;
-      border-left: 4px dotted #57606a;
     }
-    .github-alert .alert-title {
+    .markdown-alert.markdown-alert-note {
+      border-left: 4px solid #0969da;
+    }
+    .markdown-alert.markdown-alert-tip {
+      border-left: 4px solid #1a7f37;
+    }
+    .markdown-alert.markdown-alert-important {
+      border-left: 4px solid #8250df;
+    }
+    .markdown-alert.markdown-alert-warning {
+      border-left: 4px solid #bf8700;
+    }
+    .markdown-alert.markdown-alert-caution {
+      border-left: 4px solid #cf222e;
+    }
+    .markdown-alert .markdown-alert-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-weight: 600;
       margin-bottom: 8px;
-      font-size: 13px;
-      color: #57606a;
-    }
-    .github-alert .alert-body {
       font-size: 14px;
       line-height: 1.5;
+    }
+    /* Alert 标题中的 SVG 图标 */
+    .markdown-alert .markdown-alert-title svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .markdown-alert.markdown-alert-note .markdown-alert-title {
+      color: #0969da;
+    }
+    .markdown-alert.markdown-alert-tip .markdown-alert-title {
+      color: #1a7f37;
+    }
+    .markdown-alert.markdown-alert-important .markdown-alert-title {
+      color: #8250df;
+    }
+    .markdown-alert.markdown-alert-warning .markdown-alert-title {
+      color: #bf8700;
+    }
+    .markdown-alert.markdown-alert-caution .markdown-alert-title {
+      color: #cf222e;
+    }
+    .markdown-alert p:last-child {
+      margin-bottom: 0;
     }
     .task-list-item {
       list-style-type: none;

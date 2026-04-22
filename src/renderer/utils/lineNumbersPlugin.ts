@@ -48,7 +48,9 @@ export default function lineNumbersPlugin(md: MarkdownIt, options: LineNumbersOp
     
     // 将行号插入到 <pre> 标签内
     result = result.replace('<pre', `<pre class="with-line-numbers"`);
-    result = result.replace('<code>', `${lineNumbersHtml}<code>`);
+    
+    // 匹配 <code> 或 <code class="..."> 标签
+    result = result.replace(/<code([^>]*)>/, `<code$1>${lineNumbersHtml}`);
     
     return result;
   };
