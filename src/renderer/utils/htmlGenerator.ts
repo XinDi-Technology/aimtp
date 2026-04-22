@@ -128,6 +128,10 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       : page.size === 'A3'
       ? (isPortrait ? '297mm' : '420mm')
       : '100%';
+    // Ensure cover page width aligns with content width across A4/A3 and orientation
+    const paperWidthMm = page.size === 'A4' ? (isPortrait ? 210 : 297) : page.size === 'A3' ? (isPortrait ? 297 : 420) : 210;
+    const coverLeftMm = page.margins.left;
+    const coverRightMm = page.margins.right;
 
     // 获取 highlight.js 主题样式（本地化，无 CDN 依赖）
     const hljsTheme = extensions.codeTheme || 'github';
@@ -152,6 +156,8 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     };
   </script>` : ''}
   <style>
+  :root { --paper-width-mm: ${paperWidthMm}mm; --cover-left-mm: ${coverLeftMm}mm; --cover-right-mm: ${coverRightMm}mm; }
+  .cover-page { width: calc(var(--paper-width-mm) - (var(--cover-left-mm) + var(--cover-right-mm))); }
     body {
       font-family: ${font.body}, sans-serif;
       font-size: ${font.baseSize}px;
@@ -200,15 +206,21 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       width: 100%;
       border-collapse: collapse;
       margin: 16px 0;
+      table-layout: fixed;
+      word-wrap: break-word;
     }
     th, td {
       border: 1px solid #e5e3dd;
       padding: 8px 16px;
       text-align: left;
+      overflow: hidden;
     }
     th {
       background: #f5f4f0;
       font-weight: 600;
+    }
+    tr {
+      page-break-inside: avoid;
     }
     .github-alert {
       border-radius: 6px;

@@ -81,13 +81,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const mmToPx = useCallback((mm: number) => mm * (dpi / 25.4), [dpi]);
 
   // 计算页面可用内容高度
+  // 注：页边距已经包含了内容区域与页面边缘的距离
+  // 页眉页脚定位在页边距区域内，不需要额外减去高度
   const availableContentHeight = useMemo(() => {
     const topMargin = mmToPx(page.margins.top);
     const bottomMargin = mmToPx(page.margins.bottom);
-    const headerHeight = headerFooter.enabled ? topMargin : 0;
-    const footerHeight = headerFooter.enabled ? bottomMargin : 0;
-    return pageDimensions.height - topMargin - bottomMargin - headerHeight - footerHeight;
-  }, [pageDimensions.height, page.margins, mmToPx, headerFooter.enabled]);
+    // 页面总高度减去上下页边距即为可用内容高度
+    // 页眉页脚位于页边距范围内，不单独占用内容空间
+    return pageDimensions.height - topMargin - bottomMargin;
+  }, [pageDimensions.height, page.margins, mmToPx]);
 
   // 章节分割
   const sections = useMemo(() => {
@@ -183,6 +185,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     measureHost.style.width = `${contentWidth}px`;
     measureHost.style.padding = `${mmToPx(page.margins.top)}px ${mmToPx(page.margins.right)}px ${mmToPx(page.margins.bottom)}px ${mmToPx(page.margins.left)}px`;
     measureHost.style.boxSizing = 'border-box';
+    // 应用字体样式以确保测量准确
+    measureHost.style.fontFamily = font.body;
+    measureHost.style.fontSize = `${font.baseSize}px`;
+    measureHost.style.lineHeight = String(font.lineHeight);
     measureHost.className = 'preview-pager-measure';
     document.body.appendChild(measureHost);
 
@@ -424,7 +430,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
               <div className="page-wrapper">
                 {pageContent.isCover ? (
                   // 封面页
-                  <div className="a4-page cover-page" data-is-cover="true" data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
+                  <div className="a4-page cover-page" style={{ width: pageDimensions.width, height: pageDimensions.height }} data-is-cover="true" data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
                     <div className="cover-content" style={{ textAlign: 'center' }}>
                       <h1 style={{ fontSize: `${font.baseSize * 2.5}px`, marginBottom: '20px', fontFamily: font.heading }}>{coverTitle}</h1>
                       {coverAuthor && (
@@ -437,7 +443,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   </div>
                 ) : (
                   // 内容页
-                  <div className="a4-page content-page" data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
+                  <div className="a4-page content-page" style={{ width: pageDimensions.width, height: pageDimensions.height }} data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
                     {pageContent.contentList.map((content, cIndex) => (
                       <React.Fragment key={`${pageContent.id}-${cIndex}`}>
                         <style>{content.themeCss}{headingStyles}</style>

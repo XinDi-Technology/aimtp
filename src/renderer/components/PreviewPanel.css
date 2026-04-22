@@ -126,7 +126,7 @@
   justify-content: center;
   gap: 16px;
   width: 100%;
-  max-width: 794px;
+  max-width: var(--page-width, 794px);
   padding: 16px 0;
   margin: 0 auto;
 }
@@ -170,15 +170,12 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* A4 页面 - 固定尺寸 */
+/* A4 页面 - 动态尺寸，由 React 内联样式传入 */
 .a4-page {
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
-  /* 固定 A4 尺寸 */
-  width: 794px;
-  height: 1123px;
   max-width: 100%;
   flex-shrink: 0;
 }
@@ -246,6 +243,33 @@
 .preview-markdown pre,
 .preview-markdown code {
   font-family: var(--font-code), monospace;
+}
+
+/* 表格样式 */
+.preview-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  table-layout: fixed;
+  word-wrap: break-word;
+}
+
+.preview-markdown th,
+.preview-markdown td {
+  border: 1px solid #e5e3dd;
+  padding: 8px 16px;
+  text-align: left;
+  overflow: hidden;
+}
+
+.preview-markdown th {
+  background: #f5f4f0;
+  font-weight: 600;
+}
+
+/* 表格行 */
+.preview-markdown tr {
+  page-break-inside: avoid;
 }
 
 /* 页眉页脚 */
