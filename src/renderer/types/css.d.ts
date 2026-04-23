@@ -64,3 +64,7 @@ declare module 'pagedjs' {
     ): Promise<{ total: number; pages: HTMLElement[] }>;
   }
 }
+
+declare module 'pagedjs/dist/paged.polyfill' {
+  export { Previewer } from 'pagedjs';
+}

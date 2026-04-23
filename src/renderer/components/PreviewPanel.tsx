@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { Previewer } from 'pagedjs/dist/paged.polyfill';
+import { Previewer } from 'pagedjs';
 import { generatePagedPreviewHtml } from '../utils/htmlGenerator';
 import { getCalibratedDPI, getPageDimensionsPixels } from '../utils/dpi';
 import { parseFrontMatter, formatDate } from '../utils/frontMatter';
@@ -147,7 +147,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
       // 注入页眉页脚到预览页面（Paged.js 的 margin box content 只在打印时生效，屏幕上需手动注入）
       if (headerFooter.enabled) {
-        result.pages.forEach((pageEl, index) => {
+        result.pages.forEach((pageEl: HTMLElement, index: number) => {
           const pageNum = index + 1;
 
           // 页眉
