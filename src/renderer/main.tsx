@@ -10,7 +10,12 @@ const handleError = (error: Error, source?: string) => {
 
   // Paged.js 渲染错误不应销毁整个页面，仅记录日志
   // 这些错误通常来自第三方库的 DOM 遍历，不影响应用整体框架
-  if (error?.message?.includes('nextSibling') || error?.message?.includes('previousSibling')) {
+  const pagedJsErrorPatterns = [
+    'nextSibling', 'previousSibling', 'childNodes',
+    'findEndToken', 'checkUnderflowAfterResize',
+    'querySelector is not a function',
+  ];
+  if (pagedJsErrorPatterns.some(p => error?.message?.includes(p))) {
     console.warn('[Aimtp] Paged.js DOM traversal error suppressed. Preview may be incomplete.');
     return;
   }

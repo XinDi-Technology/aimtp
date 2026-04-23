@@ -138,33 +138,20 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
       // 将 HTML 字符串解析为 DOM 内容，Paged.js preview() 要求传入 DOM 而非字符串
       // generatePagedPreviewHtml 返回完整 <html><head>...</head><body>...</body></html> 结构
-      // 用 DOMParser 解析后提取 body 内容和 <style> 标签，确保结构正确
-      // 直接 innerHTML 塞进 div 在之前会导致嵌套 <html> 标签（已修复），
-      // 但 DOMParser 方式更可靠：它能正确解析 <style> 中的 @page 等 CSS 规则
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      // 将 <style> 标签和 body 内容组装到一个 DocumentFragment 中传给 Paged.js
-      const fragment = document.createDocumentFragment();
-
-      // 先加入样式标签（Paged.js 需要解析 @page 等 CSS 规则）
-      doc.head.querySelectorAll('style').forEach(style => {
-        fragment.appendChild(document.adoptNode(style));
-      });
-
-      // 再加入 body 内容
-      while (doc.body.firstChild) {
-        fragment.appendChild(document.adoptNode(doc.body.firstChild));
-      }
+      // 浏览器会自动剥离 <html>/<head>/<body> 等外层标签，保留 <style> 和 body 内容
+      // 之前因 htmlGenerator.ts 返回 doc.documentElement.outerHTML 导致嵌套 <html> 标签
+      // （已修复为 doc.body.innerHTML），现在 innerHTML 方式是安全的
+      const content = document.createElement('div');
+      content.innerHTML = html;
 
       const previewer = new Previewer();
       // Paged.js 的 preview 方法：
       // 第一个参数是 DOM 内容（HTMLElement 或 DocumentFragment）
-      // 第二个参数是样式表数组（此处为空，样式已嵌入 fragment 中的 <style> 标签）
+      // 第二个参数是样式表数组
       // 第三个参数是渲染目标（HTMLElement）
       // 使用 wrapPreviewWithErrorHandling 包装，拦截 Paged.js 内部的 DOM 遍历崩溃
       const result = await wrapPreviewWithErrorHandling(
-        () => previewer.preview(fragment, [], previewRef.current!)
+        () => previewer.preview(content, [], previewRef.current!)
       );
       if (!result) {
         // Paged.js 渲染过程中发生了不可恢复的错误，显示降级内容

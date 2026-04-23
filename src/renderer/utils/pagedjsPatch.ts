@@ -69,7 +69,8 @@ export async function wrapPreviewWithErrorHandling<T>(
       msg.includes('previousSibling') ||
       msg.includes('childNodes') ||
       msg.includes('findEndToken') ||
-      msg.includes('checkUnderflowAfterResize')
+      msg.includes('checkUnderflowAfterResize') ||
+      msg.includes('querySelector is not a function')
     ) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -88,7 +89,8 @@ export async function wrapPreviewWithErrorHandling<T>(
       msg.includes('previousSibling') ||
       msg.includes('childNodes') ||
       msg.includes('findEndToken') ||
-      msg.includes('checkUnderflowAfterResize')
+      msg.includes('checkUnderflowAfterResize') ||
+      msg.includes('querySelector is not a function')
     ) {
       event.preventDefault();
       const error = reason instanceof Error ? reason : new Error(msg);
@@ -120,7 +122,8 @@ export async function wrapPreviewWithErrorHandling<T>(
       msg.includes('nextSibling') ||
       msg.includes('previousSibling') ||
       msg.includes('childNodes') ||
-      msg.includes('findEndToken')
+      msg.includes('findEndToken') ||
+      msg.includes('querySelector is not a function')
     ) {
       console.warn('[Aimtp] Paged.js preview() threw a DOM traversal error. Returning null.');
       return null;
