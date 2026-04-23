@@ -138,7 +138,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       // 将 HTML 字符串解析为 DOM 内容，Paged.js preview() 要求传入 DOM 而非字符串
       const parser = new DOMParser();
       const parsedDoc = parser.parseFromString(html, 'text/html');
-      const content = parsedDoc.body;
+      // 用 adoptNode 将节点迁移到当前文档，避免跨文档导致的 getAttribute 报错
+      const content = document.adoptNode(parsedDoc.body);
 
       const previewer = new Previewer();
       // Paged.js 的 preview 方法：
