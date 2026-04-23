@@ -8,7 +8,6 @@ import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
 import mdGithubAlerts from 'markdown-it-github-alerts';
-import lineNumbersPlugin from './lineNumbersPlugin';
 import { mathjaxPlugin, initMathJaxInstance } from './mathjaxPlugin';
 import { mermaidPlugin, initMermaidInstance } from './mermaidPlugin';
 
@@ -52,58 +51,62 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
     breaks: true,
     linkify: true,
     typographer: true,
-    highlight: function (str, lang) {
+    highlight: function (str: string, lang: string): string {
       // 如果启用代码高亮
       if (options.codeHighlight && lang && hljs.getLanguage(lang)) {
         try {
           // 得到经过highlight.js之后的html代码
-          const preCode = hljs.highlight(str, { language: lang }).value;
+          const preCode: string = hljs.highlight(str, { language: lang }).value;
           
           // 以换行进行分割
-          const lines = preCode.split(/\n/).slice(0, -1);
+          const lines: string[] = preCode.split(/\n/).slice(0, -1);
           
           // 如果启用行号（包括单行）
           if (options.showLineNumbers && lines.length > 0) {
             // 添加自定义行号
-            let html = lines.map((item, index) => {
+            let html: string = lines.map((item: string, index: number) => {
               return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item + '</li>';
             }).join('');
             html = '<ol class="code-lines">' + html + '</ol>';
-            // 添加代码语言标签
-            if (lines.length) {
-              html += '<b class="lang-name">' + lang + '</b>';
-            }
             return '<pre class="hljs"><code>' + html + '</code></pre>';
           } else {
             // 不显示行号，返回普通高亮代码
-            return '<pre class="hljs"><code>' + preCode + '</code></pre>';
+            let html: string = '<pre class="hljs"><code>' + preCode + '</code></pre>';
+            // 添加代码语言标签
+            if (lang) {
+              html = html.replace('</code>', '</code><b class="lang-name">' + lang + '</b>');
+            }
+            return html;
           }
         } catch (__) {}
       }
       
       // 未启用代码高亮或未指定语言，转义后返回
-      const preCode = md.utils.escapeHtml(str);
-      const lines = preCode.split(/\n/).slice(0, -1);
+      const preCode: string = md.utils.escapeHtml(str);
+      const lines: string[] = preCode.split(/\n/).slice(0, -1);
       
       // 如果启用行号（包括单行）
       if (options.showLineNumbers && lines.length > 0) {
-        let html = lines.map((item, index) => {
+        let html: string = lines.map((item: string, index: number) => {
           return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item + '</li>';
         }).join('');
         html = '<ol class="code-lines">' + html + '</ol>';
         return '<pre class="hljs"><code>' + html + '</code></pre>';
       }
       
-      return '<pre class="hljs"><code>' + preCode + '</code></pre>';
+      // 不显示行号，返回普通代码
+      let html: string = '<pre class="hljs"><code>' + preCode + '</code></pre>';
+      // 添加代码语言标签（如果有语言标识）
+      if (lang) {
+        html = html.replace('</code>', '</code><b class="lang-name">' + lang + '</b>');
+      }
+      return html;
     }
   });
 
   if (options.codeHighlight) {
     // 代码高亮已经在 highlight 配置函数中处理，不需要额外插件
   }
-
-  // 行号也已经在 highlight 配置函数中处理，不需要额外插件
-  // if (options.showLineNumbers) { ... }
 
   if (options.taskLists) {
     md.use(mdTaskLists);

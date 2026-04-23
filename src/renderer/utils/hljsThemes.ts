@@ -39,20 +39,16 @@ export const getHljsTheme = (theme: string): string => {
 
   const baseStyle = themeStyles[themeKey] || themeStyles.github;
 
-  // 添加代码块边框和行号样式 - 统一边框宽度
-  const codeBlockCss = `.hljs{background:${codeStyle.background};border:1px solid ${codeStyle.border}}.code-line-numbers{background:${codeStyle.background};border-right:1px solid ${codeStyle.lineNumberBorder};color:${codeStyle.lineNumberColor}}`;
+  // 添加代码块边框样式
+  const codeBlockCss = `.hljs{background:${codeStyle.background};border:1px solid ${codeStyle.border}}`;
 
   return baseStyle + codeBlockCss;
 };
 
 /**
  * 获取 hljs 基础样式（.hljs 类本身的样式）
- * @param background 代码块背景色
+ * 注意：背景和边框由主题自行控制，此处只设置布局相关属性
  */
-export const getHljsBaseStyles = (background: string = '#f6f8fa'): string => {
-  return `.hljs{background:${background};display:block;overflow-x:visible;overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap;padding:1em;border-radius:6px;font-size:14px;line-height:1.5;font-family:inherit;border:1px solid #d0d7de}
-
-.code-line-numbers{background:${background};display:inline-block;min-width:2.5em;text-align:right;padding-right:1em;margin-right:1em;border-right:1px solid #d0d7de;color:#6a737d;user-select:none;vertical-align:top;white-space:pre}
-.line-number{display:block;line-height:1.5}
-.with-line-numbers{display:flex;align-items:flex-start}`;
+export const getHljsBaseStyles = (): string => {
+  return `.hljs{display:block;overflow-x:visible;overflow-wrap:break-word;word-wrap:break-word;white-space:pre-wrap;padding:1em;border-radius:6px;font-size:14px;line-height:1.5;font-family:inherit}`;
 };

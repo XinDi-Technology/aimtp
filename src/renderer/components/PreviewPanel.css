@@ -257,6 +257,7 @@ pre.hljs ol.code-lines {
   margin: 0;
   margin-left: 3em;
   padding: 0;
+  line-height: 1; /* 重置浏览器默认行高 */
 }
 
 pre.hljs ol.code-lines li {
@@ -276,6 +277,11 @@ pre.hljs ol.code-lines li .line-num {
   padding-right: 0;
   color: #6a737d;
   user-select: none;
+}
+
+pre.hljs ol.code-lines li .line-num::before {
+  content: attr(data-line);
+  display: block;
 }
 
 pre.hljs b.lang-name {

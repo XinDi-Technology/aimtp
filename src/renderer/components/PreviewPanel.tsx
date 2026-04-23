@@ -107,13 +107,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   // 生成章节HTML列表
   const sectionHtmlList = useMemo(() => {
     const currentTheme = extensions.codeTheme || 'github';
-    const codeBackgrounds: Record<string, string> = {
-      github: '#f6f8fa',
-      monokai: '#272822',
-      dracula: '#282a36',
-    };
-    const codeBackground = codeBackgrounds[currentTheme] || codeBackgrounds.github;
-    const themeCss = `${getHljsBaseStyles(codeBackground)}${getHljsTheme(currentTheme)}`;
+    const themeCss = `${getHljsBaseStyles()}${getHljsTheme(currentTheme)}`;
 
     return sections.map((section) => {
       try {

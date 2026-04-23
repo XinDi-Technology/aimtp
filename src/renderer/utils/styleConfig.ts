@@ -89,6 +89,7 @@ function generateCodeStyles(className: string, font: FontConfig): string {
   return `
     ${className} pre.hljs {
       margin: ${font.lineHeight}em 0 !important;
+      line-height: ${font.lineHeight} !important;
     }
     ${className} pre.hljs ol.code-lines li {
       line-height: ${font.lineHeight} !important;

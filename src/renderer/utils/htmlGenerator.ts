@@ -126,25 +126,9 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     // 获取 highlight.js 主题样式（本地化，无 CDN 依赖）
     const hljsTheme = extensions.codeTheme || 'github';
     
-    // 代码块样式配置 - 统一边框宽度
-    const codeBlockColors: Record<string, { border: string; background: string; lineNumberBorder: string; lineNumberColor: string }> = {
-      github: { border: '#d0d7de', background: '#f6f8fa', lineNumberBorder: '#d0d7de', lineNumberColor: '#6a737d' },
-      monokai: { border: '#d0d7de', background: '#272822', lineNumberBorder: '#d0d7de', lineNumberColor: '#75715e' },
-      dracula: { border: '#d0d7de', background: '#282a36', lineNumberBorder: '#d0d7de', lineNumberColor: '#6272a4' },
-    };
-    const codeColors = codeBlockColors[hljsTheme] || codeBlockColors.github;
-    
     const hljsStyles = extensions.codeHighlight 
-      ? `<style>${getHljsBaseStyles(codeColors.background)}${getHljsTheme(hljsTheme)}</style>` 
+      ? `<style>${getHljsBaseStyles()}${getHljsTheme(hljsTheme)}</style>` 
       : '';
-    
-    // 代码块边框样式 - 统一边框宽度
-    const codeBlockStyles = `<style>
-    .hljs { 
-      border: 1px solid ${codeColors.border}; 
-      font-family: ${font.code}, monospace !important;
-    }
-    </style>`;
 
     // 使用绝对路径的 @font-face，确保 PDF 导出时字体能被正确加载
 const fontsCss = `
@@ -212,7 +196,7 @@ const fontsCss = `
 <html>
 <head>
   <meta charset="UTF-8">
-<style>${fontsCssWithRealPath}${hljsStyles}${codeBlockStyles}</style>
+<style>${fontsCssWithRealPath}${hljsStyles}</style>
   ${extensions.mermaid ? `<script>
     // Mermaid is loaded from local node_modules
   </script>` : ''}
@@ -274,12 +258,14 @@ const fontsCss = `
       position: relative;
       padding: 1em;
       margin: ${font.lineHeight}em 0;
+      line-height: ${font.lineHeight};
     }
     pre.hljs ol.code-lines {
       list-style: none;
       margin: 0;
       margin-left: 3em;
       padding: 0;
+      line-height: 1; /* 重置浏览器默认行高 */
     }
     pre.hljs ol.code-lines li {
       position: relative;
@@ -296,6 +282,10 @@ const fontsCss = `
       padding-right: 0;
       color: #6a737d;
       user-select: none;
+    }
+    pre.hljs ol.code-lines li .line-num::before {
+      content: attr(data-line);
+      display: block;
     }
     pre.hljs b.lang-name {
       position: absolute;
