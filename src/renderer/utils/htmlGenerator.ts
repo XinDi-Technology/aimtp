@@ -66,7 +66,8 @@ const transformFootnotesToPagedJs = (html: string): string => {
   const footnotesSep = doc.querySelector('.footnotes-sep');
   if (footnotesSep) footnotesSep.remove();
 
-  return doc.documentElement.outerHTML;
+  // 返回 body 内容而非整个文档，避免在后续拼接时产生嵌套 <html> 标签
+  return doc.body.innerHTML;
 };
 
 export const generateHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
@@ -192,7 +193,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
           (el as HTMLElement).style.breakBefore = 'page';
         });
       }
-      result = doc.documentElement.outerHTML;
+      result = doc.body.innerHTML;
     }
 
     const isPortrait = page.orientation === 'portrait';

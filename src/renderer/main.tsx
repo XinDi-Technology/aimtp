@@ -7,6 +7,15 @@ import './styles.css';
 const handleError = (error: Error, source?: string) => {
   console.error(`[Aimtp] Error in ${source || 'unknown'}:`, error);
   console.error('[Aimtp] Error stack:', error?.stack);
+
+  // Paged.js 渲染错误不应销毁整个页面，仅记录日志
+  // 这些错误通常来自第三方库的 DOM 遍历，不影响应用整体框架
+  if (error?.message?.includes('nextSibling') || error?.message?.includes('previousSibling')) {
+    console.warn('[Aimtp] Paged.js DOM traversal error suppressed. Preview may be incomplete.');
+    return;
+  }
+
+  // 非第三方库的致命错误，仍需替换页面
   document.body.innerHTML = `
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background: #f5f5f5;">
       <h1 style="color: #dc2626; margin-bottom: 20px;">Application Error</h1>

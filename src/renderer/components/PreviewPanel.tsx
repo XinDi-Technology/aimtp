@@ -5,6 +5,7 @@ import { generatePagedPreviewHtml } from '../utils/htmlGenerator';
 import { getCalibratedDPI, getPageDimensionsPixels } from '../utils/dpi';
 import { parseFrontMatter, formatDate } from '../utils/frontMatter';
 import { t } from '../../shared/i18n';
+import { wrapPreviewWithErrorHandling } from '../utils/pagedjsPatch';
 import './PreviewPanel.css';
 
 interface PreviewPanelProps {
@@ -135,17 +136,36 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       // 清空之前的内容
       previewRef.current.innerHTML = '';
 
-      // 将 HTML 字符串解析为 DOM 内容，Paged.js preview() 要求传入 DOM 而非字符串
-      // 在当前文档中创建 div，自动提取 <head> 样式和 <body> 内容，不跨文档
-      const content = document.createElement('div');
-      content.innerHTML = html;
+      // 使用 DOMParser 正确解析完整 HTML 文档
+      // generatePagedPreviewHtml 返回的是完整 <html><head>...</head><body>...</body></html> 结构
+      // 直接 innerHTML 塞进 div 会导致 <html>/<head>/<body> 标签被浏览器剥离/重排，产生非法 DOM
+      // DOMParser 会正确解析完整文档结构，保留 <style> 和内容层级
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // 提取 <style> 标签作为样式表传入 Paged.js
+      const styleElements = Array.from(doc.head.querySelectorAll('style'));
+      const stylesheets = styleElements.map(s => s.outerHTML);
+
+      // 提取 body 内容作为 Paged.js 的分页内容
+      const content = doc.body;
 
       const previewer = new Previewer();
       // Paged.js 的 preview 方法：
       // 第一个参数是 DOM 内容（HTMLElement 或 DocumentFragment）
       // 第二个参数是样式表数组
       // 第三个参数是渲染目标（HTMLElement）
-      const result = await previewer.preview(content, [], previewRef.current);
+      // 使用 wrapPreviewWithErrorHandling 包装，拦截 Paged.js 内部的 DOM 遍历崩溃
+      const result = await wrapPreviewWithErrorHandling(
+        () => previewer.preview(content, stylesheets, previewRef.current!)
+      );
+      if (!result) {
+        // Paged.js 渲染过程中发生了不可恢复的错误，显示降级内容
+        if (previewRef.current) {
+          previewRef.current.innerHTML = `<div style="padding:20px;color:#d4462a;">${locale === 'zh' ? '预览渲染失败，请尝试简化文档内容' : 'Preview rendering failed, try simplifying the document'}</div>`;
+        }
+        return;
+      }
       setTotalPages(result.total);
 
       // 注入页眉页脚到预览页面（Paged.js 的 margin box content 只在打印时生效，屏幕上需手动注入）
