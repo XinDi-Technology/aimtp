@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { Previewer } from 'pagedjs';
+import { Previewer } from 'pagedjs/dist/paged.polyfill';
 import { generatePagedPreviewHtml } from '../utils/htmlGenerator';
 import { getCalibratedDPI, getPageDimensionsPixels } from '../utils/dpi';
 import { parseFrontMatter, formatDate } from '../utils/frontMatter';
@@ -136,7 +136,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       previewRef.current.innerHTML = '';
 
       const previewer = new Previewer();
-      const result = await previewer.preview(html, [], previewRef.current);
+      // Paged.js 的 preview 方法可能期望 document.body 作为目标
+      // 我们传入 previewRef.current，但需要确保它是有效的 HTMLElement
+      const target = previewRef.current;
+      if (!target || !(target instanceof HTMLElement)) {
+        throw new Error('Preview target is not a valid HTMLElement');
+      }
+      const result = await previewer.preview(html, [], target);
       setTotalPages(result.total);
 
       // 注入页眉页脚到预览页面（Paged.js 的 margin box content 只在打印时生效，屏幕上需手动注入）
