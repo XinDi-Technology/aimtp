@@ -136,10 +136,9 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       previewRef.current.innerHTML = '';
 
       // 将 HTML 字符串解析为 DOM 内容，Paged.js preview() 要求传入 DOM 而非字符串
-      // 使用 template 在当前文档上下文中解析，完整保留 <head> 样式且不跨文档
-      const template = document.createElement('template');
-      template.innerHTML = html;
-      const content = template.content;
+      // 在当前文档中创建 div，自动提取 <head> 样式和 <body> 内容，不跨文档
+      const content = document.createElement('div');
+      content.innerHTML = html;
 
       const previewer = new Previewer();
       // Paged.js 的 preview 方法：
