@@ -84,10 +84,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       const pageWidthPx = pageDimensions.width;
       const pageHeightPx = pageDimensions.height;
       let newZoom = 100;
-      if (zoomMode === 'fit-width') {
-        newZoom = Math.max(50, Math.min(150, ((containerWidth - 80) / pageWidthPx) * 100));
+       if (zoomMode === 'fit-width') {
+         newZoom = Math.max(50, ((containerWidth - 80) / pageWidthPx) * 100);
       } else if (zoomMode === 'fit-height') {
-        newZoom = Math.max(50, Math.min(150, ((containerHeight - 120) / pageHeightPx) * 100));
+        newZoom = Math.max(50, ((containerHeight - 120) / pageHeightPx) * 100);
       } else {
         newZoom = 100;
       }
@@ -170,11 +170,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           // 页眉
           if (headerText) {
             const headerSelector = `.pagedjs_margin-top-${headerFooter.header.alignment}`;
-            // 兼容 paged.js 未来版本中 pageEl 可能不是 Element 的情况
-            const pageElAny: any = pageEl as any;
-            const headerBox = typeof pageElAny?.querySelector === 'function'
-              ? pageElAny.querySelector(headerSelector)
-              : null;
+            const headerBox = pageEl.querySelector(headerSelector);
             if (headerBox) {
               const div = document.createElement('div');
               div.className = 'preview-header-text';
@@ -188,10 +184,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           const footerTextContent = getFooterText(pageNum, result.total);
           if (footerTextContent) {
             const footerSelector = `.pagedjs_margin-bottom-${headerFooter.footer.alignment}`;
-            const pageElAny: any = pageEl as any;
-            const footerBox = typeof pageElAny?.querySelector === 'function'
-              ? pageElAny.querySelector(footerSelector)
-              : null;
+            const footerBox = pageEl.querySelector(footerSelector);
             if (footerBox) {
               const div = document.createElement('div');
               div.className = 'preview-footer-text';

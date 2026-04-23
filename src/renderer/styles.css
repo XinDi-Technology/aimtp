@@ -71,6 +71,7 @@ body {
 .app-container {
   display: flex;
   height: 100vh;
+  width: 100%;
   overflow: hidden;
   user-select: text;
   -webkit-user-select: text;
@@ -380,9 +381,9 @@ body {
 
 /* 编辑器 + 预览 */
 .editor-preview {
-  flex: 1;
+  flex:1;
   display: flex;
-  min-height: 0; /* Flexbox 滚动链必需 */
+  min-height:0; /* Flexbox 滚动链必需 */
   pointer-events: auto;
   overflow: hidden; /* 防止整体溢出，允许子元素独立滚动 */
 }
