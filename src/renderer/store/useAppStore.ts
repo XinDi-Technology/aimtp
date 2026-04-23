@@ -53,6 +53,9 @@ export interface ExtensionSettings {
   mermaid: boolean;
   mathJax: boolean;
   footnotes: boolean;
+  footnoteMode: 'end' | 'page-bottom';
+  h1PageBreak: boolean;
+  h2PageBreak: boolean;
   mark: boolean;
   ins: boolean;
   sub: boolean;
@@ -315,6 +318,9 @@ const defaultExtensions: ExtensionSettings = {
   mermaid: false,
   mathJax: false,
   footnotes: true,
+  footnoteMode: 'end',
+  h1PageBreak: false,
+  h2PageBreak: false,
   mark: true,
   ins: true,
   sub: true,
@@ -414,6 +420,9 @@ const validateExtensionSettings = (data: any): ExtensionSettings => {
     // 兼容旧版本的 katex 设置
     mathJax: isValidBoolean(data.mathJax) ? data.mathJax : (isValidBoolean(data.katex) ? data.katex : defaults.mathJax),
     footnotes: isValidBoolean(data.footnotes) ? data.footnotes : defaults.footnotes,
+    footnoteMode: ['end', 'page-bottom'].includes(data.footnoteMode) ? data.footnoteMode : defaults.footnoteMode,
+    h1PageBreak: isValidBoolean(data.h1PageBreak) ? data.h1PageBreak : defaults.h1PageBreak,
+    h2PageBreak: isValidBoolean(data.h2PageBreak) ? data.h2PageBreak : defaults.h2PageBreak,
     mark: isValidBoolean(data.mark) ? data.mark : defaults.mark,
     ins: isValidBoolean(data.ins) ? data.ins : defaults.ins,
     sub: isValidBoolean(data.sub) ? data.sub : defaults.sub,

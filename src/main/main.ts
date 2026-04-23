@@ -108,15 +108,16 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
     const { page } = options;
     const margins = page.margins || { top: 20, bottom: 20, left: 20, right: 20 };
     
-    const pageSize = page.size === 'A4' ? 'A4' : page.size === 'Letter' ? 'Letter' : page.size === 'A3' ? 'A3' : 'A4';
-    
-    const maxMargins: Record<string, number> = {
-      A4: 15,
-      Letter: 15,
-      A3: 20,
+    const isPortrait = page.orientation === 'portrait';
+    const pageSizeMap: Record<string, { width: number; height: number }> = {
+      A4: { width: 210000, height: 297000 },
+      A3: { width: 297000, height: 420000 },
+      Letter: { width: 215900, height: 279400 },
     };
-    const maxMargin = maxMargins[pageSize] || 15;
-    const safeMargin = (value: number) => Math.min(Math.max(value || 10, 3), maxMargin);
+    const basePageSize = pageSizeMap[page.size] || pageSizeMap.A4;
+    const pageSize = isPortrait
+      ? basePageSize
+      : { width: basePageSize.height, height: basePageSize.width };
     
     pdfWindow = new BrowserWindow({
       width: 800,
@@ -178,10 +179,10 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
     const pdfData = await pdfWindow.webContents.printToPDF({
       pageSize,
       margins: {
-        top: safeMargin(margins.top) / 25.4, // mm to inches
-        bottom: safeMargin(margins.bottom) / 25.4,
-        left: safeMargin(margins.left) / 25.4,
-        right: safeMargin(margins.right) / 25.4,
+        top: margins.top / 25.4, // mm to inches
+        bottom: margins.bottom / 25.4,
+        left: margins.left / 25.4,
+        right: margins.right / 25.4,
       },
       printBackground: true,
       preferCSSPageSize: false,

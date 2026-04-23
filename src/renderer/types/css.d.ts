@@ -54,3 +54,13 @@ declare module 'markdown-it-task-lists' {
   const plugin: any;
   export default plugin;
 }
+
+declare module 'pagedjs' {
+  export class Previewer {
+    preview(
+      html: string,
+      stylesheets: string[],
+      target: HTMLElement
+    ): Promise<{ total: number; pages: HTMLElement[] }>;
+  }
+}

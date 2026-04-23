@@ -507,13 +507,16 @@ body {
 }
 
 .markdown-content pre {
-  background: #1e1e1e;
-  color: #d4d4d4;
   padding: var(--space-lg);
   border-radius: 8px;
   overflow-x: auto;
   margin: var(--space-lg) 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.markdown-content pre:not(.hljs) {
+  background: #1e1e1e;
+  color: #d4d4d4;
 }
 
 .markdown-content pre code {

@@ -18,6 +18,57 @@ export interface HtmlGeneratorOptions {
   cover: CoverSettings;
 }
 
+/**
+ * 将 markdown-it-footnote 生成的文末脚注转换为 Paged.js 的 float: footnote 格式
+ * 脚注会显示在引用所在页面的底部
+ */
+const transformFootnotesToPagedJs = (html: string): string => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const footnotesContainer = doc.querySelector('.footnotes');
+  if (!footnotesContainer) return html;
+
+  const footnoteItems = footnotesContainer.querySelectorAll('li[id^="fn"]');
+  const footnoteMap = new Map<string, string>();
+
+  footnoteItems.forEach((item) => {
+    const id = item.id;
+    // 克隆节点以移除返回链接
+    const clone = item.cloneNode(true) as HTMLElement;
+    const backref = clone.querySelector('.footnote-backref');
+    if (backref) backref.remove();
+    footnoteMap.set(id, clone.innerHTML.trim());
+  });
+
+  // 在正文中每个 footnote-ref 后插入 float: footnote 元素
+  const refs = doc.querySelectorAll('a.footnote-ref');
+  refs.forEach((ref) => {
+    const href = ref.getAttribute('href');
+    if (!href) return;
+    const footnoteId = href.replace('#', '');
+    const content = footnoteMap.get(footnoteId);
+    if (!content) return;
+
+    const footnoteEl = doc.createElement('span');
+    footnoteEl.className = 'pagedjs-footnote';
+    footnoteEl.style.cssText = 'float: footnote;';
+    footnoteEl.innerHTML = content;
+
+    // 在引用链接的父元素末尾插入
+    ref.parentNode?.appendChild(footnoteEl);
+  });
+
+  // 移除文末的 footnotes 容器
+  footnotesContainer.remove();
+
+  // 移除 footnotes 分隔线（如果有）
+  const footnotesSep = doc.querySelector('.footnotes-sep');
+  if (footnotesSep) footnotesSep.remove();
+
+  return doc.documentElement.outerHTML;
+};
+
 export const generateHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
   const { markdown, locale, page, font, extensions, headerFooter, cover } = options;
   
@@ -110,6 +161,38 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       result = (sanitized as unknown) as string;
     } catch (e) {
       logger.warn('DOMPurify sanitization failed:', e);
+    }
+
+    // 如果启用"当前页底部"脚注模式，转换脚注格式
+    if (extensions.footnotes && extensions.footnoteMode === 'page-bottom') {
+      try {
+        result = transformFootnotesToPagedJs(result);
+      } catch (error) {
+        logger.error('Footnote transformation error:', error);
+      }
+    }
+
+    // 如果启用 H1/H2 自动分页，添加 break-before 样式
+    if (extensions.h1PageBreak || extensions.h2PageBreak) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(result, 'text/html');
+      if (extensions.h1PageBreak) {
+        const h1Elements = doc.querySelectorAll('h1');
+        h1Elements.forEach((el, index) => {
+          // 跳过第一个 H1（避免封面/文档开头出现空白页）
+          if (index === 0) return;
+          (el as HTMLElement).style.breakBefore = 'page';
+        });
+      }
+      if (extensions.h2PageBreak) {
+        const h2Elements = doc.querySelectorAll('h2');
+        h2Elements.forEach((el, index) => {
+          // 跳过第一个 H2（避免文档开头出现空白页）
+          if (index === 0) return;
+          (el as HTMLElement).style.breakBefore = 'page';
+        });
+      }
+      result = doc.documentElement.outerHTML;
     }
 
     const isPortrait = page.orientation === 'portrait';
@@ -217,7 +300,7 @@ const fontsCss = `
       line-height: ${font.lineHeight};
       max-width: ${maxWidth};
       margin: 0 auto;
-      padding: ${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm;
+      padding: 0;
     }
     h1, h2, h3, h4, h5, h6 {
       font-family: ${font.heading}, sans-serif;
@@ -270,6 +353,7 @@ const fontsCss = `
     pre.hljs ol.code-lines li {
       position: relative;
       padding-left: 0.5em;
+      margin: 0;
     }
     pre.hljs ol.code-lines li .line-num {
       position: absolute;
@@ -402,7 +486,19 @@ const fontsCss = `
       margin-bottom: 8px;
     }
     .footnote-backref {
-      margin-left: 4px;
+      display: none;
+    }
+    /* Paged.js 每页底部脚注样式 */
+    .pagedjs-footnote {
+      float: footnote;
+      font-size: 0.85em;
+      color: #555;
+    }
+    @page {
+      @footnote {
+        border-top: 1px solid #e5e3dd;
+        padding-top: 0.5em;
+      }
     }
     .cover-page {
       page-break-after: always;
@@ -492,15 +588,21 @@ const fontsCss = `
       display: inline-block;
       vertical-align: middle;
     }
-    ${headerFooter.enabled ? `
     /* 封面页（第一页）：不显示页眉页脚 */
     @page :first {
       margin: 0;
+      @top-left { content: none; }
+      @top-center { content: none; }
+      @top-right { content: none; }
+      @bottom-left { content: none; }
+      @bottom-center { content: none; }
+      @bottom-right { content: none; }
     }
-    /* 后续页面：显示页眉页脚 */
+    /* 页面设置 */
     @page {
+      size: ${page.size} ${page.orientation};
       margin: ${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm;
-      
+      ${headerFooter.enabled ? `
       /* 页眉 - 根据对齐方式选择位置 */
       ${headerFooter.header.alignment === 'left' ? `@top-left` : headerFooter.header.alignment === 'right' ? `@top-right` : `@top-center`} {
         content: "${headerContent.replace(/"/g, '\\"').replace(/\n/g, ' ')}";
@@ -516,11 +618,11 @@ const fontsCss = `
         font-size: ${font.baseSize * 0.9}px;
         color: #666;
       }
+      ` : ''}
     }
     body {
       counter-reset: page;
     }
-    ` : ''}
   </style>
 </head>
 <body>
@@ -652,5 +754,24 @@ const preRenderMathJax = async (html: string): Promise<string> => {
     }
   }
   
+  return html;
+};
+
+/**
+ * 生成 Paged.js 预览用的 HTML
+ * 复用 generateHtml 的渲染逻辑，但禁用页眉页脚的 @page content（预览中由 React 手动渲染）
+ */
+export const generatePagedPreviewHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
+  const previewOptions = {
+    ...options,
+    headerFooter: { ...options.headerFooter, enabled: false },
+  };
+
+  let html = await generateHtml(previewOptions);
+
+  // 移除 @font-face 规则，避免开发/生产环境中的字体路径问题
+  // 字体已由主页面通过 styles.css -> fonts.css 加载
+  html = html.replace(/@font-face\s*\{[\s\S]*?\}/g, '');
+
   return html;
 };

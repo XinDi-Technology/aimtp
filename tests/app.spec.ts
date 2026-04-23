@@ -123,6 +123,19 @@ test.describe('Aimtp Application', () => {
       await expect(page.locator('[data-testid="settings-panel"]')).toContainText(/(扩展功能|Extensions)/, { timeout: UI_TIMEOUT });
     });
 
+    test('should have footnote mode selector when footnotes enabled', async ({ page }) => {
+      const settingsPanel = page.locator('[data-testid="settings-panel"]');
+      // 检查脚注位置选择器是否存在（默认脚注已启用）
+      await expect(settingsPanel).toContainText(/脚注位置|Footnote Position/, { timeout: UI_TIMEOUT });
+    });
+
+    test('should have page break settings', async ({ page }) => {
+      const settingsPanel = page.locator('[data-testid="settings-panel"]');
+      await expect(settingsPanel).toContainText(/分页设置|Page Break/, { timeout: UI_TIMEOUT });
+      await expect(settingsPanel).toContainText(/H1 标题前自动分页/, { timeout: UI_TIMEOUT });
+      await expect(settingsPanel).toContainText(/H2 标题前自动分页/, { timeout: UI_TIMEOUT });
+    });
+
     test('should have code highlight toggle', async ({ page }) => {
       const settingsPanel = page.locator('[data-testid="settings-panel"]');
       const checkboxes = settingsPanel.locator('input[type="checkbox"]');
@@ -178,51 +191,31 @@ test.describe('Aimtp Application', () => {
   });
 
   test.describe('Preview Rendering', () => {
-    test('should show A4 page in preview and pagination metadata is present', async ({ page }) => {
-      // 新布局：检查 Word 风格的 A4 页面容器（可能有多个页面）
-      const a4Pages = page.locator('.preview-panel .a4-page');
-      await expect(a4Pages.first()).toBeVisible({ timeout: UI_TIMEOUT });
-      // 验证至少有一个页面
-      const count = await a4Pages.count();
+    test('should show pages in preview', async ({ page }) => {
+      // 等待 Paged.js 完成排版
+      await page.waitForSelector('.preview-panel .pagedjs_page', { timeout: UI_TIMEOUT });
+      const pages = page.locator('.preview-panel .pagedjs_page');
+      const count = await pages.count();
       expect(count).toBeGreaterThanOrEqual(1);
-      // 新增：检查分页元数据存在，支持结构化断言
-      // 由于文档中可能存在多个分页页，取第一个作为断言目标以避免强制单元素断言
-      await expect(page.locator('[data-total-pages]').first()).toBeVisible({ timeout: UI_TIMEOUT });
     });
   });
 
   test.describe('Page Stacking Mode', () => {
-    test('should show page stack container', async ({ page }) => {
-      const pageStack = page.locator('.page-stack');
-      await expect(pageStack).toBeVisible({ timeout: UI_TIMEOUT });
-    });
-
-    test('should show page dividers between pages', async ({ page }) => {
-      const dividers = page.locator('.page-divider');
-      // 验证分隔线存在
-      const count = await dividers.count();
-      expect(count).toBeGreaterThanOrEqual(0);
-    });
-
-    test('should show page numbers in dividers', async ({ page }) => {
-      const dividers = page.locator('.divider-label');
-      const count = await dividers.count();
-      if (count > 0) {
-        await expect(dividers.first()).toContainText(/(第.*页|Page)/, { timeout: UI_TIMEOUT });
-      }
+    test('should show pagedjs pages container', async ({ page }) => {
+      await page.waitForSelector('.pagedjs_pages', { timeout: UI_TIMEOUT });
+      const pagesContainer = page.locator('.pagedjs_pages');
+      await expect(pagesContainer).toBeVisible({ timeout: UI_TIMEOUT });
     });
 
     test('should render cover page separately when enabled', async ({ page }) => {
-      // 启用封面时检查封面页存在
       const coverPages = page.locator('.cover-page');
       const count = await coverPages.count();
-      // 封面可能存在或不存在，取决于模板设置
       expect(count).toBeGreaterThanOrEqual(0);
     });
 
     test('should render multiple content pages', async ({ page }) => {
-      const a4Pages = page.locator('.a4-page');
-      const count = await a4Pages.count();
+      const pages = page.locator('.pagedjs_page');
+      const count = await pages.count();
       expect(count).toBeGreaterThanOrEqual(1);
     });
   });

@@ -235,6 +235,46 @@ export const SettingsPanel: React.FC = () => {
           </label>
         </div>
 
+        {extensions.footnotes && (
+          <div className="setting-group" style={{ paddingLeft: '24px' }}>
+            <label className="setting-label">脚注位置</label>
+            <select
+              className="setting-input setting-select"
+              value={extensions.footnoteMode}
+              onChange={(e) => setExtensions({ footnoteMode: e.target.value as 'end' | 'page-bottom' })}
+            >
+              <option value="end">文档末尾</option>
+              <option value="page-bottom">当前页底部</option>
+            </select>
+            <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+              "当前页底部" 需要 Paged.js 排版，仅在预览和 PDF 中生效
+            </div>
+          </div>
+        )}
+
+        <div className="setting-group">
+          <label className="setting-label" style={{ marginBottom: '8px', display: 'block' }}>分页设置</label>
+          <label className="setting-checkbox">
+            <input
+              type="checkbox"
+              checked={extensions.h1PageBreak}
+              onChange={(e) => setExtensions({ h1PageBreak: e.target.checked })}
+            />
+            H1 标题前自动分页
+          </label>
+        </div>
+
+        <div className="setting-group" style={{ paddingLeft: '24px' }}>
+          <label className="setting-checkbox">
+            <input
+              type="checkbox"
+              checked={extensions.h2PageBreak}
+              onChange={(e) => setExtensions({ h2PageBreak: e.target.checked })}
+            />
+            H2 标题前自动分页
+          </label>
+        </div>
+
         <div className="setting-group">
           <label className="setting-checkbox">
             <input
