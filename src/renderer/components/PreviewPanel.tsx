@@ -170,7 +170,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           // 页眉
           if (headerText) {
             const headerSelector = `.pagedjs_margin-top-${headerFooter.header.alignment}`;
-            const headerBox = pageEl.querySelector(headerSelector);
+            // 兼容 paged.js 未来版本中 pageEl 可能不是 Element 的情况
+            const pageElAny: any = pageEl as any;
+            const headerBox = typeof pageElAny?.querySelector === 'function'
+              ? pageElAny.querySelector(headerSelector)
+              : null;
             if (headerBox) {
               const div = document.createElement('div');
               div.className = 'preview-header-text';
@@ -184,7 +188,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           const footerTextContent = getFooterText(pageNum, result.total);
           if (footerTextContent) {
             const footerSelector = `.pagedjs_margin-bottom-${headerFooter.footer.alignment}`;
-            const footerBox = pageEl.querySelector(footerSelector);
+            const pageElAny: any = pageEl as any;
+            const footerBox = typeof pageElAny?.querySelector === 'function'
+              ? pageElAny.querySelector(footerSelector)
+              : null;
             if (footerBox) {
               const div = document.createElement('div');
               div.className = 'preview-footer-text';
