@@ -135,14 +135,17 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       // 清空之前的内容
       previewRef.current.innerHTML = '';
 
+      // 将 HTML 字符串解析为 DOM 内容，Paged.js preview() 要求传入 DOM 而非字符串
+      const parser = new DOMParser();
+      const parsedDoc = parser.parseFromString(html, 'text/html');
+      const content = parsedDoc.body;
+
       const previewer = new Previewer();
-      // Paged.js 的 preview 方法可能期望 document.body 作为目标
-      // 我们传入 previewRef.current，但需要确保它是有效的 HTMLElement
-      const target = previewRef.current;
-      if (!target || !(target instanceof HTMLElement)) {
-        throw new Error('Preview target is not a valid HTMLElement');
-      }
-      const result = await previewer.preview(html, [], target);
+      // Paged.js 的 preview 方法：
+      // 第一个参数是 DOM 内容（HTMLElement 或 DocumentFragment）
+      // 第二个参数是样式表数组
+      // 第三个参数是渲染目标（HTMLElement）
+      const result = await previewer.preview(content, [], previewRef.current);
       setTotalPages(result.total);
 
       // 注入页眉页脚到预览页面（Paged.js 的 margin box content 只在打印时生效，屏幕上需手动注入）

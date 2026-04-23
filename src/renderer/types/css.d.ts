@@ -58,13 +58,9 @@ declare module 'markdown-it-task-lists' {
 declare module 'pagedjs' {
   export class Previewer {
     preview(
-      html: string,
+      content: HTMLElement | DocumentFragment,
       stylesheets: string[],
       target: HTMLElement
     ): Promise<{ total: number; pages: HTMLElement[] }>;
   }
-}
-
-declare module 'pagedjs/dist/paged.polyfill' {
-  export { Previewer } from 'pagedjs';
 }
