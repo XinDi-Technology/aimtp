@@ -9,6 +9,7 @@ import { splitMarkdownByH2 } from '../utils/pageSplitter';
 import { parseFrontMatter, formatDate } from '../utils/frontMatter';
 import { getCalibratedDPI, getPageDimensionsPixels } from '../utils/dpi';
 import { t } from '../../shared/i18n';
+import { generateDynamicStyles, generateInlineStyles } from '../utils/styleConfig';
 import './PreviewPanel.css';
 
 interface PreviewPanelProps {
@@ -144,18 +145,20 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     });
   }, [sections, extensions]);
 
-  // 生成动态标题样式
-  const headingStyles = useMemo(() => {
-    const scale = font.headingScale || 1.2;
-    return `
-      .preview-markdown h1 { font-size: ${font.baseSize * Math.pow(scale, 5)}px !important; }
-      .preview-markdown h2 { font-size: ${font.baseSize * Math.pow(scale, 4)}px !important; }
-      .preview-markdown h3 { font-size: ${font.baseSize * Math.pow(scale, 3)}px !important; }
-      .preview-markdown h4 { font-size: ${font.baseSize * Math.pow(scale, 2)}px !important; }
-      .preview-markdown h5 { font-size: ${font.baseSize * Math.pow(scale, 1)}px !important; }
-      .preview-markdown h6 { font-size: ${font.baseSize * Math.pow(scale, 0)}px !important; }
-    `;
-  }, [font.baseSize, font.headingScale]);
+  // 生成动态标题样式（使用固定系数）
+  // 使用统一的样式配置系统生成动态样式
+  const dynamicStyles = useMemo(() => {
+    return generateDynamicStyles({
+      font: {
+        baseSize: font.baseSize,
+        lineHeight: font.lineHeight,
+        heading: font.heading,
+        body: font.body,
+        code: font.code,
+      },
+      className: '.markdown-content',
+    });
+  }, [font.baseSize, font.lineHeight, font.heading, font.body, font.code]);
 
   // 核心分页算法：基于逐段测量的分页实现（方案A）
   const calculatePagination = useCallback(async () => {
@@ -199,7 +202,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
     // 当前正在拼装的页
     const currentPageDiv = document.createElement('div');
-    currentPageDiv.className = 'preview-markdown';
+    currentPageDiv.className = 'markdown-content';
     measureHost.appendChild(currentPageDiv);
 
     try {
@@ -451,7 +454,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                   <div className="a4-page content-page" style={{ width: pageDimensions.width, height: pageDimensions.height }} data-section-index={pageContent.sectionIndex ?? -1} data-page-index={pageContent.pageIndex ?? -1} data-total-pages={pageContent.totalPages ?? 0}>
                     {pageContent.contentList.map((content, cIndex) => (
                       <React.Fragment key={`${pageContent.id}-${cIndex}`}>
-                        <style>{content.themeCss}{headingStyles}</style>
+                        <style>{content.themeCss}{dynamicStyles}</style>
                         
                         {/* 页眉 */}
                         {headerText && (
@@ -470,15 +473,19 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
                           className="page-content-area"
                           style={{
                             padding: `${contentPaddingTop}px ${contentPaddingRight}px ${contentPaddingBottom}px ${contentPaddingLeft}px`,
-                            fontSize: `${font.baseSize}px`,
-                            lineHeight: font.lineHeight,
-                            fontFamily: font.body,
+                            ...generateInlineStyles({
+                              baseSize: font.baseSize,
+                              lineHeight: font.lineHeight,
+                              heading: font.heading,
+                              body: font.body,
+                              code: font.code,
+                            }),
                             height: '100%',
                             boxSizing: 'border-box',
                           }}
                         >
                           {/* [TODO] 问题2：XSS 风险，虽已消毒一次，应二次消毒或添加注释说明来源可信 */}
-                          <div className="preview-markdown" dangerouslySetInnerHTML={{ __html: content.html }} />
+                          <div className="markdown-content" dangerouslySetInnerHTML={{ __html: content.html }} />
                         </div>
                         
                         {/* 页脚 */}

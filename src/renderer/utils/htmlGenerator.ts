@@ -6,6 +6,7 @@ import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
 import { parseFrontMatter, formatDate } from './frontMatter';
 import { renderMermaidSync } from './mermaidPlugin';
 import { renderMathInlineAsync, renderMathDisplayAsync } from './mathjaxPlugin';
+import { generateDynamicStyles } from './styleConfig';
 
 export interface HtmlGeneratorOptions {
   markdown: string;
@@ -141,7 +142,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     const codeBlockStyles = `<style>
     .hljs { 
       border: 1px solid ${codeColors.border}; 
-      font-family: ${font.code}, monospace;
+      font-family: ${font.code}, monospace !important;
     }
     </style>`;
 
@@ -169,6 +170,11 @@ const fontsCss = `
   font-weight: bold;
 }
 @font-face {
+  font-family: 'JetBrains Mono';
+  src: url('file://FONTS_PATH/JetBrainsMono-Light.woff2') format('woff2');
+  font-weight: 300;
+}
+@font-face {
   font-family: 'Monaspace Argon';
   src: url('file://FONTS_PATH/MonaspaceArgon-Regular.woff2') format('woff2');
   font-weight: normal;
@@ -178,13 +184,35 @@ const fontsCss = `
   src: url('file://FONTS_PATH/MonaspaceArgon-Bold.woff2') format('woff2');
   font-weight: bold;
 }
+@font-face {
+  font-family: 'Monaspace Argon';
+  src: url('file://FONTS_PATH/MonaspaceArgon-Light.woff2') format('woff2');
+  font-weight: 300;
+}
 `;
+
+    // 获取字体文件的实际路径（相对于应用根目录）
+    // 在 Electron 中，使用 file:// 协议访问本地文件
+    // 开发环境：Vite 服务器运行在 localhost，字体通过 @import 加载
+    // 生产环境：需要使用 file:// 协议访问打包后的字体文件
+    const isDev = window.location.hostname === 'localhost';
+    let fontsCssWithRealPath = fontsCss;
+    
+    if (!isDev) {
+      // 生产环境：字体文件会被复制到 dist 目录
+      // 使用相对路径，Electron 会正确解析
+      fontsCssWithRealPath = fontsCss.replace(/file:\/\/FONTS_PATH\//g, './');
+    } else {
+      // 开发环境：移除占位符，让浏览器使用已加载的字体
+      // （字体已经通过 styles.css -> fonts.css 加载）
+      fontsCssWithRealPath = fontsCss.replace(/file:\/\/FONTS_PATH\//g, '../fonts/');
+    }
 
     return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-<style>${fontsCss}${hljsStyles}${codeBlockStyles}</style>
+<style>${fontsCssWithRealPath}${hljsStyles}${codeBlockStyles}</style>
   ${extensions.mermaid ? `<script>
     // Mermaid is loaded from local node_modules
   </script>` : ''}
@@ -200,7 +228,7 @@ const fontsCss = `
   :root { --paper-width-mm: ${paperWidthMm}mm; --cover-left-mm: ${coverLeftMm}mm; --cover-right-mm: ${coverRightMm}mm; }
   .cover-page { width: calc(var(--paper-width-mm) - (var(--cover-left-mm) + var(--cover-right-mm))); }
     body {
-      font-family: ${font.body}, sans-serif;
+      font-family: ${font.body}, sans-serif !important;
       font-size: ${font.baseSize}px;
       line-height: ${font.lineHeight};
       max-width: ${maxWidth};
@@ -210,20 +238,24 @@ const fontsCss = `
     h1, h2, h3, h4, h5, h6 {
       font-family: ${font.heading}, sans-serif;
     }
-    /* 动态标题大小（基于 headingScale） */
-    h1 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 5)}px; }
-    h2 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 4)}px; }
-    h3 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 3)}px; }
-    h4 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 2)}px; }
-    h5 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 1)}px; }
-    h6 { font-size: ${font.baseSize * Math.pow(font.headingScale || 1.2, 0)}px; }
+    /* 动态样式（基于用户设置） */
+    ${generateDynamicStyles({
+      font: {
+        baseSize: font.baseSize,
+        lineHeight: font.lineHeight,
+        heading: font.heading,
+        body: font.body,
+        code: font.code,
+      },
+      className: '', // 不使用类名前缀，直接应用到全局
+    })}
     pre, code {
       font-family: ${font.code}, monospace;
       font-size: inherit; /* 继承父元素的 font-size */
     }
     pre {
-      padding: 16px;
-      border-radius: 8px;
+      padding: 1em;
+      border-radius: 6px;
       overflow-x: visible;
       overflow-wrap: break-word;
       word-wrap: break-word;
@@ -252,7 +284,6 @@ const fontsCss = `
     pre.hljs ol.code-lines li {
       position: relative;
       padding-left: 0.5em;
-      line-height: 1.5;
     }
     pre.hljs ol.code-lines li .line-num {
       position: absolute;
@@ -436,7 +467,6 @@ const fontsCss = `
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 1.5em 0;
       padding: 1em;
       background: transparent;
       overflow-x: auto;
@@ -458,7 +488,6 @@ const fontsCss = `
     }
     /* MathJax 样式 */
     .math-display {
-      margin: 1em 0;
       padding: 0.5em 0;
       overflow-x: auto;
       overflow-y: hidden;

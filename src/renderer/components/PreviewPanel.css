@@ -225,23 +225,23 @@
 }
 
 /* Markdown 内容 */
-.preview-markdown {
+.markdown-content {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
 }
 
-.preview-markdown h1,
-.preview-markdown h2,
-.preview-markdown h3,
-.preview-markdown h4,
-.preview-markdown h5,
-.preview-markdown h6 {
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
   font-family: var(--font-heading);
 }
 
-.preview-markdown pre,
-.preview-markdown code {
+.markdown-content pre,
+.markdown-content code {
   font-family: var(--font-code), monospace;
 }
 
@@ -249,8 +249,7 @@
 pre.hljs {
   position: relative;
   padding: 1em;
-  /* 代码块间距应与行间距一致（默认1.6） */
-  margin: 1.6em 0;
+  /* margin 由 styleConfig.ts 动态生成（基于 font.lineHeight） */
 }
 
 pre.hljs ol.code-lines {
@@ -263,7 +262,7 @@ pre.hljs ol.code-lines {
 pre.hljs ol.code-lines li {
   position: relative;
   padding-left: 0.5em;
-  line-height: 1.5;
+  /* line-height 由 previewStyle 动态注入（基于 font.lineHeight） */
 }
 
 pre.hljs ol.code-lines li .line-num {
@@ -291,7 +290,7 @@ pre.hljs b.lang-name {
 }
 
 /* 表格样式 */
-.preview-markdown table {
+.markdown-content table {
   width: 100%;
   border-collapse: collapse;
   margin: 16px 0;
@@ -299,21 +298,21 @@ pre.hljs b.lang-name {
   word-wrap: break-word;
 }
 
-.preview-markdown th,
-.preview-markdown td {
+.markdown-content th,
+.markdown-content td {
   border: 1px solid #e5e3dd;
   padding: 8px 16px;
   text-align: left;
   overflow: hidden;
 }
 
-.preview-markdown th {
+.markdown-content th {
   background: #f5f4f0;
   font-weight: 600;
 }
 
 /* 表格行 */
-.preview-markdown tr {
+.markdown-content tr {
   page-break-inside: avoid;
 }
 
@@ -359,7 +358,7 @@ pre.hljs b.lang-name {
   font-weight: 600;
   margin-bottom: 8px;
   font-size: 14px;
-  line-height: 1.5;
+  /* line-height 由 previewStyle 动态注入（基于 font.lineHeight） */
 }
 
 /* Alert 标题中的 SVG 图标 */
@@ -398,7 +397,7 @@ pre.hljs b.lang-name {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 1.5em 0;
+  /* margin 由 styleConfig.ts 动态生成（基于 font.lineHeight） */
   overflow-x: auto;
 }
 

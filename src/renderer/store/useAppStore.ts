@@ -42,7 +42,6 @@ export interface FontSettings {
   code: string;
   baseSize: number;
   lineHeight: number;
-  headingScale: number;
 }
 
 export interface ExtensionSettings {
@@ -305,7 +304,6 @@ const defaultFont: FontSettings = {
   code: 'JetBrains Mono',
   baseSize: 12,
   lineHeight: 1.6,
-  headingScale: 1.2,
 };
 
 const defaultExtensions: ExtensionSettings = {
@@ -399,7 +397,6 @@ const validateFontSettings = (data: any): FontSettings => {
     code: isValidString(data.code) ? data.code : defaults.code,
     baseSize: isValidNumber(data.baseSize) ? data.baseSize : defaults.baseSize,
     lineHeight: isValidNumber(data.lineHeight) ? data.lineHeight : defaults.lineHeight,
-    headingScale: isValidNumber(data.headingScale) ? data.headingScale : defaults.headingScale,
   };
 };
 
