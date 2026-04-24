@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>布局调试工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    .check-item {
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 4px;
+    }
+    .check-pass {
+      background: #d4edda;
+      color: #155724;
+    }
+    .check-fail {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e9ecef;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h2> 布局高度链调试</h2>
+    <p>这个工具会检查应用的布局高度是否正确传递</p>
+    <button onclick="checkLayout()">开始检查</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function checkLayout() {
+      const result = document.getElementById('result');
+      let output = '=== 布局高度链检查 ===\n\n';
+      
+      // 模拟检查
+      const checks = [
+        {
+          name: '1. .app-container 高度',
+          expected: '100vh',
+          actual: '需要运行应用后检查',
+          status: 'warning'
+        },
+        {
+          name: '2. .main-content 高度',
+          expected: '100%',
+          actual: '需要运行应用后检查',
+          status: 'warning'
+        },
+        {
+          name: '3. .editor-preview 高度',
+          expected: '100%',
+          actual: '需要运行应用后检查',
+          status: 'warning'
+        },
+        {
+          name: '4. .preview-panel 高度',
+          expected: '100%',
+          actual: '需要运行应用后检查',
+          status: 'warning'
+        }
+      ];
+      
+      checks.forEach(check => {
+        const statusClass = check.status === 'pass' ? 'check-pass' : 
+                           check.status === 'fail' ? 'check-fail' : '';
+        output += `${check.name}\n`;
+        output += `  预期: ${check.expected}\n`;
+        output += `  实际: ${check.actual}\n`;
+        output += `  状态: ${check.status === 'pass' ? '✅ 通过' : check.status === 'fail' ? '❌ 失败' : '⚠️ 待验证'}\n\n`;
+      });
+      
+      output += '=== 修复内容 ===\n';
+      output += '已在以下位置添加 height: 100%:\n';
+      output += '1. .main-content (styles.css 第229行)\n';
+      output += '2. .editor-preview (styles.css 第389行)\n';
+      output += '3. .preview-panel (PreviewPanel.css 第10行)\n';
+      output += '4. .preview-panel (styles.css 第401行)\n\n';
+      output += '=== 验证方法 ===\n';
+      output += '请打开应用后，在浏览器开发者工具中：\n';
+      output += '1. 打开 Elements 面板\n';
+      output += '2. 选择 .preview-panel 元素\n';
+      output += '3. 查看 Computed 样式中的 height 属性\n';
+      output += '4. 尝试最大化窗口，观察预览区域是否跟随扩展\n';
+      
+      result.textContent = output;
+    }
+    
+    // 如果脚本注入到应用中，执行实际检查
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      setTimeout(() => {
+        const appContainer = document.querySelector('.app-container');
+        const mainContent = document.querySelector('.main-content');
+        const editorPreview = document.querySelector('.editor-preview');
+        const previewPanel = document.querySelector('.preview-panel');
+        
+        if (appContainer && mainContent && editorPreview && previewPanel) {
+          const result = document.getElementById('result');
+          result.textContent = '✅ 成功注入到应用中！正在执行实际检查...\n\n' + 
+            checkActualLayout();
+        }
+      }, 1000);
+    }
+    
+    function checkActualLayout() {
+      const elements = {
+        '.app-container': document.querySelector('.app-container'),
+        '.main-content': document.querySelector('.main-content'),
+        '.editor-preview': document.querySelector('.editor-preview'),
+        '.preview-panel': document.querySelector('.preview-panel')
+      };
+      
+      let output = '=== 实际元素检查 ===\n\n';
+      
+      for (const [selector, element] of Object.entries(elements)) {
+        if (element) {
+          const styles = window.getComputedStyle(element);
+          const height = styles.height;
+          const computedHeight = styles.getPropertyValue('height');
+          
+          output += `${selector}:\n`;
+          output += `  height: ${height}\n`;
+          output += `  offsetHeight: ${element.offsetHeight}px\n`;
+          output += `  clientHeight: ${element.clientHeight}px\n`;
+          output += `  ✅ 元素存在\n\n`;
+        } else {
+          output += `${selector}: ❌ 元素未找到\n\n`;
+        }
+      }
+      
+      return output;
+    }
+  </script>
+</body>
+</html>

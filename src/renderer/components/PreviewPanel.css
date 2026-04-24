@@ -7,6 +7,7 @@
   overflow: visible; /* 允许 transform scale 后的内容不被裁剪 */
   border-left: 1px solid var(--border);
   background: var(--bg-primary);
+  height: 100%; /* ★ 关键修复：确保占满父容器高度，配合 flex:1 实现高度扩展 */
 }
 
 .panel-header {
@@ -80,6 +81,7 @@
   align-items: flex-start;
   min-height: 0;
   position: relative;
+  width: 100%; /* ★ 关键修复：确保预览区域占满父容器宽度 */
 }
 
 [data-theme='dark'] .preview-with-margins {
@@ -135,6 +137,7 @@
   align-items: center;
   gap: 24px;
   padding: 24px 0;
+  width: 100%; /* ★ 关键修复：确保 pages 容器占满父容器宽度 */
 }
 
 .pagedjs-preview-wrapper .pagedjs_page {
@@ -142,6 +145,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin: 0 !important;
   width: 100%;
+  max-width: 100%; /* ★ 关键修复：防止页面宽度超出容器 */
+  min-height: auto; /* ★ 关键修复：让页面高度自适应内容 */
 }
 
 [data-theme='dark'] .pagedjs-preview-wrapper .pagedjs_page {

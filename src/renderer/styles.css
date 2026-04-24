@@ -82,7 +82,7 @@ body {
 
 /* 左侧设置面板容器 */
 .settings-panel-container {
-  height: 100vh;
+  height: 100%; /* ★ 关键修复：从 100vh 改为 100%，让 Grid 控制高度 */
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -386,6 +386,7 @@ body {
   display: flex;
   min-height: 0;
   overflow: hidden;
+  height: 100%; /* ★ 关键修复：确保在 Grid 中正确继承高度 */
 }
 
 .preview-panel {
@@ -397,6 +398,7 @@ body {
   flex-direction: column;
   min-height: 0; /* Flexbox 滚动链必需：允许子元素正确计算高度 */
   overflow: visible; /* 关键修复：允许 transform scale 后的内容不被裁剪 */
+  height: 100%; /* ★ 关键修复：确保占满父容器高度 */
 }
 
 /* 预览面板全宽模式（当编辑器隐藏或显示模板选择时） */
