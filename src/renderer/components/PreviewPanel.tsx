@@ -13,7 +13,7 @@ interface PreviewPanelProps {
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className }) => {
-  const { markdown, font, extensions, page, locale, cover, headerFooter } = useAppStore();
+  const { markdown, font, extensions, page, preview, locale, cover, headerFooter } = useAppStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<number | null>(null);
@@ -22,12 +22,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const [actualZoom, setActualZoom] = useState<number>(100);
   const [isCalculating, setIsCalculating] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
-
-  // DPI 和页面尺寸（用于缩放计算）
-  const dpi = useMemo(() => getCalibratedDPI(300), []);
-  const pageDimensions = useMemo(() => {
-    return getPageDimensionsPixels(page.size, page.orientation, dpi);
-  }, [page.size, page.orientation, dpi]);
 
   // 封面元数据
   const frontMatterData = useMemo(() => {
@@ -76,23 +70,64 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   }, [headerFooter, locale, coverTitle, coverAuthor, coverDate]);
 
   // 缩放计算
-  useEffect(() => {
-    const calculateZoom = () => {
-      if (!containerRef.current) return;
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      const pageWidthPx = pageDimensions.width;
-      const pageHeightPx = pageDimensions.height;
-      let newZoom = 100;
-       if (zoomMode === 'fit-width') {
-         newZoom = Math.max(50, ((containerWidth - 80) / pageWidthPx) * 100);
-      } else if (zoomMode === 'fit-height') {
-        newZoom = Math.max(50, ((containerHeight - 120) / pageHeightPx) * 100);
-      } else {
-        newZoom = 100;
+  const calculateZoom = useCallback(() => {
+    if (!containerRef.current) return;
+
+    if (zoomMode === 'actual') {
+      setActualZoom(100);
+      return;
+    }
+
+    const container = containerRef.current;
+    const previewRoot = previewRef.current;
+    const containerStyles = window.getComputedStyle(container);
+    const availableWidth =
+      container.clientWidth -
+      parseFloat(containerStyles.paddingLeft) -
+      parseFloat(containerStyles.paddingRight);
+    const availableHeight =
+      container.clientHeight -
+      parseFloat(containerStyles.paddingTop) -
+      parseFloat(containerStyles.paddingBottom);
+
+    let pageWidthPx = 0;
+    let pageHeightPx = 0;
+
+    if (previewRoot) {
+      const previousZoom = previewRoot.style.zoom;
+      previewRoot.style.zoom = '1';
+
+      const firstPage = previewRoot.querySelector('.pagedjs_page') as HTMLElement | null;
+      if (firstPage) {
+        const pageRect = firstPage.getBoundingClientRect();
+        pageWidthPx = pageRect.width;
+        pageHeightPx = pageRect.height;
       }
-      setActualZoom(Math.round(newZoom));
-    };
+
+      previewRoot.style.zoom = previousZoom;
+    }
+
+    // Paged.js 尚未完成渲染时，回退到校准 DPI 的理论尺寸，避免首次进入时无缩放值。
+    if (!pageWidthPx || !pageHeightPx) {
+      const dpi = getCalibratedDPI(preview.targetDPI);
+      const pageDimensions = getPageDimensionsPixels(page.size, page.orientation, dpi);
+      pageWidthPx = pageDimensions.width;
+      pageHeightPx = pageDimensions.height;
+    }
+
+    if (!pageWidthPx || !pageHeightPx || availableWidth <= 0 || availableHeight <= 0) {
+      return;
+    }
+
+    const nextZoom =
+      zoomMode === 'fit-width'
+        ? (availableWidth / pageWidthPx) * 100
+        : (availableHeight / pageHeightPx) * 100;
+
+    setActualZoom(Math.round(Math.min(Math.max(nextZoom, 10), 400)));
+  }, [page.orientation, page.size, preview.targetDPI, zoomMode]);
+
+  useEffect(() => {
     calculateZoom();
     window.addEventListener('resize', calculateZoom);
     const observer = new ResizeObserver(calculateZoom);
@@ -101,7 +136,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       window.removeEventListener('resize', calculateZoom);
       observer.disconnect();
     };
-  }, [zoomMode, pageDimensions]);
+  }, [calculateZoom]);
 
   // 清理 Paged.js 注入的全局样式
   const cleanupPagedJsStyles = useCallback(() => {
@@ -195,6 +230,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           }
         });
       }
+
+      window.requestAnimationFrame(() => {
+        calculateZoom();
+      });
     } catch (error) {
       console.error('Paged.js preview error:', error);
       // 降级：显示错误信息
@@ -204,7 +243,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     } finally {
       setIsCalculating(false);
     }
-  }, [markdown, locale, page, font, extensions, headerFooter, cover, cleanupPagedJsStyles, headerText, getFooterText]);
+  }, [markdown, locale, page, font, extensions, headerFooter, cover, cleanupPagedJsStyles, headerText, getFooterText, calculateZoom]);
 
   // 防抖触发 Paged.js
   useEffect(() => {
@@ -275,8 +314,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           ref={previewRef}
           className="pagedjs-preview-wrapper"
           style={{
-            transform: `scale(${actualZoom / 100})`,
-            transformOrigin: 'top center',
+            zoom: actualZoom / 100,
             opacity: isCalculating ? 0.3 : 1,
             transition: 'opacity 0.2s ease',
           }}

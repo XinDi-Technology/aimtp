@@ -85,6 +85,7 @@ body {
   height: 100%; /* ★ 关键修复：从 100vh 改为 100%，让 Grid 控制高度 */
   flex-shrink: 0;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* 左侧设置面板 */
@@ -95,7 +96,16 @@ body {
   border-right: 1px solid var(--border);
   padding: var(--space-lg);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 左侧设置面板滚动区域 */
+.settings-panel-scroll {
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .settings-panel h2 {

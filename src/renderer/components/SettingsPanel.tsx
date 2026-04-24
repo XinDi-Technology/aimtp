@@ -15,10 +15,11 @@ export const SettingsPanel: React.FC = () => {
   };
 
   return (
-    <aside className="settings-panel" data-testid="settings-panel">
-      <h2>⚙️ 设置</h2>
+    <div className="settings-panel" data-testid="settings-panel">
+      <div className="settings-panel-scroll" data-testid="settings-panel-scroll">
+        <h2>⚙️ 设置</h2>
 
-      <div className="setting-section" data-testid="page-settings">
+        <div className="setting-section" data-testid="page-settings">
         <h3>页面设置</h3>
         
         <div className="setting-group">
@@ -109,7 +110,7 @@ export const SettingsPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="setting-section">
+        <div className="setting-section">
         <h3>字体设置</h3>
         
         <div className="setting-group">
@@ -172,7 +173,7 @@ export const SettingsPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="setting-section">
+        <div className="setting-section">
         <h3>扩展功能</h3>
         
         <div className="setting-group">
@@ -354,7 +355,7 @@ export const SettingsPanel: React.FC = () => {
 
       </div>
 
-      <div className="setting-section">
+        <div className="setting-section">
         <h3>封面设置</h3>
         
         <div className="setting-group">
@@ -382,7 +383,7 @@ date: 2024-01-01
         )}
       </div>
 
-      <div className="setting-section">
+        <div className="setting-section">
         <h3>页眉页脚</h3>
         
         <div className="setting-group">
@@ -526,7 +527,7 @@ date: 2024-01-01
         )}
       </div>
 
-      <div className="setting-section">
+        <div className="setting-section">
         <h3>预览校准</h3>
         
         <div className="setting-group">
@@ -552,7 +553,7 @@ date: 2024-01-01
         </div>
       </div>
 
-      <div className="setting-section">
+        <div className="setting-section">
         <button
           className="btn btn-secondary"
           style={{ width: '100%', marginTop: '8px' }}
@@ -560,6 +561,7 @@ date: 2024-01-01
         >
           💾 保存设置为模板
         </button>
+        </div>
       </div>
 
       {/* 模板名称输入弹窗 */}
@@ -600,6 +602,6 @@ date: 2024-01-01
           </div>
         </div>
       )}
-    </aside>
+    </div>
   );
 };
