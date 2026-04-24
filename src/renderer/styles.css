@@ -226,6 +226,7 @@ body {
   grid-template-rows: auto 1fr auto;
   min-width: 0;
   overflow: visible;
+  height: 100%; /* ★ 关键修复：确保 Grid 容器占满父容器，使 1fr 行正确分配高度 */
 }
 
 /* 工具栏 */
