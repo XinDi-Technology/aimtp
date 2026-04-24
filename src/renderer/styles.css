@@ -81,6 +81,7 @@ body {
 
 /* 左侧设置面板容器 */
 .settings-panel-container {
+  height: 100vh;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -390,7 +391,6 @@ body {
 
 .preview-panel {
   flex: 1; /* 占据可用空间 */
-  height: 0; /* 强制由 flex 容器计算高度，而非内容撑开 */
   background: var(--bg-primary);
   /* padding 已移至 PreviewPanel.css 中的 .preview-with-margins，避免双重 padding */
   min-width: 0;
