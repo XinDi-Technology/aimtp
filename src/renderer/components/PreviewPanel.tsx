@@ -170,7 +170,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           // 页眉
           if (headerText) {
             const headerSelector = `.pagedjs_margin-top-${headerFooter.header.alignment}`;
-            const headerBox = pageEl.querySelector(headerSelector);
+            const headerBox = pageEl instanceof HTMLElement ? pageEl.querySelector(headerSelector) : null;
             if (headerBox) {
               const div = document.createElement('div');
               div.className = 'preview-header-text';
@@ -184,7 +184,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           const footerTextContent = getFooterText(pageNum, result.total);
           if (footerTextContent) {
             const footerSelector = `.pagedjs_margin-bottom-${headerFooter.footer.alignment}`;
-            const footerBox = pageEl.querySelector(footerSelector);
+            const footerBox = pageEl instanceof HTMLElement ? pageEl.querySelector(footerSelector) : null;
             if (footerBox) {
               const div = document.createElement('div');
               div.className = 'preview-footer-text';
