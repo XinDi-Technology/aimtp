@@ -82,7 +82,6 @@ body {
 
 /* 左侧设置面板容器 */
 .settings-panel-container {
-  height: 100%; /* ★ 关键修复：从 100vh 改为 100%，让 Grid 控制高度 */
   flex-shrink: 0;
   overflow: hidden;
   min-height: 0;
@@ -93,7 +92,6 @@ body {
 /* 左侧设置面板 */
 .settings-panel {
   width: 280px;
-  height: 100%;
   flex: 1;                /* ★ 修复滚动：作为 flex item 占满父容器可用空间 */
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
@@ -238,8 +236,7 @@ body {
   display: grid;
   grid-template-rows: auto 1fr auto;
   min-width: 0;
-  overflow: visible;
-  height: 100%; /* ★ 关键修复：确保 Grid 容器占满父容器，使 1fr 行正确分配高度 */
+  overflow: hidden;
 }
 
 /* 工具栏 */
@@ -395,11 +392,9 @@ body {
 
 /* 编辑器 + 预览 */
 .editor-preview {
-  flex: 1; /* ★ 关键修复：Grid 的 1fr 行分配高度后，内部仍需 flex:1 让子元素继承 */
   display: flex;
   min-height: 0;
   overflow: hidden;
-  height: 100%; /* ★ 关键修复：确保在 Grid 中正确继承高度 */
 }
 
 .preview-panel {
@@ -411,7 +406,6 @@ body {
   flex-direction: column;
   min-height: 0; /* Flexbox 滚动链必需：允许子元素正确计算高度 */
   overflow: hidden; /* ★ 修复扩展：严格受 flex 控制尺寸，防止因内容溢出导致布局异常 */
-  height: 100%; /* ★ 关键修复：确保占满父容器高度 */
 }
 
 /* 预览面板全宽模式（当编辑器隐藏或显示模板选择时） */
