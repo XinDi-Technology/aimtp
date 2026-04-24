@@ -1,13 +1,6 @@
 /* Global Component Styles */
 
-/* Settings Panel */
-.settings-panel {
-  width: 300px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-left: 1px solid #e0e0e0;
-  overflow-y: auto;
-}
+/* Settings Panel - 样式已统一到全局 styles.css:89-97，此处不再重复定义 */
 
 .settings-panel h2 {
   margin-top: 0;
@@ -343,19 +336,7 @@
   margin-right: 8px;
 }
 
-/* Editor Preview Container */
-.editor-preview {
-  display: flex;
-  flex: 1;
-  overflow: hidden; /* 保持隐藏，防止整体溢出 */
-  min-height: 0; /* Flexbox 子元素滚动必需 */
-}
-
-/* EditorPanel 和 PreviewPanel 的布局由 styles.css 中的 flex 属性控制 */
-/* 这里不再设置 width，避免与 flex 布局冲突 */
-
-/* PreviewPanel 的样式已移至 styles.css 和 PreviewPanel.css */
-/* 这里不再定义 .editor-preview .preview-panel，避免样式冲突 */
+/* Editor Preview Container - 样式已统一到全局 styles.css:383-389，此处不再重复定义 */
 
 /* Modal */
 .modal-overlay {
