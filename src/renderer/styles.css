@@ -86,12 +86,15 @@ body {
   flex-shrink: 0;
   overflow: hidden;
   min-height: 0;
+  display: flex;          /* ★ 修复滚动：设为 flex 容器，让子元素正确继承高度 */
+  flex-direction: column; /* ★ 修复滚动 */
 }
 
 /* 左侧设置面板 */
 .settings-panel {
   width: 280px;
   height: 100%;
+  flex: 1;                /* ★ 修复滚动：作为 flex item 占满父容器可用空间 */
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   padding: var(--space-lg);
@@ -407,7 +410,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0; /* Flexbox 滚动链必需：允许子元素正确计算高度 */
-  overflow: visible; /* 关键修复：允许 transform scale 后的内容不被裁剪 */
+  overflow: hidden; /* ★ 修复扩展：严格受 flex 控制尺寸，防止因内容溢出导致布局异常 */
   height: 100%; /* ★ 关键修复：确保占满父容器高度 */
 }
 
@@ -418,6 +421,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden; /* ★ 修复扩展：同步保持 overflow 一致 */
 }
 
 .panel-header {

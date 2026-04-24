@@ -4,7 +4,7 @@
   flex: 1; /* ★ 关键修复：从全局样式补充，确保在组件级 CSS 加载后不被丢失 */
   min-height: 0; /* Flexbox 滚动链必需 */
   min-width: 0;
-  overflow: visible; /* 允许 transform scale 后的内容不被裁剪 */
+  overflow: hidden; /* ★ 修复扩展：严格受 flex 控制尺寸，防止因内容溢出导致布局异常 */
   border-left: 1px solid var(--border);
   background: var(--bg-primary);
   height: 100%; /* ★ 关键修复：确保占满父容器高度，配合 flex:1 实现高度扩展 */
@@ -82,6 +82,7 @@
   min-height: 0;
   position: relative;
   width: 100%; /* ★ 关键修复：确保预览区域占满父容器宽度 */
+  height: 0;                    /* ★ 修复滚动：强制 flex item 收缩到可用空间，使 overflow-y: auto 生效 */
 }
 
 [data-theme='dark'] .preview-with-margins {
@@ -129,6 +130,7 @@
   flex-direction: column;
   align-items: center;
   min-height: 0;
+  flex-shrink: 1;               /* ★ 修复滚动：允许在父 flex 容器中收缩 */
   width: max-content;
   margin: 0 auto;
 }
@@ -139,6 +141,7 @@
   align-items: center;
   gap: 24px;
   padding: 24px 0;
+  min-height: 0;                /* ★ 修复滚动：阻断嵌套 flex 容器的高度传递链 */
 }
 
 .pagedjs-preview-wrapper .pagedjs_page {
