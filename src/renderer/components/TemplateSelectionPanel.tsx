@@ -1,6 +1,5 @@
 import type { FC } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import './styles.css';
 
 const templateList = [
   { key: 'blank', name: '空白文档', nameEn: 'Blank', icon: '📄', desc: '新建空白文档', descEn: 'Create new document' },

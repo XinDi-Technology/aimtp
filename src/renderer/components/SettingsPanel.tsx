@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAppStore, PageSettings } from '../store/useAppStore';
-import './styles.css';
 
 export const SettingsPanel: React.FC = () => {
   const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, preview, setPreview, locale } = useAppStore();

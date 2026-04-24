@@ -1,7 +1,12 @@
 .preview-panel {
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #e0e0e0;
+  flex: 1; /* ★ 关键修复：从全局样式补充，确保在组件级 CSS 加载后不被丢失 */
+  min-height: 0; /* Flexbox 滚动链必需 */
+  min-width: 0;
+  overflow: visible; /* 允许 transform scale 后的内容不被裁剪 */
+  border-left: 1px solid var(--border);
+  background: var(--bg-primary);
 }
 
 .panel-header {

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useFileImport } from '../hooks';
-import './styles.css';
 
 interface ToolbarProps {
   onExportPdf?: () => void;

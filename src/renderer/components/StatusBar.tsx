@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
-import './styles.css';
 
 export const StatusBar: React.FC = () => {
   const { markdown, currentTemplate } = useAppStore();
