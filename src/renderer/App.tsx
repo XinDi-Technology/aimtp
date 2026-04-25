@@ -20,14 +20,14 @@ function App() {
         <aside className="settings-panel-container">
           <SettingsPanel />
         </aside>
+        {showTemplateSelection && (
+          <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
+            <TemplateSelectionPanel />
+          </section>
+        )}
         <main className="main-content">
           <Toolbar onExportPdf={handleExportPdf} />
           <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '预览' : 'Preview'}>
-            {showTemplateSelection && (
-              <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
-                <TemplateSelectionPanel />
-              </section>
-            )}
             <PreviewPanel className="preview-full-width" />
           </div>
           <StatusBar />
