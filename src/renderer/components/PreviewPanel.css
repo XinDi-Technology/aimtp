@@ -125,6 +125,11 @@
 }
 
 /* Paged.js 预览容器 */
+.pagedjs-scale-container {
+  width: 100%;
+  overflow: hidden;
+}
+
 .pagedjs-preview-wrapper {
   display: flex;
   flex-direction: column;
@@ -133,7 +138,7 @@
   flex-shrink: 1;
   width: 100% !important;
   max-width: 100% !important;
-  overflow: visible !important;
+  transform-origin: top center;
 }
 
 .pagedjs-preview-wrapper .pagedjs_pages {

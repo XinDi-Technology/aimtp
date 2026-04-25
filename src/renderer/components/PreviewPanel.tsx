@@ -24,7 +24,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const [isCalculating, setIsCalculating] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
 
-  // 页面理论尺寸（用于动态计算预览容器宽度，避免 zoom 放大后被 overflow 裁剪）
+  const [contentHeight, setContentHeight] = useState<number>(0);
+
   const pageDimensions = useMemo(() =>
     getPageDimensionsPixels(page.size, page.orientation, getCalibratedDPI(preview.targetDPI)),
     [page.size, page.orientation, preview.targetDPI]
@@ -96,19 +97,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       parseFloat(containerStyles.paddingTop) -
       parseFloat(containerStyles.paddingBottom);
 
-    // 始终使用校准 DPI 的理论尺寸，避免 DOM 测量时序和竞争条件问题
     const dpi = getCalibratedDPI(preview.targetDPI);
     const pageDimensions = getPageDimensionsPixels(page.size, page.orientation, dpi);
     const pageWidthPx = pageDimensions.width;
     const pageHeightPx = pageDimensions.height;
 
-    // 诊断输出：帮助定位是哪一层容器尺寸没有变化
-    console.log('[Aimtp Debug] container.clientWidth:', container.clientWidth, 'container.clientHeight:', container.clientHeight);
-    console.log('[Aimtp Debug] availableWidth:', availableWidth, 'availableHeight:', availableHeight);
-    console.log('[Aimtp Debug] pageWidthPx:', pageWidthPx, 'pageHeightPx:', pageHeightPx);
-
     if (!pageWidthPx || !pageHeightPx || availableWidth <= 0 || availableHeight <= 0) {
-      console.log('[Aimtp Debug] 提前返回，条件不满足');
       return;
     }
 
@@ -118,7 +112,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         : (availableHeight / pageHeightPx) * 100;
 
     const newZoom = Math.round(Math.min(Math.max(nextZoom, 10), 400));
-    console.log('[Aimtp Debug] zoomMode:', zoomMode, 'nextZoom:', nextZoom, 'newZoom:', newZoom);
     setActualZoom(newZoom);
   }, [page.orientation, page.size, preview.targetDPI, zoomMode]);
 
@@ -126,7 +119,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
   useEffect(() => {
     calculateZoom();
-    // resize 事件延迟到下一帧执行，确保浏览器完成重排后再读取尺寸
     const handleResize = () => requestAnimationFrame(calculateZoom);
     window.addEventListener('resize', handleResize);
     const observer = new ResizeObserver(calculateZoom);
@@ -136,6 +128,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       observer.disconnect();
     };
   }, [calculateZoom]);
+
+  useEffect(() => {
+    if (!previewRef.current || contentHeight <= 0) return;
+    const scaledHeight = Math.round(contentHeight * actualZoom / 100);
+    const scaleContainer = previewRef.current.parentElement;
+    if (scaleContainer) {
+      scaleContainer.style.height = `${scaledHeight}px`;
+    }
+  }, [actualZoom, contentHeight]);
 
   // 清理 Paged.js 注入的全局样式
   const cleanupPagedJsStyles = useCallback(() => {
@@ -244,6 +245,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }
 
       calculateZoomRef.current();
+
+      if (previewRef.current) {
+        setContentHeight(previewRef.current.scrollHeight);
+      }
     } catch (error) {
       console.error('Paged.js preview error:', error);
       // 降级：显示错误信息
@@ -321,15 +326,23 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           </div>
         )}
         <div
-          ref={previewRef}
-          className="pagedjs-preview-wrapper"
+          className="pagedjs-scale-container"
           style={{
-            zoom: actualZoom / 100,
-            width: '100%',
-            opacity: isCalculating ? 0.3 : 1,
-            transition: 'opacity 0.2s ease',
+            height: contentHeight > 0 ? `${Math.round(contentHeight * actualZoom / 100)}px` : undefined,
           }}
-        />
+        >
+          <div
+            ref={previewRef}
+            className="pagedjs-preview-wrapper"
+            style={{
+              transform: `scale(${actualZoom / 100})`,
+              transformOrigin: 'top center',
+              width: '100%',
+              opacity: isCalculating ? 0.3 : 1,
+              transition: 'opacity 0.2s ease',
+            }}
+          />
+        </div>
       </div>
     </div>
   );
