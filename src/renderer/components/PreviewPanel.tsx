@@ -311,7 +311,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           className="pagedjs-preview-wrapper"
           style={{
             zoom: actualZoom / 100,
-            width: actualZoom > 0 ? `${Math.round(pageDimensions.width * (actualZoom / 100))}px` : `${pageDimensions.width}px`,
+            width: '100%',
             opacity: isCalculating ? 0.3 : 1,
             transition: 'opacity 0.2s ease',
           }}
