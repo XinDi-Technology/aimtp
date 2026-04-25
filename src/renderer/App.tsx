@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PreviewPanel } from './components/PreviewPanel';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -13,6 +13,19 @@ function App() {
   const { handleExportPdf } = usePDFExport();
 
   useFontLoading();
+
+  useEffect(() => {
+    const triggerResize = () => {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+        document.body.style.display = 'none';
+        document.body.offsetHeight;
+        document.body.style.display = '';
+      });
+    };
+    window.addEventListener('resize', triggerResize);
+    return () => window.removeEventListener('resize', triggerResize);
+  }, []);
 
   return (
     <ErrorBoundary>

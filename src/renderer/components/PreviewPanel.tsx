@@ -133,7 +133,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         : (availableHeight / pageHeightPx) * 100;
 
     const newZoom = Math.round(Math.min(Math.max(nextZoom, 10), 400));
-    console.log('[Aimtp Debug] newZoom:', newZoom);
+    console.log('[Aimtp Debug] newZoom:', newZoom, 'availableWidth:', availableWidth, 'pageWidthPx:', pageWidthPx, 'now:', Date.now());
     setActualZoom(newZoom);
   }, [page.orientation, page.size, preview.targetDPI, zoomMode]);
 
@@ -141,9 +141,17 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
   useEffect(() => {
     calculateZoom();
-    const handleResize = () => requestAnimationFrame(calculateZoom);
+    const handleResize = () => {
+      setTimeout(() => {
+        requestAnimationFrame(() => requestAnimationFrame(calculateZoom));
+      }, 50);
+    };
     window.addEventListener('resize', handleResize);
-    const observer = new ResizeObserver(() => requestAnimationFrame(calculateZoom));
+    const observer = new ResizeObserver(() => {
+      setTimeout(() => {
+        requestAnimationFrame(() => requestAnimationFrame(calculateZoom));
+      }, 50);
+    });
     if (containerRef.current) observer.observe(containerRef.current);
     return () => {
       window.removeEventListener('resize', handleResize);
