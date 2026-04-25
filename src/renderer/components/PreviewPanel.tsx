@@ -255,10 +255,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           htmlEl.style.setProperty('display', 'flex', 'important');
           htmlEl.style.setProperty('flex-direction', 'column', 'important');
           htmlEl.style.setProperty('align-items', 'center', 'important');
-          htmlEl.style.setProperty('flex', '1 1 auto', 'important');
-          htmlEl.style.setProperty('width', 'auto', 'important');
-          htmlEl.style.setProperty('min-width', '0', 'important');
-          htmlEl.style.setProperty('max-width', '100%', 'important');
           htmlEl.style.setProperty('margin', '0', 'important');
         });
       }
@@ -378,7 +374,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
             style={{
               transform: `scale(${actualZoom / 100})`,
               transformOrigin: 'top center',
-              width: '100%',
               opacity: isCalculating ? 0.3 : 1,
               transition: 'opacity 0.2s ease',
             }}
