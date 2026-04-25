@@ -130,8 +130,7 @@
   align-items: center;
   min-height: 0;
   flex-shrink: 1;               /* ★ 修复滚动：允许在父 flex 容器中收缩 */
-  width: max-content;
-  margin: 0 auto;
+  /* width 由 React 内联样式动态计算，避免 zoom 放大后被 overflow 裁剪 */
 }
 
 .pagedjs-preview-wrapper .pagedjs_pages {

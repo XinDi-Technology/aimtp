@@ -23,6 +23,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const [isCalculating, setIsCalculating] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
 
+  // 页面理论尺寸（用于动态计算预览容器宽度，避免 zoom 放大后被 overflow 裁剪）
+  const pageDimensions = useMemo(() =>
+    getPageDimensionsPixels(page.size, page.orientation, getCalibratedDPI(preview.targetDPI)),
+    [page.size, page.orientation, preview.targetDPI]
+  );
+
   // 封面元数据
   const frontMatterData = useMemo(() => {
     const { data } = parseFrontMatter(markdown);
@@ -109,11 +115,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
   useEffect(() => {
     calculateZoom();
-    window.addEventListener('resize', calculateZoom);
+    // resize 事件延迟到下一帧执行，确保浏览器完成重排后再读取尺寸
+    const handleResize = () => requestAnimationFrame(calculateZoom);
+    window.addEventListener('resize', handleResize);
     const observer = new ResizeObserver(calculateZoom);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => {
-      window.removeEventListener('resize', calculateZoom);
+      window.removeEventListener('resize', handleResize);
       observer.disconnect();
     };
   }, [calculateZoom]);
@@ -295,6 +303,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
           className="pagedjs-preview-wrapper"
           style={{
             zoom: actualZoom / 100,
+            width: actualZoom > 0 ? `${Math.round(pageDimensions.width * (actualZoom / 100))}px` : `${pageDimensions.width}px`,
             opacity: isCalculating ? 0.3 : 1,
             transition: 'opacity 0.2s ease',
           }}
