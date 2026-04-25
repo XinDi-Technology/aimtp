@@ -17,6 +17,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const containerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<number | null>(null);
+  const isPagedJsRenderingRef = useRef(false);
 
   const [zoomMode, setZoomMode] = useState<'fit-width' | 'fit-height' | 'actual'>('fit-width');
   const [actualZoom, setActualZoom] = useState<number>(100);
@@ -78,6 +79,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   // 缩放计算
   const calculateZoom = useCallback(() => {
     if (!containerRef.current) return;
+    if (isPagedJsRenderingRef.current) return;
 
     if (zoomMode === 'actual') {
       setActualZoom(100);
@@ -152,6 +154,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
     cleanupPagedJsStyles();
     setIsCalculating(true);
+    isPagedJsRenderingRef.current = true;
 
     try {
       const html = await generatePagedPreviewHtml({
@@ -227,9 +230,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         });
       }
 
-      window.requestAnimationFrame(() => {
-        calculateZoom();
-      });
+      calculateZoom();
     } catch (error) {
       console.error('Paged.js preview error:', error);
       // 降级：显示错误信息
@@ -238,6 +239,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }
     } finally {
       setIsCalculating(false);
+      isPagedJsRenderingRef.current = false;
     }
   }, [markdown, locale, page, font, extensions, headerFooter, cover, cleanupPagedJsStyles, headerText, getFooterText, calculateZoom]);
 
