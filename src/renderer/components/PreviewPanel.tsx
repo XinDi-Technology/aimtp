@@ -139,6 +139,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   }, [actualZoom, contentHeight]);
 
   // 清理 Paged.js 注入的全局样式
+  const isPagedJsRenderingRef = useRef(false);
+
   const cleanupPagedJsStyles = useCallback(() => {
     document.querySelectorAll('style').forEach(style => {
       if (
@@ -156,6 +158,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
     cleanupPagedJsStyles();
     setIsCalculating(true);
+    isPagedJsRenderingRef.current = true;
 
     try {
       const html = await generatePagedPreviewHtml({
@@ -248,9 +251,19 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
       if (previewRef.current) {
         previewRef.current.querySelectorAll('.pagedjs_pages').forEach((el) => {
-          el.removeAttribute('style');
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.setProperty('display', 'flex', 'important');
+          htmlEl.style.setProperty('flex-direction', 'column', 'important');
+          htmlEl.style.setProperty('align-items', 'center', 'important');
+          htmlEl.style.setProperty('flex', '1 1 auto', 'important');
+          htmlEl.style.setProperty('width', 'auto', 'important');
+          htmlEl.style.setProperty('min-width', '0', 'important');
+          htmlEl.style.setProperty('max-width', '100%', 'important');
+          htmlEl.style.setProperty('margin', '0', 'important');
         });
       }
+
+      isPagedJsRenderingRef.current = false;
 
       calculateZoomRef.current();
 
@@ -258,6 +271,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         setContentHeight(previewRef.current.scrollHeight);
       }
     } catch (error) {
+      isPagedJsRenderingRef.current = false;
       console.error('Paged.js preview error:', error);
       // 降级：显示错误信息
       if (previewRef.current) {
@@ -292,12 +306,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
   useEffect(() => {
     const styleObserver = new MutationObserver((mutations) => {
+      if (isPagedJsRenderingRef.current) return;
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (
             node instanceof HTMLStyleElement &&
             node.textContent &&
-            node.textContent.includes('.pagedjs_')
+            node.textContent.includes('.pagedjs_pages')
           ) {
             node.remove();
           }
