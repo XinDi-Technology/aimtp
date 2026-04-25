@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import './styles.css';
+import './styles/index.css';
 
 const handleError = (error: Error, source?: string) => {
   console.error(`[Aimtp] Error in ${source || 'unknown'}:`, error);

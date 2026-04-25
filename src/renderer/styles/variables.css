@@ -1,0 +1,36 @@
+@import '../../fonts/fonts.css';
+
+:root {
+  --bg-primary: #FAFAF8;
+  --bg-surface: #F5F4F0;
+  --bg-elevated: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #4A4A4A;
+  --text-muted: #6E6E6E;
+  --accent-primary: #C43D24;
+  --accent-secondary: #1A4BDB;
+  --border: #D5D3CD;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  --font-display: 'GWM Sans UI', sans-serif;
+  --font-body: 'GWM Sans UI', sans-serif;
+  --font-code: 'JetBrains Mono', 'Monaspace Argon', monospace;
+}
+
+[data-theme='dark'] {
+  --bg-primary: #1a1a1a;
+  --bg-surface: #252525;
+  --bg-elevated: #2d2d2d;
+  --text-primary: #e8e8e8;
+  --text-secondary: #b0b0b0;
+  --text-muted: #888888;
+  --accent-primary: #e05030;
+  --accent-secondary: #4a7dff;
+  --border: #404040;
+}

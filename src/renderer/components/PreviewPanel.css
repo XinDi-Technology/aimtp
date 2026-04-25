@@ -4,6 +4,7 @@
   flex: 1; /* ★ 关键修复：从全局样式补充，确保在组件级 CSS 加载后不被丢失 */
   min-height: 0; /* Flexbox 滚动链必需 */
   min-width: 0;
+  width: 100%;
   overflow: hidden; /* ★ 修复扩展：严格受 flex 控制尺寸，防止因内容溢出导致布局异常 */
   border-left: 1px solid var(--border);
   background: var(--bg-primary);
