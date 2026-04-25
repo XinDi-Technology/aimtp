@@ -143,7 +143,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     calculateZoom();
     const handleResize = () => requestAnimationFrame(calculateZoom);
     window.addEventListener('resize', handleResize);
-    const observer = new ResizeObserver(calculateZoom);
+    const observer = new ResizeObserver(() => requestAnimationFrame(calculateZoom));
     if (containerRef.current) observer.observe(containerRef.current);
     return () => {
       window.removeEventListener('resize', handleResize);
