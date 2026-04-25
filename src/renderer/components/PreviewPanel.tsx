@@ -101,7 +101,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     const pageWidthPx = pageDimensions.width;
     const pageHeightPx = pageDimensions.height;
 
+    // 诊断输出：帮助定位是哪一层容器尺寸没有变化
+    console.log('[Aimtp Debug] container.clientWidth:', container.clientWidth, 'container.clientHeight:', container.clientHeight);
+    console.log('[Aimtp Debug] availableWidth:', availableWidth, 'availableHeight:', availableHeight);
+    console.log('[Aimtp Debug] pageWidthPx:', pageWidthPx, 'pageHeightPx:', pageHeightPx);
+
     if (!pageWidthPx || !pageHeightPx || availableWidth <= 0 || availableHeight <= 0) {
+      console.log('[Aimtp Debug] 提前返回，条件不满足');
       return;
     }
 
@@ -110,7 +116,9 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         ? (availableWidth / pageWidthPx) * 100
         : (availableHeight / pageHeightPx) * 100;
 
-    setActualZoom(Math.round(Math.min(Math.max(nextZoom, 10), 400)));
+    const newZoom = Math.round(Math.min(Math.max(nextZoom, 10), 400));
+    console.log('[Aimtp Debug] zoomMode:', zoomMode, 'nextZoom:', nextZoom, 'newZoom:', newZoom);
+    setActualZoom(newZoom);
   }, [page.orientation, page.size, preview.targetDPI, zoomMode]);
 
   useEffect(() => {
