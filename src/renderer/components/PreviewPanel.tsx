@@ -244,6 +244,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         });
       }
 
+      cleanupPagedJsStyles();
+
+      if (previewRef.current) {
+        previewRef.current.querySelectorAll('.pagedjs_pages').forEach((el) => {
+          el.removeAttribute('style');
+        });
+      }
+
       calculateZoomRef.current();
 
       if (previewRef.current) {
@@ -281,6 +289,24 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       cleanupPagedJsStyles();
     };
   }, [cleanupPagedJsStyles]);
+
+  useEffect(() => {
+    const styleObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (
+            node instanceof HTMLStyleElement &&
+            node.textContent &&
+            node.textContent.includes('.pagedjs_')
+          ) {
+            node.remove();
+          }
+        }
+      }
+    });
+    styleObserver.observe(document.head, { childList: true });
+    return () => styleObserver.disconnect();
+  }, []);
 
   return (
     <div className={`preview-panel ${className || ''}`}>
