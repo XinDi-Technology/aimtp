@@ -79,7 +79,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     }
 
     const container = containerRef.current;
-    const previewRoot = previewRef.current;
     const containerStyles = window.getComputedStyle(container);
     const availableWidth =
       container.clientWidth -
@@ -90,30 +89,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       parseFloat(containerStyles.paddingTop) -
       parseFloat(containerStyles.paddingBottom);
 
-    let pageWidthPx = 0;
-    let pageHeightPx = 0;
-
-    if (previewRoot) {
-      const previousZoom = previewRoot.style.zoom;
-      previewRoot.style.zoom = '1';
-
-      const firstPage = previewRoot.querySelector('.pagedjs_page') as HTMLElement | null;
-      if (firstPage) {
-        const pageRect = firstPage.getBoundingClientRect();
-        pageWidthPx = pageRect.width;
-        pageHeightPx = pageRect.height;
-      }
-
-      previewRoot.style.zoom = previousZoom;
-    }
-
-    // Paged.js 尚未完成渲染时，回退到校准 DPI 的理论尺寸，避免首次进入时无缩放值。
-    if (!pageWidthPx || !pageHeightPx) {
-      const dpi = getCalibratedDPI(preview.targetDPI);
-      const pageDimensions = getPageDimensionsPixels(page.size, page.orientation, dpi);
-      pageWidthPx = pageDimensions.width;
-      pageHeightPx = pageDimensions.height;
-    }
+    // 始终使用校准 DPI 的理论尺寸，避免 DOM 测量时序和竞争条件问题
+    const dpi = getCalibratedDPI(preview.targetDPI);
+    const pageDimensions = getPageDimensionsPixels(page.size, page.orientation, dpi);
+    const pageWidthPx = pageDimensions.width;
+    const pageHeightPx = pageDimensions.height;
 
     if (!pageWidthPx || !pageHeightPx || availableWidth <= 0 || availableHeight <= 0) {
       return;
