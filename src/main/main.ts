@@ -25,6 +25,9 @@ function createWindow() {
     },
   });
 
+  // 窗口最大化
+  mainWindow.maximize();
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
