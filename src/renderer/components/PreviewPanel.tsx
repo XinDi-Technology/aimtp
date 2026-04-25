@@ -102,7 +102,28 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     const pageWidthPx = pageDimensions.width;
     const pageHeightPx = pageDimensions.height;
 
+    // 调试日志
+    console.log('[Aimtp Debug] calculateZoom:', {
+      containerClientWidth: container.clientWidth,
+      containerClientHeight: container.clientHeight,
+      paddingLeft: containerStyles.paddingLeft,
+      paddingRight: containerStyles.paddingRight,
+      availableWidth,
+      availableHeight,
+      dpi,
+      pageWidthPx,
+      pageHeightPx,
+      zoomMode,
+      containerOffsetWidth: container.offsetWidth,
+      containerScrollWidth: container.scrollWidth,
+      parentElement: container.parentElement?.className,
+      parentClientWidth: container.parentElement?.clientWidth,
+      grandparentElement: container.parentElement?.parentElement?.className,
+      grandparentClientWidth: container.parentElement?.parentElement?.clientWidth,
+    });
+
     if (!pageWidthPx || !pageHeightPx || availableWidth <= 0 || availableHeight <= 0) {
+      console.log('[Aimtp Debug] Invalid dimensions, returning');
       return;
     }
 
@@ -112,6 +133,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         : (availableHeight / pageHeightPx) * 100;
 
     const newZoom = Math.round(Math.min(Math.max(nextZoom, 10), 400));
+    console.log('[Aimtp Debug] newZoom:', newZoom);
     setActualZoom(newZoom);
   }, [page.orientation, page.size, preview.targetDPI, zoomMode]);
 
