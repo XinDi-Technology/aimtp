@@ -2,7 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { applyPagedJsPatch } from './utils/pagedjsPatch';
 import './styles/index.css';
+
+applyPagedJsPatch();
 
 const handleError = (error: Error, source?: string) => {
   console.error(`[Aimtp] Error in ${source || 'unknown'}:`, error);

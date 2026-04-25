@@ -17,7 +17,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   const containerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<number | null>(null);
-  const isPagedJsRenderingRef = useRef(false);
+  const calculateZoomRef = useRef<() => void>(() => {});
 
   const [zoomMode, setZoomMode] = useState<'fit-width' | 'fit-height' | 'actual'>('fit-width');
   const [actualZoom, setActualZoom] = useState<number>(100);
@@ -79,7 +79,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
   // 缩放计算
   const calculateZoom = useCallback(() => {
     if (!containerRef.current) return;
-    if (isPagedJsRenderingRef.current) return;
 
     if (zoomMode === 'actual') {
       setActualZoom(100);
@@ -123,6 +122,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     setActualZoom(newZoom);
   }, [page.orientation, page.size, preview.targetDPI, zoomMode]);
 
+  calculateZoomRef.current = calculateZoom;
+
   useEffect(() => {
     calculateZoom();
     // resize 事件延迟到下一帧执行，确保浏览器完成重排后再读取尺寸
@@ -154,7 +155,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
     cleanupPagedJsStyles();
     setIsCalculating(true);
-    isPagedJsRenderingRef.current = true;
 
     try {
       const html = await generatePagedPreviewHtml({
@@ -196,6 +196,19 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }
       setTotalPages(result.total);
 
+      // 断开 Paged.js 内部的 ResizeObserver，防止延迟回调触发 checkUnderflowAfterResize
+      // 导致 null 引用错误和布局重置。我们已在内容变化时从头重新渲染，不需要它的 resize 处理。
+      if (result.pages) {
+        result.pages.forEach((p: any) => {
+          if (p.ro) {
+            try { p.ro.disconnect(); } catch (_) { /* ignore */ }
+          }
+          if (p.listening !== undefined) {
+            p.listening = false;
+          }
+        });
+      }
+
       // 注入页眉页脚到预览页面（Paged.js 的 margin box content 只在打印时生效，屏幕上需手动注入）
       if (headerFooter.enabled) {
         result.pages.forEach((pageEl: HTMLElement, index: number) => {
@@ -230,7 +243,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
         });
       }
 
-      calculateZoom();
+      calculateZoomRef.current();
     } catch (error) {
       console.error('Paged.js preview error:', error);
       // 降级：显示错误信息
@@ -239,9 +252,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }
     } finally {
       setIsCalculating(false);
-      isPagedJsRenderingRef.current = false;
     }
-  }, [markdown, locale, page, font, extensions, headerFooter, cover, cleanupPagedJsStyles, headerText, getFooterText, calculateZoom]);
+  }, [markdown, locale, page, font, extensions, headerFooter, cover, cleanupPagedJsStyles, headerText, getFooterText]);
 
   // 防抖触发 Paged.js
   useEffect(() => {
