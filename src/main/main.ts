@@ -16,6 +16,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     title: 'Aimtp',
+    show: false,
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -25,6 +26,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.maximize();
+    mainWindow?.show();
   });
 
   if (isDev) {
