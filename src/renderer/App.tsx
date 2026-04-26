@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PreviewPanel } from './components/PreviewPanel';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -11,7 +11,7 @@ import { usePDFExport, useFontLoading } from './hooks';
 declare global {
   interface Window {
     electronAPI?: {
-      onWindowStateChanged?: (callback: (data: { isMaximized: boolean }) => void) => void;
+      onWindowStateChanged?: (callback: (data: { isMaximized: boolean }) => void;
     };
   }
 }
@@ -19,17 +19,13 @@ declare global {
 function App() {
   const { locale, showTemplateSelection } = useAppStore();
   const { handleExportPdf } = usePDFExport();
+  const [, forceUpdateCounter] = useState(0);
 
   useFontLoading();
 
   useEffect(() => {
     const triggerResize = () => {
-      requestAnimationFrame(() => {
-        window.dispatchEvent(new Event('resize'));
-        document.body.style.display = 'none';
-        document.body.offsetHeight;
-        document.body.style.display = '';
-      });
+      window.dispatchEvent(new Event('resize'));
     };
     window.addEventListener('resize', triggerResize);
     return () => window.removeEventListener('resize', triggerResize);
@@ -37,12 +33,10 @@ function App() {
 
   useEffect(() => {
     window.electronAPI?.onWindowStateChanged?.(() => {
-      requestAnimationFrame(() => {
+      setTimeout(() => {
+        forceUpdateCounter((c) => c + 1);
         window.dispatchEvent(new Event('resize'));
-        document.body.style.display = 'none';
-        document.body.offsetHeight;
-        document.body.style.display = '';
-      });
+      }, 50);
     });
   }, []);
 
