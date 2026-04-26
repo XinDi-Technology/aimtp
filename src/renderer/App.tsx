@@ -8,6 +8,14 @@ import { TemplateSelectionPanel } from './components/TemplateSelectionPanel';
 import { useAppStore } from './store/useAppStore';
 import { usePDFExport, useFontLoading } from './hooks';
 
+declare global {
+  interface Window {
+    electronAPI?: {
+      onWindowStateChanged?: (callback: (data: { isMaximized: boolean }) => void) => void;
+    };
+  }
+}
+
 function App() {
   const { locale, showTemplateSelection } = useAppStore();
   const { handleExportPdf } = usePDFExport();
@@ -25,6 +33,17 @@ function App() {
     };
     window.addEventListener('resize', triggerResize);
     return () => window.removeEventListener('resize', triggerResize);
+  }, []);
+
+  useEffect(() => {
+    window.electronAPI?.onWindowStateChanged?.(() => {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+        document.body.style.display = 'none';
+        document.body.offsetHeight;
+        document.body.style.display = '';
+      });
+    });
   }, []);
 
   return (

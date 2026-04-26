@@ -230,19 +230,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }
       setTotalPages(result.total);
 
-      // 断开 Paged.js 内部的 ResizeObserver，防止延迟回调触发 checkUnderflowAfterResize
-      // 导致 null 引用错误和布局重置。我们已在内容变化时从头重新渲染，不需要它的 resize 处理。
-      if (result.pages) {
-        result.pages.forEach((p: any) => {
-          if (p.ro) {
-            try { p.ro.disconnect(); } catch (_) { /* ignore */ }
-          }
-          if (p.listening !== undefined) {
-            p.listening = false;
-          }
-        });
-      }
-
       // 注入页眉页脚到预览页面（Paged.js 的 margin box content 只在打印时生效，屏幕上需手动注入）
       if (headerFooter.enabled) {
         result.pages.forEach((pageEl: HTMLElement, index: number) => {

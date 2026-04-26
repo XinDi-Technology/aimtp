@@ -12,4 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     html: string;
     locale?: string;
   }) => ipcRenderer.invoke('generate-pdf', options),
+  onWindowStateChanged: (callback: (data: { isMaximized: boolean }) => void) => {
+    ipcRenderer.on('window-state-changed', (_event, data) => callback(data));
+  },
 });
