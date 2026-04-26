@@ -8,6 +8,14 @@ import { t } from '../../shared/i18n';
 import { wrapPreviewWithErrorHandling } from '../utils/pagedjsPatch';
 import './PreviewPanel.css';
 
+declare global {
+  interface Window {
+    electronAPI?: {
+      onWindowStateChanged?: (callback: (data: { isMaximized: boolean }) => void) => void;
+    };
+  }
+}
+
 interface PreviewPanelProps {
   className?: string;
 }
@@ -153,6 +161,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
       }, 50);
     });
     if (containerRef.current) observer.observe(containerRef.current);
+    
+    window.electronAPI?.onWindowStateChanged?.(() => {
+      setTimeout(() => {
+        calculateZoom();
+      }, 100);
+    });
+    
     return () => {
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
