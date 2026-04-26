@@ -151,23 +151,23 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     calculateZoom();
     const handleResize = () => {
       setTimeout(() => {
-        requestAnimationFrame(() => requestAnimationFrame(calculateZoom));
+        requestAnimationFrame(() => calculateZoom());
       }, 50);
     };
     window.addEventListener('resize', handleResize);
     const observer = new ResizeObserver(() => {
       setTimeout(() => {
-        requestAnimationFrame(() => requestAnimationFrame(calculateZoom));
+        requestAnimationFrame(() => calculateZoom());
       }, 50);
     });
     if (containerRef.current) observer.observe(containerRef.current);
-    
+
     window.electronAPI?.onWindowStateChanged?.(() => {
       setTimeout(() => {
-        calculateZoom();
+        requestAnimationFrame(() => calculateZoom());
       }, 100);
     });
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
       observer.disconnect();

@@ -23,16 +23,11 @@ function App() {
   useFontLoading();
 
   useEffect(() => {
-    const triggerResize = () => {
-      window.dispatchEvent(new Event('resize'));
-    };
-    window.addEventListener('resize', triggerResize);
-
     window.electronAPI?.onWindowStateChanged?.(() => {
-      window.dispatchEvent(new Event('resize'));
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 50);
     });
-
-    return () => window.removeEventListener('resize', triggerResize);
   }, []);
 
   return (
