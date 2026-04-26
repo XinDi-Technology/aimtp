@@ -147,39 +147,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
 
   calculateZoomRef.current = calculateZoom;
 
+  // 只在首次加载时计算一次缩放，之后保持固定
   useEffect(() => {
     calculateZoom();
-    const handleResize = () => {
-      setTimeout(() => {
-        requestAnimationFrame(() => calculateZoom());
-      }, 50);
-    };
-    window.addEventListener('resize', handleResize);
-    const observer = new ResizeObserver(() => {
-      setTimeout(() => {
-        requestAnimationFrame(() => calculateZoom());
-      }, 50);
-    });
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    // 轮询检测宽度变化 - 更可靠的方法
-    const lastWidth = { value: 0 };
-    const pollInterval = setInterval(() => {
-      if (containerRef.current) {
-        const currentWidth = containerRef.current.clientWidth;
-        if (currentWidth !== lastWidth.value && currentWidth > 0) {
-          lastWidth.value = currentWidth;
-          calculateZoom();
-        }
-      }
-    }, 500);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      observer.disconnect();
-      clearInterval(pollInterval);
-    };
-  }, [calculateZoom]);
+    return () => {};
+  }, []);
 
   useEffect(() => {
     if (!previewRef.current || contentHeight <= 0) return;

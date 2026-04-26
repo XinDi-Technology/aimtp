@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PreviewPanel } from './components/PreviewPanel';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -8,25 +8,9 @@ import { TemplateSelectionPanel } from './components/TemplateSelectionPanel';
 import { useAppStore } from './store/useAppStore';
 import { usePDFExport, useFontLoading } from './hooks';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      onWindowStateChanged?: (callback: (data: { isMaximized: boolean }) => void) => void;
-    };
-  }
-}
-
 function App() {
   const { locale, showTemplateSelection } = useAppStore();
   const { handleExportPdf } = usePDFExport();
-
-  useEffect(() => {
-    window.electronAPI?.onWindowStateChanged?.(() => {
-      setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-      }, 50);
-    });
-  }, []);
 
   useFontLoading();
 

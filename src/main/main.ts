@@ -11,7 +11,7 @@ let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 1280,
     height: 800,
     minWidth: 800,
     minHeight: 600,
@@ -25,7 +25,6 @@ function createWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow?.maximize();
     mainWindow?.show();
   });
 
