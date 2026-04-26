@@ -20,8 +20,6 @@ function App() {
   const { locale, showTemplateSelection } = useAppStore();
   const { handleExportPdf } = usePDFExport();
 
-  useFontLoading();
-
   useEffect(() => {
     window.electronAPI?.onWindowStateChanged?.(() => {
       setTimeout(() => {
@@ -29,6 +27,8 @@ function App() {
       }, 50);
     });
   }, []);
+
+  useFontLoading();
 
   return (
     <ErrorBoundary>
@@ -38,13 +38,15 @@ function App() {
         </aside>
         <main className="main-content">
           <Toolbar onExportPdf={handleExportPdf} />
-          {showTemplateSelection && (
-            <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
-              <TemplateSelectionPanel />
-            </section>
-          )}
-          <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '预览' : 'Preview'}>
-            <PreviewPanel className="preview-full-width" />
+          <div className="main-content-body">
+            {showTemplateSelection && (
+              <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
+                <TemplateSelectionPanel />
+              </section>
+            )}
+            <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '预览' : 'Preview'}>
+              <PreviewPanel className="preview-full-width" />
+            </div>
           </div>
           <StatusBar />
         </main>

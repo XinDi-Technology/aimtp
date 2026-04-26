@@ -165,6 +165,19 @@
   overflow: hidden;
 }
 
+.main-content-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.main-content-body .editor-preview {
+  flex: 1;
+  min-width: 0;
+}
+
 .toolbar {
   flex-shrink: 0;
   height: 48px;

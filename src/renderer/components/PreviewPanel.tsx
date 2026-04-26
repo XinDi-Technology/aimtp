@@ -162,15 +162,22 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = React.memo(({ className
     });
     if (containerRef.current) observer.observe(containerRef.current);
 
-    window.electronAPI?.onWindowStateChanged?.(() => {
-      setTimeout(() => {
-        requestAnimationFrame(() => calculateZoom());
-      }, 100);
-    });
+    // 轮询检测宽度变化 - 更可靠的方法
+    const lastWidth = { value: 0 };
+    const pollInterval = setInterval(() => {
+      if (containerRef.current) {
+        const currentWidth = containerRef.current.clientWidth;
+        if (currentWidth !== lastWidth.value && currentWidth > 0) {
+          lastWidth.value = currentWidth;
+          calculateZoom();
+        }
+      }
+    }, 500);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
+      clearInterval(pollInterval);
     };
   }, [calculateZoom]);
 
