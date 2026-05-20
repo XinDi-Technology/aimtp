@@ -187,8 +187,7 @@ blockquote {
 
 table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   margin: 16px 0;
   table-layout: auto;
   word-wrap: break-word;
@@ -202,10 +201,6 @@ th, td {
   text-align: left;
   word-break: break-word;
   font-size: $$tableFontSize;
-}
-
-th + th, td + td {
-  border-left: none;
 }
 
 th {
