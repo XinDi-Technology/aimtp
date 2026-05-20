@@ -22,14 +22,14 @@ body {
 
 .settings-panel-container {
   flex-shrink: 0;
-  width: 280px;
+  width: 250px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .settings-panel {
-  width: 280px;
+  width: 250px;
   flex: 1;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
