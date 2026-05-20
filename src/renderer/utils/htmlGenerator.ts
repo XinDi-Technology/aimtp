@@ -40,7 +40,7 @@ function getFontsBaseUrl(): string {
 
   switch (env.type) {
     case 'browser-http':
-      return `file:///${__FONTS_DIR__.replace(/\\/g, '/')}/`;
+      return `${window.location.origin}/assets/fonts/`;
     case 'electron-dev':
       return `file:///${env.fontsDir}/`;
     case 'electron-prod':
