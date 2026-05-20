@@ -1,0 +1,77 @@
+{
+  "name": "Aimtp",
+  "version": "0.1.0",
+  "description": "专注合规的 Markdown 转 PDF 桌面应用",
+  "main": "dist/main/main/main.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.electron.json",
+    "build:renderer": "node scripts/build-pagedjs-iife.mjs && vite build",
+    "build:vite": "node scripts/build-pagedjs-iife.mjs && vite build && node scripts/fix-crossorigin.mjs",
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder",
+    "test": "NODE_ENV=test playwright test",
+    "test:preview": "npm run build:vite && npx vite preview --port 4173",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XinDi-Technology/aimtp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  
+  "bugs": {
+    "url": "https://github.com/XinDi-Technology/aimtp/issues"
+  },
+  "homepage": "https://github.com/XinDi-Technology/aimtp#readme",
+  "dependencies": {
+    "dompurify": "^3.4.5",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.1",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-github-alerts": "^1.0.1",
+    "markdown-it-ins": "^4.0.0",
+    "markdown-it-mark": "^4.0.0",
+    "markdown-it-sub": "^2.0.0",
+    "markdown-it-sup": "^2.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "mathjax": "^4.1.2",
+    "mermaid": "^11.15.0",
+    "pagedjs": "0.5.0-beta.2",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/markdown-it": "^14.1.2",
+    "@types/markdown-it-footnote": "^3.0.4",
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@vitejs/plugin-react": "^6.0.2",
+    "concurrently": "^9.2.1",
+    "electron-builder": "^26.11.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "playwright": "^1.60.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13",
+    "electron": "^42.2.0",
+    "wait-on": "^9.0.10"
+  }
+}

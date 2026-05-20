@@ -1,0 +1,47 @@
+{
+  "appId": "com.aimtp.converter",
+  "productName": "Aimtp",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "src/fonts/**/*",
+    "package.json",
+    "!**/*.map",
+    "!**/*.d.ts",
+    "!tests/**/*",
+    "!**/.DS_Store"
+  ],
+  "extraResources": [
+    {
+      "from": "src/fonts",
+      "to": "dist/renderer/fonts"
+    },
+    {
+      "from": "node_modules/pagedjs/dist/paged.js",
+      "to": "paged.js"
+    }
+  ],
+  "extraMetadata": {
+    "main": "dist/main/main/main.js"
+  },
+  "asar": true,
+  "asarUnpack": [],
+  "compression": "maximum",
+  "win": { 
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "mac": { 
+    "target": "dmg"
+  },
+  "linux": { 
+    "target": "AppImage"
+  },
+  "publish": null
+}

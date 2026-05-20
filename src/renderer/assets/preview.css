@@ -1,0 +1,564 @@
+@page {
+  size: $$pageSize $$pageOrientation;
+  margin: $$marginTop $$marginRight $$marginBottom $$marginLeft;
+}
+
+@page {
+  @footnote {
+    border-top: solid 1px #e5e3dd;
+    padding-top: 0.5em;
+  }
+}
+
+$$coverPageCss
+
+$$headerFooterCss
+
+body {
+  font-family: $$fontBody;
+  font-size: $$fontBaseSize;
+  line-height: $$fontLineHeight;
+  margin: 0 auto;
+  padding: 0;
+  background-color: #9ca3af;
+}
+
+.pagedjs_pages {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 24px;
+  padding: 24px 0;
+  min-height: 0;
+}
+
+.pagedjs_page {
+  margin: 0 auto !important;
+  min-height: auto;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+.pagedjs_margin.hasContent {
+  visibility: visible !important;
+}
+
+.pagedjs_margin.hasContent .pagedjs_margin-content {
+  visibility: visible !important;
+  display: block !important;
+}
+
+.pagedjs_margin.hasContent .pagedjs_margin-content::before,
+.pagedjs_margin.hasContent .pagedjs_margin-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+.aimtp-page-header,
+.aimtp-page-footer {
+  display: block;
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pagedjs_margin-top-center.hasContent,
+.pagedjs_margin-bottom-center.hasContent {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $$fontBody;
+}
+
+p {
+  line-height: $$fontLineHeight;
+  margin: 1em 0;
+}
+
+li {
+  line-height: $$fontLineHeight;
+}
+
+pre, code {
+  font-family: $$fontCode, $$fontBody;
+  font-size: $$codeFontSize;
+}
+
+pre.hljs,
+code.hljs {
+  font-family: $$fontCode, $$fontBody;
+}
+
+pre {
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: visible;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+pre code {
+  padding: 0;
+}
+
+pre.hljs {
+  position: relative;
+  padding: 1em 1em 1em 0;
+  margin: calc($$fontLineHeight * 1em) 0;
+  line-height: $$fontLineHeight;
+  widows: 1;
+  orphans: 1;
+}
+
+pre.hljs ol.code-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+pre.hljs ol.code-lines li {
+  display: block;
+  position: relative;
+  padding-left: 3.5em;
+  margin: 0;
+  line-height: $$fontLineHeight;
+}
+
+pre.hljs ol.code-lines li .line-num {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.8em;
+  border-right: 1px solid #d0d7de;
+  text-align: center;
+  color: #6a737d;
+  user-select: none;
+  pointer-events: none;
+  line-height: $$fontLineHeight;
+}
+
+pre.hljs ol.code-lines li .line-num::before {
+  content: attr(data-line);
+  display: block;
+}
+
+/* Paged.js 跨页切分时错误复制 padding/border，导致行丢失 #167 */
+[data-split-to] {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+[data-split-from] {
+  padding-top: 0;
+  border-top: 0;
+}
+
+pre.hljs b.lang-name {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  z-index: 10;
+  color: #999;
+  font-size: 12px;
+  font-weight: normal;
+  pointer-events: none;
+}
+
+blockquote {
+  border-left: 4px solid #c43d24;
+  padding: 12px 16px;
+  margin: 16px 0;
+  color: #555;
+  background: #fafaf8;
+  border-radius: 0 4px 4px 0;
+  line-height: $$fontLineHeight;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 16px 0;
+  table-layout: auto;
+  word-wrap: break-word;
+  widows: 1;
+  orphans: 1;
+}
+
+th, td {
+  border: 1px solid #e5e3dd;
+  padding: 8px 16px;
+  text-align: left;
+  word-break: break-word;
+  font-size: $$tableFontSize;
+}
+
+th + th, td + td {
+  border-left: none;
+}
+
+th {
+  background: #f5f4f0;
+  font-weight: 700;
+}
+
+td:empty::after, th:empty::after {
+  content: '\00A0';
+}
+
+.markdown-alert {
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left: 4px solid #0969da;
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left: 4px solid #1a7f37;
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left: 4px solid #8250df;
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left: 4px solid #bf8700;
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left: 4px solid #cf222e;
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.markdown-alert .markdown-alert-title svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: #0969da;
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: #1a7f37;
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: #8250df;
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: #bf8700;
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: #cf222e;
+}
+
+.markdown-alert p:last-child {
+  margin-bottom: 0;
+}
+
+.task-list-item {
+  list-style-type: none;
+}
+
+.task-list-item-checkbox {
+  margin-right: 8px;
+}
+
+.footnote-ref {
+  vertical-align: super;
+  font-size: 0.8em;
+}
+
+.footnotes {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e3dd;
+}
+
+.footnote-item {
+  margin-bottom: 8px;
+}
+
+.footnote-backref {
+  display: none;
+}
+
+.pagedjs-footnote {
+  float: footnote;
+  font-size: 0.85em;
+  color: #555;
+}
+
+.cover-page {
+  break-after: page;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: $$coverPadding;
+  box-sizing: border-box;
+}
+
+.aimtp-page-break-before {
+  break-before: page;
+}
+
+.cover-content {
+  text-align: center;
+  display: block;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.cover-content h1 {
+  display: block;
+  font-size: $$coverTitleSize;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  padding: 0;
+  font-family: $$fontBody;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.cover-author {
+  display: block;
+  font-size: $$coverAuthorSize;
+  color: #666;
+  margin: 0 0 10px 0;
+  padding: 0;
+  font-family: $$fontBody;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+.cover-date {
+  display: block;
+  font-size: $$coverDateSize;
+  color: #999;
+  margin: 0;
+  padding: 0;
+  font-family: $$fontBody;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+.mermaid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1em;
+  background: transparent;
+  overflow-x: auto;
+  margin: calc($$fontLineHeight * 1em) 0;
+}
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.mermaid-error {
+  color: #d4462a;
+  font-size: 0.9em;
+  background: #fff8f8;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #ffc1aa;
+  margin: 1em 0;
+}
+
+.math-display {
+  padding: 0.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: calc($$fontLineHeight * 1em) 0;
+}
+
+.math-display svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+.math-inline svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+$$paragraphSpacingCss
+
+@media screen and (prefers-color-scheme: dark) {
+  html {
+    color: #d3d3d3;
+    background-color: #101010;
+  }
+
+  a, a:visited {
+    color: #d3d3d3;
+  }
+
+  blockquote {
+    border-color: #707070;
+    color: #d3d3d3;
+  }
+
+  pre, code {
+    background-color: #1b1b1b;
+  }
+
+  hr {
+    background-color: #d3d3d3;
+  }
+
+  tbody, th {
+    border-color: #d3d3d3;
+  }
+}
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+q { quotes: "\201C" "\201D" "\2018" "\2019"; }
+
+/* ========================================
+   @media screen: Paged.js 视觉增强（仅预览）
+   ======================================== */
+@media screen {
+  .pagedjs_page {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ========================================
+   @media print: 导出适配（仅 printToPDF 时生效）
+   零 CSS 后处理：这些规则替代了 exportHtmlGenerator.ts 的正则替换
+   和 main.ts 的 insertCSS 注入
+   ======================================== */
+@media print {
+  body {
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Override CSS variables that pagedjs computed at Letter width (8.5in).
+     If syncCssomToDom() fails to capture pagedjs's CSSOM updates,
+     --pagedjs-pagebox-width defaults to 816px (Letter) instead of A4.
+     Using mm values ensures correct physical dimensions at any DPI. */
+  .pagedjs_pagebox {
+    --pagedjs-pagebox-width: calc($$pageWidthMm);
+    --pagedjs-pagebox-height: calc($$pageHeightMm);
+    --pagedjs-width: calc($$pageWidthMm);
+    --pagedjs-height: calc($$pageHeightMm);
+    --pagedjs-pagebox-width-right: calc($$pageWidthMm);
+    --pagedjs-pagebox-height-right: calc($$pageHeightMm);
+    --pagedjs-width-right: calc($$pageWidthMm);
+    --pagedjs-height-right: calc($$pageHeightMm);
+  }
+
+  .pagedjs_sheet {
+    position: static !important;
+    float: none !important;
+  }
+
+  .pagedjs_pages,
+  .pagedjs_page {
+    position: static !important;
+    display: block !important;
+    float: none !important;
+  }
+
+  .pagedjs_pages {
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+
+  .pagedjs_page {
+    break-after: page !important;
+    page-break-after: always !important;
+    margin: 0 auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  .pagedjs_page:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 保障 margin box 在 print 上下文中可见 */
+  .pagedjs_margin,
+  .pagedjs_margin-content {
+    visibility: visible !important;
+  }
+
+  /* 保障 aimtp-page-header/footer 在 print 上下文中正常布局 */
+  .aimtp-page-header,
+  .aimtp-page-footer {
+    position: static !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  /* 保障 margin box 容器的 flex 布局在 print 上下文中生效 */
+  .pagedjs_margin-top-center,
+  .pagedjs_margin-bottom-center,
+  .pagedjs_margin-top-left,
+  .pagedjs_margin-bottom-left,
+  .pagedjs_margin-top-right,
+  .pagedjs_margin-bottom-right {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 保障表格单元格行高与预览一致，避免 print 上下文下行高继承差异导致单元格高度偏小 */
+  th, td {
+    line-height: $$fontLineHeight;
+  }
+}

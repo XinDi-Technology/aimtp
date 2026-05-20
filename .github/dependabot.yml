@@ -1,0 +1,62 @@
+# Dependabot配置文件
+# 用于自动更新项目依赖
+
+version: 2
+updates:
+  # GitHub Actions依赖更新配置
+  - package-ecosystem: "github-actions"
+    # 配置文件所在目录
+    directory: "/"
+    # 更新检查频率
+    schedule:
+      interval: "daily"
+    # 最大打开的PR数量
+    open-pull-requests-limit: 10
+    # 提交信息前缀
+    commit-message:
+      prefix: "ci"
+    # PR标签
+    labels:
+      - "dependencies"
+      - "github-actions"
+    # 依赖分组
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # npm依赖更新配置
+  - package-ecosystem: "npm"
+    # 配置文件所在目录
+    directory: "/"
+    # 更新检查频率
+    schedule:
+      interval: "daily"
+    # 最大打开的PR数量
+    open-pull-requests-limit: 10
+    # 提交信息前缀
+    commit-message:
+      prefix: "deps"
+    # PR标签
+    labels:
+      - "dependencies"
+      - "npm"
+    # 依赖分组
+    groups:
+      # 生产依赖分组
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      # 开发依赖分组
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # 只为 package.json 中显式声明的直接依赖创建 PR，
+    # 不管理间接/传递依赖（应由上游包负责升级）
+    allow:
+      - dependency-type: "production"
+      - dependency-type: "development"

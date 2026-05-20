@@ -1,0 +1,524 @@
+/**
+ * PagedJsAdapter — Paged.js 适配层（模块化 API 模式，方案C: IIFE 注入）
+ *
+ * 重构说明（迭代2）：
+ * - 从 polyfill 注入模式 → 模块化 API 模式（Previewer 类 + Handler 机制）
+ * - 采用方案C：将 pagedjs ESM 打包为 IIFE 注入 iframe，确保 Paged.js 在正确的 window 上下文中运行
+ * - 不再使用 ?raw 导入 polyfill JS 文本
+ * - 不再使用轮询检测 PagedPolyfill 全局变量
+ * - 使用 Previewer 类实例化和 preview() 调用
+ * - 通过 Previewer 事件系统监听分页进度
+ * - 支持 Handler 注册机制（由 HandlerRegistry 管理）
+ */
+
+import type { LayoutEngine } from './LayoutEngine';
+import type { LayoutDOM, LayoutDOMMetadata, LayoutDOMProvenance } from './LayoutDOM';
+import type { Flow, Page } from 'pagedjs';
+import { handlerRegistry } from './handlers/HandlerRegistry';
+import type { HeaderFooterConfig, FrontMatter } from './handlers/AimtpHandler';
+import pagedJsIifeCode from '../assets/vendor/pagedjs.iife.js?raw';
+
+const FONT_READY_TIMEOUT = 5000;
+const DOCUMENT_READY_TIMEOUT = 2000;
+const PAGEDJS_READY_TIMEOUT = 10000;
+
+/** 分页进度回调 */
+export type LayoutProgressCallback = (
+  phase: 'fonts' | 'document' | 'injecting' | 'rendering' | 'page' | 'done',
+  detail?: { current?: number; total?: number },
+) => void;
+
+/** Previewer 实例接口（含事件系统） */
+interface PreviewerInstance {
+  preview(
+    content: string | HTMLElement | Document,
+    stylesheets?: string[],
+    renderTo?: HTMLElement,
+  ): Promise<Flow>;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  off(event: string, listener: (...args: unknown[]) => void): void;
+}
+
+/** __pagedjs 全局变量接口（IIFE 注入后暴露） */
+interface PagedJsBridge {
+  Previewer: new () => PreviewerInstance;
+  Handler: new () => unknown;
+  Chunker: unknown;
+  Polisher: unknown;
+  registerHandlers: (...handlers: unknown[]) => void;
+  initializeHandlers: (...args: unknown[]) => void;
+  createPreviewer: () => PreviewerInstance;
+  createHandler: () => unknown;
+}
+
+export class PagedJsAdapter implements LayoutEngine {
+  private disposed = false;
+  private progressCallback: LayoutProgressCallback | null = null;
+  private registeredHandlerConstructors: (new (...args: unknown[]) => unknown)[] = [];
+  private handlerConfig: HeaderFooterConfig | null = null;
+  private frontMatter: FrontMatter | null = null;
+
+  /** 设置进度回调 */
+  onProgress(callback: LayoutProgressCallback): void {
+    this.progressCallback = callback;
+  }
+
+  /** 注册 Handler 类（在 layout 前调用） */
+  registerHandler(handlerClass: new (...args: unknown[]) => unknown): void {
+    this.registeredHandlerConstructors.push(handlerClass);
+  }
+
+  /** 清除所有已注册的 Handler 类 */
+  clearHandlers(): void {
+    this.registeredHandlerConstructors = [];
+  }
+
+  /** 配置页眉页脚 Handler（在 layout 前调用） */
+  setHeaderFooterConfig(config: HeaderFooterConfig, frontMatter?: FrontMatter): void {
+    this.handlerConfig = config;
+    this.frontMatter = frontMatter ?? null;
+  }
+
+  async layout(
+    html: string,
+    iframe: HTMLIFrameElement,
+    sourceHash: string,
+  ): Promise<LayoutDOM> {
+    if (this.disposed) {
+      throw new Error('PagedJsAdapter has been disposed');
+    }
+
+    const doc = iframe.contentDocument;
+    const win = iframe.contentWindow;
+    if (!doc || !win) {
+      throw new Error('iframe contentDocument/contentWindow is not available');
+    }
+
+    this.emitProgress('fonts');
+    await this.waitForFonts(doc);
+
+    this.emitProgress('document');
+    await this.waitForDocumentReady(iframe);
+
+    // 1. Write HTML content into iframe
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    // [PAGEDJS_WORKAROUND] 1.5. Protect TD/TH/LI from lastChildCheck removal.
+    // pagedjs removes empty overflowTagged elements. For TD/TH/LI, this breaks
+    // column structure and line numbering. Pre-insert a zero-width space so
+    // textContent.trim() is never empty, even after content extraction.
+    // Remove this if pagedjs upstream fully fixes lastChildCheck exclusion.
+    this.protectStructuralElements(doc);
+
+    // 2. Inject pagedjs IIFE into iframe
+    this.emitProgress('injecting');
+    this.injectPagedJsIife(doc);
+
+    // 3. Wait for __pagedjs bridge to be available
+    const bridge = await this.waitForPagedJsBridge(iframe);
+
+    // 4. Register Handlers from HandlerRegistry + locally registered handlers
+    const allHandlerClasses = [
+      ...handlerRegistry.getAllHandlerClasses(),
+      ...this.registeredHandlerConstructors,
+    ];
+    // Deduplicate
+    const uniqueHandlerClasses = [...new Set(allHandlerClasses)];
+    if (uniqueHandlerClasses.length > 0) {
+      const handlerInstances = uniqueHandlerClasses.map(
+        (HandlerClass) => new HandlerClass(),
+      );
+      bridge.registerHandlers(...handlerInstances);
+    }
+
+    // 5. Instantiate Previewer and run preview
+    this.emitProgress('rendering');
+    const previewer = bridge.createPreviewer();
+
+    let currentPage = 0;
+    let totalPages = 0;
+    previewer.on('page', () => {
+      currentPage++;
+      totalPages = Math.max(totalPages, currentPage);
+      this.emitProgress('page', { current: currentPage, total: totalPages });
+    });
+
+    // Move body children into a DocumentFragment so body is empty before preview.
+    // pagedjs reads content.children while simultaneously modifying renderTo (body),
+    // which can detach nodes and cause null.children errors.
+    const fragment = doc.createDocumentFragment();
+    while (doc.body.firstChild) {
+      fragment.appendChild(doc.body.firstChild);
+    }
+
+    // [PAGEDJS_WORKAROUND] Inject :root { --pagedjs-margin-* } from author CSS to
+    // override pagedjs base :root values, since pagedjs addMarginVars() may not
+    // set correct margin CSS variables on individual page elements.
+    this.injectMarginCssVars(doc);
+
+    // [PAGEDJS_WORKAROUND] Pass ONLY @page rules from author CSS to pagedjs
+    // polisher so handlers process @page { size: A4; margin: 25mm ... } and
+    // emit correct page size. Without this, Previewer defaults to 8.5in×11in
+    // (Letter) and ignores DOM @page rules.
+    //
+    // We must NOT pass the full author CSS because pagedjs's @media handler
+    // extracts rules from @media print and @media screen blocks, which would
+    // break our gap/shadow styling on screen and leak print rules to all media.
+    const aimtpCss = doc.querySelector('style[data-aimtp-css]');
+    const styleInputs: Record<string, string>[] = [];
+    if (aimtpCss) {
+      const pageOnly = (aimtpCss.textContent || '').match(/@page\s*\{[^}]*\}/g);
+      if (pageOnly && pageOnly.length > 0) {
+        styleInputs.push({ 'about:blank': pageOnly.join('\n') });
+      }
+    }
+    const flow = await previewer.preview(fragment as unknown as HTMLElement, styleInputs, doc.body);
+
+    // 5.5. Inject header/footer DOM after Paged.js preview completes
+    if (this.handlerConfig?.enabled) {
+      this.injectHeaderFooterDom(doc, flow.total);
+    }
+
+    // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter <td style="..."> mis-mark.
+    // pagedjs marks ALL [style] elements as data-undisplaced when their
+    // element.style.display is "" (any non-display inline style). This causes
+    // pagedjs to skip these elements during layout → content loss on breaks.
+    // Remove this if pagedjs upstream fixes UndisplayedFilter.removable() to
+    // check whether the inline style actually sets display: none.
+    for (const el of doc.querySelectorAll('[data-undisplaced]')) {
+      const styleAttr = el.getAttribute('style');
+      if (styleAttr && !/display\s*:/i.test(styleAttr)) {
+        el.removeAttribute('data-undisplaced');
+      }
+    }
+
+    // 6. Build LayoutDOM
+    const metadata = this.extractMetadata(iframe, flow);
+    const provenance = this.buildProvenance(sourceHash);
+
+    return {
+      document: doc,
+      iframe,
+      metadata,
+      provenance,
+    };
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    this.progressCallback = null;
+    this.registeredHandlerConstructors = [];
+    this.handlerConfig = null;
+    this.frontMatter = null;
+  }
+
+  // ─── Private Methods ───
+
+  private injectHeaderFooterDom(doc: Document, totalPages: number): void {
+    if (!this.handlerConfig || !this.frontMatter) return;
+    const config = this.handlerConfig;
+    const fm = this.frontMatter;
+
+    const pages = doc.querySelectorAll('.pagedjs_page');
+    pages.forEach((pageEl, pageIndex) => {
+      const isCoverPage = pageIndex === 0 && pageEl.querySelector('.cover-page');
+
+      if (isCoverPage && config.coverPageExempt) return;
+
+      if (config.header && config.header.content !== 'none') {
+        const headerText = this.resolveHeaderContent(config.header.content, config.header.customText, fm);
+        if (headerText) {
+          const marginSelector = `.pagedjs_margin-top-${config.header.alignment}`;
+          const marginBox = pageEl.querySelector(marginSelector);
+          if (marginBox) {
+            const contentEl = marginBox.querySelector('.pagedjs_margin-content') || marginBox;
+            contentEl.innerHTML = '';
+            const headerDiv = doc.createElement('div');
+            headerDiv.className = 'aimtp-page-header';
+            headerDiv.textContent = headerText;
+            headerDiv.style.textAlign = config.header.alignment;
+            headerDiv.style.width = '100%';
+            if (config.header.font) headerDiv.style.fontFamily = `"${config.header.font}"`;
+            headerDiv.style.fontSize = config.header.fontSize || '0.8em';
+            contentEl.appendChild(headerDiv);
+            marginBox.classList.add('hasContent');
+          }
+        }
+      }
+
+      if (config.footer && config.footer.content !== 'none') {
+        const footerText = this.resolveFooterContent(config.footer.content, config.footer.customText, pageIndex + 1, totalPages, fm);
+        if (footerText) {
+          const marginSelector = `.pagedjs_margin-bottom-${config.footer.alignment}`;
+          const marginBox = pageEl.querySelector(marginSelector);
+          if (marginBox) {
+            const contentEl = marginBox.querySelector('.pagedjs_margin-content') || marginBox;
+            contentEl.innerHTML = '';
+            const footerDiv = doc.createElement('div');
+            footerDiv.className = 'aimtp-page-footer';
+            footerDiv.textContent = footerText;
+            footerDiv.style.textAlign = config.footer.alignment;
+            footerDiv.style.width = '100%';
+            if (config.footer.font) footerDiv.style.fontFamily = `"${config.footer.font}"`;
+            footerDiv.style.fontSize = config.footer.fontSize || '0.8em';
+            contentEl.appendChild(footerDiv);
+            marginBox.classList.add('hasContent');
+          }
+        }
+      }
+    });
+  }
+
+  private resolveHeaderContent(content: string, customText?: string, fm?: FrontMatter): string {
+    switch (content) {
+      case 'title': return fm?.title || '';
+      case 'author': return fm?.author || '';
+      case 'date': return fm?.date || '';
+      case 'custom': return customText || '';
+      default: return '';
+    }
+  }
+
+  private resolveFooterContent(content: string, customText?: string, pageNum?: number, totalPages?: number, fm?: FrontMatter): string {
+    switch (content) {
+      case 'pageNumber': return pageNum ? String(pageNum) : '';
+      case 'pageNumberTotal': return pageNum && totalPages ? `${pageNum} / ${totalPages}` : '';
+      case 'title': return fm?.title || '';
+      case 'author': return fm?.author || '';
+      case 'date': return fm?.date || '';
+      case 'custom': return customText || '';
+      default: return '';
+    }
+  }
+
+  private emitProgress(
+    phase: 'fonts' | 'document' | 'injecting' | 'rendering' | 'page' | 'done',
+    detail?: { current?: number; total?: number },
+  ): void {
+    this.progressCallback?.(phase, detail);
+  }
+
+  /**
+   * Inject the pre-built pagedjs IIFE into the iframe's document.
+   *
+   * [PAGEDJS_WORKAROUND] Before injection, strip two problematic declarations
+   * from pagedjs's base styles (the _h template literal):
+   *
+   * 1. @page { size: letter; margin: 0; }
+   *    Would otherwise be the last @page in CSSOM cascade and override our A4 size.
+   *
+   * 2. :root { --pagedjs-margin-*: 1in }
+   *    Would otherwise be the last :root in CSSOM cascade and override our margin values.
+   */
+  private injectPagedJsIife(doc: Document): void {
+    const code = pagedJsIifeCode
+      .replace(
+        /@page\s*\{[^}]*size:\s*letter[^}]*margin:\s*0[^}]*\}/g,
+        ''
+      )
+      // Remove individual pagedjs base :root margin declarations.
+      // Other :root variables (--pagedjs-width, --pagedjs-bleed-*, etc.) must be preserved.
+      .replace(/--pagedjs-margin-top:\s*1in;/g, '')
+      .replace(/--pagedjs-margin-right:\s*1in;/g, '')
+      .replace(/--pagedjs-margin-bottom:\s*1in;/g, '')
+      .replace(/--pagedjs-margin-left:\s*1in;/g, '');
+
+    const scriptEl = doc.createElement('script');
+    scriptEl.textContent = code;
+    doc.head.appendChild(scriptEl);
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] Inject :root { --pagedjs-margin-* } using margin values
+   * from the author's @page rule. This overrides any base :root values from
+   * pagedjs (and works even after polisher.setup() inserts base styles, because
+   * the IIFE strip removed the base :root --pagedjs-margin-* declarations).
+   */
+  private injectMarginCssVars(doc: Document): void {
+    const aimtpStyle = doc.querySelector('style[data-aimtp-css]');
+    if (!aimtpStyle) return;
+
+    const cssText = aimtpStyle.textContent || '';
+    const pageMatch = cssText.match(/@page\s*\{[^}]*size[^}]*\}/);
+    if (!pageMatch) return;
+
+    // Extract margin values from the @page rule (e.g. "25mm 22mm 25mm 22mm")
+    const marginMatch = pageMatch[0].match(/margin:\s*([^;]+);/);
+    if (!marginMatch) return;
+
+    const parts = marginMatch[1].trim().split(/\s+/);
+    let top: string, right: string, bottom: string, left: string;
+    if (parts.length === 1) {
+      top = right = bottom = left = parts[0];
+    } else if (parts.length === 2) {
+      top = bottom = parts[0];
+      right = left = parts[1];
+    } else if (parts.length === 3) {
+      top = parts[0];
+      right = left = parts[1];
+      bottom = parts[2];
+    } else {
+      [top, right, bottom, left] = parts;
+    }
+
+    const style = doc.createElement('style');
+    style.setAttribute('data-aimtp-margin-vars', '');
+    style.textContent =
+      `:root {\n` +
+      `  --pagedjs-margin-top: ${top};\n` +
+      `  --pagedjs-margin-right: ${right};\n` +
+      `  --pagedjs-margin-bottom: ${bottom};\n` +
+      `  --pagedjs-margin-left: ${left};\n` +
+      `}`;
+    doc.head.appendChild(style);
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] Protect TD/TH/LI from lastChildCheck removal.
+   * Inserts a zero-width space ensuring textContent.trim() is non-empty
+   * even after content extraction.
+   *
+   * Smart insertion for LI:
+   * - If LI's first child is a block-level element (e.g. <p>), insert ZWS
+   *   inside that block element to avoid the list marker occupying a
+   *   separate line from the content.
+   * - Otherwise (text node, inline element), insert ZWS before firstChild
+   *   as before.
+   * - TD/TH: always insert ZWS before firstChild (no list marker issue).
+   */
+  private protectStructuralElements(doc: Document): void {
+    const blockTags = new Set(['P', 'DIV', 'UL', 'OL', 'PRE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TABLE', 'DL']);
+
+    const cells = doc.querySelectorAll('td, th');
+    for (const el of cells) {
+      const zws = doc.createTextNode('\u200B');
+      el.insertBefore(zws, el.firstChild);
+    }
+
+    const listItems = doc.querySelectorAll('li');
+    for (const li of listItems) {
+      const zws = doc.createTextNode('\u200B');
+      const firstBlock = this.findFirstBlockChild(li, blockTags);
+      if (firstBlock) {
+        // First significant child is a block element: insert ZWS inside it
+        firstBlock.insertBefore(zws, firstBlock.firstChild);
+      } else {
+        // No block child: insert ZWS before firstChild
+        li.insertBefore(zws, li.firstChild);
+      }
+    }
+  }
+
+  /**
+   * Find the first child of a parent that is a block-level element,
+   * skipping over whitespace-only text nodes.
+   * Returns null if no block-level child is found.
+   */
+  private findFirstBlockChild(parent: Element, blockTags: Set<string>): Element | null {
+    for (const child of parent.childNodes) {
+      if (child.nodeType === 3 /* Text */) {
+        // Skip whitespace-only text nodes (newlines, spaces between tags)
+        if ((child.textContent || '').trim() === '') continue;
+        // Non-whitespace text node → not a block element
+        return null;
+      }
+      if (child.nodeType === 1 /* Element */) {
+        if (blockTags.has((child as Element).tagName)) {
+          return child as Element;
+        }
+        // Non-block element → not a block child
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /** Wait for the __pagedjs bridge global to be available in the iframe */
+  private waitForPagedJsBridge(iframe: HTMLIFrameElement): Promise<PagedJsBridge> {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const check = () => {
+        const bridge = (iframe.contentWindow as any)?.__pagedjs;
+        if (bridge && typeof bridge.createPreviewer === 'function') {
+          resolve(bridge as PagedJsBridge);
+          return;
+        }
+        if (Date.now() - start > PAGEDJS_READY_TIMEOUT) {
+          reject(new Error('[PagedJsAdapter] __pagedjs bridge not available after timeout'));
+          return;
+        }
+        setTimeout(check, 50);
+      };
+      check();
+    });
+  }
+
+  private waitForFonts(doc: Document): Promise<void> {
+    return new Promise((resolve) => {
+      try {
+        (doc as any).fonts?.ready?.then(resolve);
+      } catch {
+        // ignore
+      }
+      setTimeout(resolve, FONT_READY_TIMEOUT);
+    });
+  }
+
+  private waitForDocumentReady(iframe: HTMLIFrameElement): Promise<void> {
+    return new Promise((resolve) => {
+      const doc = iframe.contentDocument;
+      if (doc && doc.readyState === 'complete') {
+        resolve();
+        return;
+      }
+      (iframe.contentWindow as any)?.addEventListener?.(
+        'load',
+        () => resolve(),
+        { once: true },
+      );
+      setTimeout(resolve, DOCUMENT_READY_TIMEOUT);
+    });
+  }
+
+  private extractMetadata(iframe: HTMLIFrameElement, flow?: Flow): LayoutDOMMetadata {
+    const doc = iframe.contentDocument;
+    if (!doc) {
+      return {
+        totalPages: 0,
+        pageSize: { width: 210, height: 297 },
+        hasCoverPage: false,
+        headerFooterMaterialized: false,
+        cssArchitectureValid: false,
+      };
+    }
+
+    // Use flow.total if available, otherwise count DOM nodes
+    const pageNodes = doc.querySelectorAll('.pagedjs_page');
+    const totalPages = flow?.total ?? pageNodes.length;
+
+    const coverPage = doc.querySelector('.cover-page');
+    const hasHeaderFooterDom =
+      !!doc.querySelector('.aimtp-page-header') ||
+      !!doc.querySelector('.aimtp-page-footer');
+    const hasAimtpCss =
+      !!doc.querySelector('style[data-aimtp-css]');
+
+    return {
+      totalPages,
+      pageSize: { width: 210, height: 297 },
+      hasCoverPage: !!coverPage,
+      headerFooterMaterialized: hasHeaderFooterDom,
+      cssArchitectureValid: hasAimtpCss,
+    };
+  }
+
+  private buildProvenance(sourceHash: string): LayoutDOMProvenance {
+    return {
+      sourceHash,
+      renderedAt: Date.now(),
+      webContentsId: 0,
+    };
+  }
+}
