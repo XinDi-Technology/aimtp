@@ -238,7 +238,7 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           {extensions.footnotes && (
-            <div className="setting-group" style={{ paddingLeft: '24px' }}>
+            <div className="setting-group">
               <label className="setting-label">脚注位置</label>
               <select
                 className="setting-input setting-select"
@@ -263,7 +263,7 @@ export const SettingsPanel: React.FC = () => {
             </label>
           </div>
 
-          <div className="setting-group" style={{ paddingLeft: '24px' }}>
+          <div className="setting-group">
             <label className="setting-checkbox">
               <input
                 type="checkbox"
