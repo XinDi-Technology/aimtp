@@ -32,7 +32,7 @@ export type LayoutProgressCallback = (
 interface PreviewerInstance {
   preview(
     content: string | HTMLElement | Document,
-    stylesheets?: string[],
+    stylesheets?: (string | Record<string, string>)[],
     renderTo?: HTMLElement,
   ): Promise<Flow>;
   on(event: string, listener: (...args: unknown[]) => void): void;
