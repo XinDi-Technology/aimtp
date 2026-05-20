@@ -460,6 +460,7 @@ q { quotes: "\201C" "\201D" "\2018" "\2019"; }
   .pagedjs_page {
     background: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    zoom: calc($$targetDPI / 96);
   }
 }
 

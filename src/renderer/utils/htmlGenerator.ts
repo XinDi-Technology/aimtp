@@ -1,7 +1,7 @@
 declare const __FONTS_DIR__: string;
 
 import { resetMarkdownIt } from './markdown';
-import { FontSettings, PageSettings, ExtensionSettings, HeaderFooterSettings, CoverSettings } from '../store/useAppStore';
+import { FontSettings, PageSettings, ExtensionSettings, HeaderFooterSettings, CoverSettings, PreviewSettings } from '../store/useAppStore';
 import { logger } from './logger';
 import DOMPurify from 'dompurify';
 import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
@@ -58,6 +58,7 @@ export interface HtmlGeneratorOptions {
   extensions: ExtensionSettings;
   headerFooter: HeaderFooterSettings;
   cover: CoverSettings;
+  preview: PreviewSettings;
 }
 
 const transformFootnotesToPagedJs = (html: string): string => {
@@ -103,7 +104,7 @@ const transformFootnotesToPagedJs = (html: string): string => {
 };
 
 export const generateHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
-  const { markdown, locale, page, font, extensions, headerFooter, cover } = options;
+  const { markdown, locale, page, font, extensions, headerFooter, cover, preview } = options;
 
   try {
     const { data: frontMatter, content: markdownWithoutFrontMatter } = parseFrontMatter(markdown);
@@ -266,7 +267,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       titleText = h1Match ? h1Match[1].trim() : (locale === 'zh' ? '文档标题' : 'Document Title');
     }
 
-    const finalCss = buildFinalCss(previewCssTemplate, { page, font, cover, headerFooter });
+    const finalCss = buildFinalCss(previewCssTemplate, { page, font, cover, headerFooter, preview });
 
     const processedCss = (headerFooter.enabled && (headerFooter.header.content === 'title' || headerFooter.footer.content === 'title'))
       ? finalCss.replace(/content:\s*"title"/g, `content: "${titleText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`)

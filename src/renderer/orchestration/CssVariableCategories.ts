@@ -17,6 +17,7 @@ export const VISUAL_VARIABLES: readonly string[] = [
   'fontCode',         // 代码字体族（不影响分页）
   'fontLineHeight',   // 行高（通常不影响分页，极端由溢出检测兜底）
   'paragraphSpacingCss', // 段落间距（通常不影响分页）
+  'targetDPI',        // 预览 DPI 校准（仅影响 transform: scale，不影响分页和导出）
 ] as const;
 
 /** 布局变量 — 需要重新分页 (~990ms，字号变更可能影响内容溢出和分页) */

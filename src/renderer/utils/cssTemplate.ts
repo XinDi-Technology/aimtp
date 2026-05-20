@@ -28,6 +28,7 @@ export interface CssVariables {
   coverAuthorSize: string;
   coverDateSize: string;
   paragraphSpacingCss: string;
+  targetDPI: string;
   [key: string]: string;
 }
 
@@ -36,8 +37,9 @@ export function buildCssVariables(state: {
   font: AppState['font'];
   cover: AppState['cover'];
   headerFooter: AppState['headerFooter'];
+  preview: AppState['preview'];
 }): CssVariables {
-  const { page, font, cover, headerFooter } = state;
+  const { page, font, cover, headerFooter, preview } = state;
 
   const pageWidthMm = getPageWidthMm(page);
   const pageHeightMm = page.size === 'A3' ? (page.orientation === 'landscape' ? 297 : 420) : (page.orientation === 'landscape' ? 210 : 297);
@@ -84,6 +86,8 @@ export function buildCssVariables(state: {
         }
       `
       : '',
+
+    targetDPI: String(preview.targetDPI),
   };
 }
 
@@ -172,6 +176,7 @@ export function buildFinalCss(
     font: AppState['font'];
     cover: AppState['cover'];
     headerFooter: AppState['headerFooter'];
+    preview: AppState['preview'];
   }
 ): string {
   const variables = buildCssVariables(state);

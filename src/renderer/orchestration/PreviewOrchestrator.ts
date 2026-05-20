@@ -282,5 +282,6 @@ export interface RenderContext {
     font: AppSettingsSnapshot['font'];
     cover: AppSettingsSnapshot['cover'];
     headerFooter: AppSettingsSnapshot['headerFooter'];
+    preview: AppSettingsSnapshot['preview'];
   };
 }

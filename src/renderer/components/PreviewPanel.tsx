@@ -101,6 +101,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
   const cover = useAppStore((s) => s.cover);
   const headerFooter = useAppStore((s) => s.headerFooter);
   const locale = useAppStore((s) => s.locale);
+  const preview = useAppStore((s) => s.preview);
   const currentTemplate = useAppStore((s) => s.currentTemplate);
   const isGenerating = useAppStore((s) => s.isGenerating);
   const setLayoutDOM = useAppStore((s) => s.setLayoutDOM);
@@ -113,8 +114,8 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
 
   // 创建/获取当前设置快照
   const currentSnapshot = useCallback((): AppSettingsSnapshot => {
-    return createSettingsSnapshot({ page, font, cover, headerFooter });
-  }, [page, font, cover, headerFooter]);
+    return createSettingsSnapshot({ page, font, cover, headerFooter, preview });
+  }, [page, font, cover, headerFooter, preview]);
 
   // Set up progress callback on the adapter
   useEffect(() => {
@@ -183,7 +184,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
 
     try {
       const html = await generateHtml({
-        markdown, locale, page, font, extensions, cover, headerFooter,
+        markdown, locale, page, font, extensions, cover, headerFooter, preview,
       });
 
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
@@ -224,7 +225,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, locale, ensureFrameReady, setLayoutDOM]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady, setLayoutDOM]);
 
   doFullRenderRef.current = doFullRender;
 
@@ -331,10 +332,10 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
         const sourceHash = layoutDOMManager['hashContent'](markdown);
 
         const context: RenderContext = {
-          generateHtml: () => generateHtml({ markdown, locale, page, font, extensions, cover, headerFooter }),
+          generateHtml: () => generateHtml({ markdown, locale, page, font, extensions, cover, headerFooter, preview }),
           iframe: frame,
           sourceHash,
-          stateSnapshot: { page, font, cover, headerFooter },
+          stateSnapshot: { page, font, cover, headerFooter, preview },
         };
 
         orchestrator.triggerRender(prev ?? next, next, context);
@@ -348,7 +349,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
     setLoading(true);
     try {
       const html = await generateHtml({
-        markdown, locale, page, font, extensions, cover, headerFooter,
+        markdown, locale, page, font, extensions, cover, headerFooter, preview,
       });
 
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
@@ -390,7 +391,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, locale, currentTemplate, currentSnapshot, ensureFrameReady, setLayoutDOM, setSettingChangeCategory]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady, setLayoutDOM, setSettingChangeCategory]);
 
   // 设置变更触发渲染（防抖）
   useEffect(() => {

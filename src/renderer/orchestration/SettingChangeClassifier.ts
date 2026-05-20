@@ -11,7 +11,7 @@
  * 多个变更同时发生时，按优先级 content > layout > visual 返回最高级别。
  */
 
-import type { PageSettings, FontSettings, CoverSettings, HeaderFooterSettings } from '../store/useAppStore';
+import type { PageSettings, FontSettings, CoverSettings, HeaderFooterSettings, PreviewSettings } from '../store/useAppStore';
 import {
   CSS_VARIABLE_CATEGORIES,
   getVariableCategory,
@@ -36,6 +36,7 @@ export interface AppSettingsSnapshot {
   font: FontSettings;
   cover: CoverSettings;
   headerFooter: HeaderFooterSettings;
+  preview: PreviewSettings;
 }
 
 /**
@@ -115,6 +116,9 @@ export class SettingChangeClassifier {
     if (prev.font.lineHeight !== next.font.lineHeight) changed.push('fontLineHeight');
     if (prev.font.paragraphSpacing !== next.font.paragraphSpacing) changed.push('paragraphSpacingCss');
 
+    // preview 相关变量
+    if (prev.preview.targetDPI !== next.preview.targetDPI) changed.push('targetDPI');
+
     // cover 相关变量
     if (prev.cover.enabled !== next.cover.enabled) {
       changed.push('coverPageCss');
@@ -170,5 +174,6 @@ export function createSettingsSnapshot(settings: AppSettingsSnapshot): AppSettin
       header: { ...settings.headerFooter.header },
       footer: { ...settings.headerFooter.footer },
     },
+    preview: { ...settings.preview },
   };
 }
