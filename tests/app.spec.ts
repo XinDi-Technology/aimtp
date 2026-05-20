@@ -139,8 +139,8 @@ test.describe('Aimtp Application', () => {
     test('should have page break settings', async ({ page }) => {
       const settingsPanel = page.locator('[data-testid="settings-panel"]');
       await expect(settingsPanel).toContainText(/分页设置|Page Break/, { timeout: UI_TIMEOUT });
-      await expect(settingsPanel).toContainText(/H1 标题前自动分页/, { timeout: UI_TIMEOUT });
-      await expect(settingsPanel).toContainText(/H2 标题前自动分页/, { timeout: UI_TIMEOUT });
+      await expect(settingsPanel).toContainText(/按 H1 标题自动分页/, { timeout: UI_TIMEOUT });
+      await expect(settingsPanel).toContainText(/按 H2 标题自动分页/, { timeout: UI_TIMEOUT });
     });
 
     test('should have code highlight toggle', async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe('Aimtp Application', () => {
   test.describe('Preview Calibration', () => {
     test('should have preview calibration control', async ({ page }) => {
       await expect(page.locator('[data-testid="settings-panel"]'))
-        .toContainText(/预览校准|Preview Calibration/, { timeout: UI_TIMEOUT });
+        .toContainText(/预览页面尺寸校准|Preview Calibration/, { timeout: UI_TIMEOUT });
       const dpiInput = page.locator('[data-testid="dpi-input"]');
       await expect(dpiInput).toBeVisible({ timeout: UI_TIMEOUT });
       await expect(dpiInput).toHaveValue('96', { timeout: UI_TIMEOUT });
