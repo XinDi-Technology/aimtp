@@ -158,12 +158,9 @@ export class PagedJsAdapter implements LayoutEngine {
     // set correct margin CSS variables on individual page elements.
     this.injectMarginCssVars(doc);
 
-    // [PAGEDJS_WORKAROUND] Pass @page rules and float:footnote rules from
-    // author CSS to pagedjs polisher so handlers process @page { size: A4;
-    // margin: 25mm ... } and emit correct page size, and polisher can find
-    // float: footnote declarations for footnote "page bottom" mode.
-    // Without this, Previewer defaults to 8.5in×11in (Letter) and ignores
-    // DOM @page rules; footnotes also won't render at page bottom.
+    // [PAGEDJS_WORKAROUND] Pass @page rules to pagedjs polisher so handlers
+    // process @page { size: A4; margin: 25mm ... } and emit correct page size.
+    // Without this, Previewer defaults to 8.5in×11in (Letter).
     //
     // We must NOT pass the full author CSS because pagedjs's @media handler
     // extracts rules from @media print and @media screen blocks, which would
@@ -177,17 +174,20 @@ export class PagedJsAdapter implements LayoutEngine {
       // e.g. @page { @footnote { border-top: ... } }
       const pageRules = cssText.match(/@page\s*\{(?:[^{}]|\{[^{}]*\})*\}/g);
 
-      // Extract CSS rules containing float: footnote (needed by Paged.js Polisher
-      // to discover footnote elements via onDeclaration)
+      // Extract float: footnote rules and inject them directly into the document
+      // as a <style> tag. This ensures Paged.js's Polisher can discover footnote
+      // elements via document.stylesheets, avoiding the URL-matching issue that
+      // occurs when passing these rules through styleInputs with 'about:blank'.
       const footnoteRules = cssText.match(/[^{}]*\{[^}]*float\s*:\s*footnote[^}]*\}/g);
+      if (footnoteRules && footnoteRules.length > 0) {
+        const footnoteStyle = doc.createElement('style');
+        footnoteStyle.setAttribute('data-aimtp-footnote-css', '');
+        footnoteStyle.textContent = footnoteRules.join('\n');
+        doc.head.appendChild(footnoteStyle);
+      }
 
-      const combinedRules = [
-        ...(pageRules || []),
-        ...(footnoteRules || []),
-      ];
-
-      if (combinedRules.length > 0) {
-        styleInputs.push({ 'about:blank': combinedRules.join('\n') });
+      if (pageRules && pageRules.length > 0) {
+        styleInputs.push({ 'about:blank': pageRules.join('\n') });
       }
     }
     const flow = await previewer.preview(fragment as unknown as HTMLElement, styleInputs, doc.body);

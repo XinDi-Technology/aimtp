@@ -89,15 +89,9 @@ const transformFootnotesToPagedJs = (html: string): string => {
 
     const footnoteEl = doc.createElement('span');
     footnoteEl.className = 'pagedjs-footnote';
-    // Paged.js Footnotes handler 需要的属性：
-    // data-note="footnote" — 标记为脚注元素
-    // data-break-before="avoid" — 避免脚注元素前分页
-    // data-note-policy="auto" — 脚注溢出策略
-    // data-note-display="block" — 脚注显示方式
-    footnoteEl.setAttribute('data-note', 'footnote');
+    // Paged.js 通过 CSS float: footnote 识别脚注元素，无需 data-note 属性。
+    // data-note 系列属性是 Paged.js 边注 (margin notes) 使用的，会干扰脚注处理。
     footnoteEl.setAttribute('data-break-before', 'avoid');
-    footnoteEl.setAttribute('data-note-policy', 'auto');
-    footnoteEl.setAttribute('data-note-display', 'block');
     footnoteEl.innerHTML = content;
 
     // 插入到引用的父元素后面，而非 <sup> 内部
