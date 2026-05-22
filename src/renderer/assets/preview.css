@@ -164,6 +164,18 @@ pre.hljs ol.code-lines li .line-num::before {
   padding-top: 0;
   border-top: 0;
 }
+/* 跨页表格第二页去掉重复的 thead 空白行 */
+table[data-split-from] thead {
+  display: table-header-group;
+  visibility: collapse;
+  height: 0;
+}
+table[data-split-from] thead th {
+  padding: 0;
+  border: none;
+  line-height: 0;
+  font-size: 0;
+}
 
 pre.hljs b.lang-name {
   position: absolute;
