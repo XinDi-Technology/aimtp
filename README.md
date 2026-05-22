@@ -1,98 +1,97 @@
 # Aimtp
 
+[![GitHub release](https://img.shields.io/github/v/release/XinDi-Technology/aimtp?include_prereleases)](https://github.com/XinDi-Technology/aimtp/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/XinDi-Technology/aimtp/build.yml?branch=main)](https://github.com/XinDi-Technology/aimtp/actions/workflows/build.yml)
+[![Node Version](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](https://github.com/XinDi-Technology/aimtp/releases)
+[![License](https://img.shields.io/github/license/XinDi-Technology/aimtp)](./LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/)
+
 专注合规的 Markdown 转 PDF 桌面应用
 
-Compliance md-to-pdf
+Compliance-first Markdown to PDF desktop application
 
-## 主要特性：
+---
 
-中文字体：GWM Sans UI 免费商用
+## 核心特性
 
-英文字体：JetBrains Mono 免费商用
+-   **完全本地运行**：无需网络环境。
+-   **免费可商用字体**：内置 GWM Sans UI（中文）、JetBrains Mono 与 Monaspace Argon Frozen（代码），全部免费商用，无版权风险
+-   **预览即所得**：所见即所得，预览效果与导出 PDF 完全一致
+-   **真纸张尺寸预览**：预览区域按实际页面宽高比渲染，你看到的每一页都和打印出的纸张大小一样
+-   **导出PDF兼容性高**：使用PDF v1.4格式进行导出。
+## 安装使用
 
-英文字体：Monaspace Argon Frozen 免费商用
+从 [Releases](https://github.com/XinDi-Technology/aimtp/releases) 页面下载对应平台的安装包：
 
-PDF版本：PDF v1.4 兼容性最好
+-   **Windows**：`.exe`
 
-排版格式支持预览
+## 支持的排版设置
 
-预览页面于实际纸张一样大小
+### 页面
 
-排版格式支持有限设置
+| 设置 | 可选值 |
+| --- | --- |
+| 页面尺寸 | A4 / A3 |
+| 页面方向 | 纵向 / 横向 |
+| 页边距 | 上 / 下 / 左 / 右 |
+| DPI | 可自定义 |
 
-## 支持的排版设置：
+### 字体与排版
 
-页面尺寸：A4 / A3
+| 设置 | 可选值 |
+| --- | --- |
+| 正文字体 | GWM Sans UI |
+| 代码字体 | JetBrains Mono / Monaspace Argon Frozen |
+| 基础字号 | 可自定义（默认 18） |
+| 行高 | 可自定义（默认 2） |
+| 段落间距 | 可自定义（默认 0.8） |
 
-页面方向：纵向 / 横向
+### 内容特性
 
-页边距：上 / 下 / 左 / 右
+-   代码高亮（GitHub / Monokai / Dracula 主题）
+-   显示代码行号
+-   GitHub 风格警告框
+-   按 H1 / H2 标题自动分页
+-   下标 / 上标
+-   封面
+-   脚注
+-   高亮标记
+-   下划线 / 插入
+-   待办事项
+-   Mermaid 图表
+-   MathJax 数学公式
 
-正文字体：GWM Sans UI
+### 页眉页脚
 
-代码字体：JetBrains Mono / Monaspace Argon Frozen
+| 设置 | 可选值 |
+| --- | --- |
+| 页眉字体 | GWM Sans UI |
+| 页眉对齐 | 左对齐 / 居中 / 右对齐 |
+| 页眉内容 | 标题 / 作者 / 日期 |
+| 页脚字体 | GWM Sans UI |
+| 页脚对齐 | 左对齐 / 居中 / 右对齐 |
+| 页脚内容 | 页码 / 第 X 页 / 共 X 页 |
 
-基础字号：18
+## 字体说明
 
-行高：2
+本项目使用以下免费可商用字体，确保生成的 PDF 文档无字体版权纠纷：
 
-段落间距：0.8
+| 字体 | 用途 | 许可 |
+| --- | --- | --- |
+| [GWM Sans UI](https://www.gwm.com.cn/gwmsans/fontdownload.html) | 中文正文 / 页眉页脚 | 免费商用 |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | 代码 | [OFL 1.1](https://github.com/JetBrains/JetBrainsMono?tab=OFL-1.1-1-ov-file) |
+| [Monaspace Argon Frozen](https://monaspace.githubnext.com/) | 代码 | [OFL 1.1](https://github.com/githubnext/monaspace?tab=OFL-1.1-1-ov-file) |
 
-GitHub风格警告框
+## 风险警告
 
-代码高亮
+1.  本项目由 AI 辅助编程
+2.  本项目目前为个人爱好性质软件
+3.  本项目目前未收到赞助
+4.  本项目目前未有其他贡献者
+5.  本项目目前专注于核心功能的完善
+6.  本项目目前没有其他使用者汇报使用情况
 
-代码高亮主题：GitHub / Monokai / Dracula
+## License
 
-按H1标题自动分页
-
-按H2标题自动分页
-
-显示代码行号
-
-下标
-
-上标
-
-封面
-
-页眉
-
-页眉字体：GWM Sans UI
-
-页眉对齐方式：左对齐 / 居中 / 右对齐
-
-页眉内容：标题 / 作者 / 日期
-
-页脚
-
-页脚字体：GWM Sans UI
-
-页脚对齐方式：左对齐 / 居中 / 右对齐
-
-页脚内容：当前页码 / 第 * 页/共 * 页
-
-DPI 
-
-脚注  (TODO)
-
-脚注位置：文档末尾 / 当前页底部  (TODO)
-
-高亮标记  (TODO)
-
-下划线插入  (TODO)
-
-待办事项  (TODO)
-
-Mermaid 图表  (TODO)
-
-MathJax 数学公式  (TODO)
-
-## 风险警告：
-
-1. 本项目是由AI进行编程的软件。
-2. 本项目目前是个人爱好性质软件。
-3. 本项目目前未收到赞助。
-4. 本项目目前未有其他贡献者。
-5. 本项目目前专注于核心功能的完善。
-6. 本项目目前没有其他使用者汇报使用情况。
+[MIT](./LICENSE)
