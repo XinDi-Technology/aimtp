@@ -260,12 +260,13 @@ app.on('web-contents-created', (event, contents) => {
   });
 
   // will-frame-navigate 捕获 iframe 等子框架内的导航（will-navigate 仅对主框架生效）
-  contents.on('will-frame-navigate', (event, navigationUrl) => {
-    if (navigationUrl.startsWith('http://localhost:5173') || navigationUrl.startsWith('file://')) {
+  contents.on('will-frame-navigate', (event, details) => {
+    const { url } = details;
+    if (url.startsWith('http://localhost:5173') || url.startsWith('file://')) {
       return;
     }
     event.preventDefault();
-    shell.openExternal(navigationUrl);
+    shell.openExternal(url);
   });
 
   contents.setWindowOpenHandler(({ url }) => {
