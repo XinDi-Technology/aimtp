@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -255,7 +255,15 @@ app.on('web-contents-created', (event, contents) => {
     const parsedUrl = new URL(navigationUrl);
     if (parsedUrl.origin !== 'http://localhost:5173' && !navigationUrl.startsWith('file://')) {
       event.preventDefault();
+      shell.openExternal(navigationUrl);
     }
+  });
+  contents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http://localhost:5173') || url.startsWith('file://')) {
+      return { action: 'allow' };
+    }
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 });
 

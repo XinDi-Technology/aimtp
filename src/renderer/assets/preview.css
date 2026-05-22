@@ -190,7 +190,7 @@ pre.hljs b.lang-name {
 
 blockquote {
   border-left: 4px solid #c43d24;
-  padding: 12px 16px;
+  padding: 12px 16px 0 16px;
   margin: 16px 0;
   color: #555;
   background: #fafaf8;
@@ -198,9 +198,13 @@ blockquote {
   line-height: $$fontLineHeight;
 }
 
+/* 只有最内层的文字内容才有底部间距，嵌套 blockquote 不加 */
+blockquote > :last-child:not(blockquote) {
+  margin-bottom: 12px;
+}
+
 blockquote blockquote {
-  margin-bottom: -12px;
-  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 table {
