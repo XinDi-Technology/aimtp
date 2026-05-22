@@ -289,7 +289,7 @@ td:empty::after, th:empty::after {
   list-style-type: none;
 }
 
-ul.task-list {
+ul.contains-task-list {
   list-style: none;
   padding-left: 0;
   margin-left: 0;
@@ -297,33 +297,8 @@ ul.task-list {
 
 .task-list-item-checkbox {
   margin-right: 8px;
-  width: 1em;
-  height: 1em;
   vertical-align: middle;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1.5px solid #bbb;
-  border-radius: 3px;
-  background-color: #fff;
-  cursor: default;
-  position: relative;
-}
-
-.task-list-item-checkbox:checked {
-  background-color: #1A4BDB;
-  border-color: #1A4BDB;
-}
-
-.task-list-item-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  left: 25%;
-  top: 10%;
-  width: 35%;
-  height: 55%;
-  border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  accent-color: #1A4BDB;
 }
 
 .footnote-ref {
