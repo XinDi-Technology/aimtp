@@ -258,6 +258,16 @@ app.on('web-contents-created', (event, contents) => {
       shell.openExternal(navigationUrl);
     }
   });
+
+  // will-frame-navigate 捕获 iframe 等子框架内的导航（will-navigate 仅对主框架生效）
+  contents.on('will-frame-navigate', (event, navigationUrl) => {
+    if (navigationUrl.startsWith('http://localhost:5173') || navigationUrl.startsWith('file://')) {
+      return;
+    }
+    event.preventDefault();
+    shell.openExternal(navigationUrl);
+  });
+
   contents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('http://localhost:5173') || url.startsWith('file://')) {
       return { action: 'allow' };

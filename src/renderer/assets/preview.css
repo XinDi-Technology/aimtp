@@ -198,6 +198,11 @@ blockquote {
   line-height: $$fontLineHeight;
 }
 
+/* 消除首个子元素的 margin-top，使 padding-top 12px 生效，文字垂直居中 */
+blockquote > :first-child {
+  margin-top: 0;
+}
+
 /* 只有最内层的文字内容才有底部间距，嵌套 blockquote 不加 */
 blockquote > :last-child:not(blockquote) {
   margin-bottom: 12px;
