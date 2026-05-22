@@ -190,7 +190,7 @@ pre.hljs b.lang-name {
 
 blockquote {
   border-left: 4px solid #c43d24;
-  padding: 12px 16px 0 16px;
+  padding: 12px 16px;
   margin: 16px 0;
   color: #555;
   background: #fafaf8;
@@ -199,7 +199,8 @@ blockquote {
 }
 
 blockquote blockquote {
-  margin-bottom: 0;
+  margin-bottom: -12px;
+  padding-bottom: 0;
 }
 
 table {
@@ -312,6 +313,7 @@ ul.contains-task-list {
   vertical-align: middle;
   accent-color: #1A4BDB;
   opacity: 1;
+  pointer-events: none;
 }
 
 .footnote-ref {
