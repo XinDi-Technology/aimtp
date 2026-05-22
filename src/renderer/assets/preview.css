@@ -190,7 +190,7 @@ pre.hljs b.lang-name {
 
 blockquote {
   border-left: 4px solid #c43d24;
-  padding: 12px 16px 0 16px;
+  padding: 12px 16px;
   margin: 16px 0;
   color: #555;
   background: #fafaf8;
@@ -198,18 +198,19 @@ blockquote {
   line-height: $$fontLineHeight;
 }
 
-/* 消除首个子元素的 margin-top，使 padding-top 12px 生效，文字垂直居中 */
+/* 消除首个子元素的 margin-top，使 padding-top 精确控制顶部间距 */
 blockquote > :first-child {
   margin-top: 0;
 }
 
-/* 只有最内层的文字内容才有底部间距，嵌套 blockquote 不加 */
-blockquote > :last-child:not(blockquote) {
-  margin-bottom: 12px;
+/* 消除最后一个子元素的 margin-bottom，由 padding-bottom 控制底部间距 */
+blockquote > :last-child {
+  margin-bottom: 0;
 }
 
-blockquote blockquote {
-  margin-bottom: 0;
+/* 含嵌套 blockquote 时，padding-bottom 归零让竖线底部对齐 */
+blockquote:has(> blockquote:last-child) {
+  padding-bottom: 0;
 }
 
 table {
