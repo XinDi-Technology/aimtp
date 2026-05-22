@@ -89,7 +89,6 @@ const transformFootnotesToPagedJs = (html: string): string => {
 
     const footnoteEl = doc.createElement('span');
     footnoteEl.className = 'pagedjs-footnote';
-    footnoteEl.style.cssText = 'float: footnote;';
     footnoteEl.innerHTML = content;
 
     ref.parentNode?.appendChild(footnoteEl);

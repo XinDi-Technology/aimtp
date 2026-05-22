@@ -158,10 +158,12 @@ export class PagedJsAdapter implements LayoutEngine {
     // set correct margin CSS variables on individual page elements.
     this.injectMarginCssVars(doc);
 
-    // [PAGEDJS_WORKAROUND] Pass ONLY @page rules from author CSS to pagedjs
-    // polisher so handlers process @page { size: A4; margin: 25mm ... } and
-    // emit correct page size. Without this, Previewer defaults to 8.5in×11in
-    // (Letter) and ignores DOM @page rules.
+    // [PAGEDJS_WORKAROUND] Pass @page rules and float:footnote rules from
+    // author CSS to pagedjs polisher so handlers process @page { size: A4;
+    // margin: 25mm ... } and emit correct page size, and polisher can find
+    // float: footnote declarations for footnote "page bottom" mode.
+    // Without this, Previewer defaults to 8.5in×11in (Letter) and ignores
+    // DOM @page rules; footnotes also won't render at page bottom.
     //
     // We must NOT pass the full author CSS because pagedjs's @media handler
     // extracts rules from @media print and @media screen blocks, which would
@@ -169,9 +171,23 @@ export class PagedJsAdapter implements LayoutEngine {
     const aimtpCss = doc.querySelector('style[data-aimtp-css]');
     const styleInputs: Record<string, string>[] = [];
     if (aimtpCss) {
-      const pageOnly = (aimtpCss.textContent || '').match(/@page\s*\{[^}]*\}/g);
-      if (pageOnly && pageOnly.length > 0) {
-        styleInputs.push({ 'about:blank': pageOnly.join('\n') });
+      const cssText = aimtpCss.textContent || '';
+
+      // Extract @page rules, including nested @footnote blocks
+      // e.g. @page { @footnote { border-top: ... } }
+      const pageRules = cssText.match(/@page\s*\{(?:[^{}]|\{[^{}]*\})*\}/g);
+
+      // Extract CSS rules containing float: footnote (needed by Paged.js Polisher
+      // to discover footnote elements via onDeclaration)
+      const footnoteRules = cssText.match(/[^{}]*\{[^}]*float\s*:\s*footnote[^}]*\}/g);
+
+      const combinedRules = [
+        ...(pageRules || []),
+        ...(footnoteRules || []),
+      ];
+
+      if (combinedRules.length > 0) {
+        styleInputs.push({ 'about:blank': combinedRules.join('\n') });
       }
     }
     const flow = await previewer.preview(fragment as unknown as HTMLElement, styleInputs, doc.body);
