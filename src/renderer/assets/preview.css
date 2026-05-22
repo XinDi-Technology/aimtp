@@ -250,7 +250,7 @@ td:empty::after, th:empty::after {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   font-size: 14px;
   line-height: 1.5;
 }
@@ -299,6 +299,7 @@ ul.contains-task-list {
   margin-right: 8px;
   vertical-align: middle;
   accent-color: #1A4BDB;
+  opacity: 1;
 }
 
 .footnote-ref {
