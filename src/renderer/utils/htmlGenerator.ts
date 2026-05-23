@@ -92,7 +92,8 @@ const transformFootnotesToPagedJs = (html: string): string => {
     // Paged.js 通过 CSS float: footnote 识别脚注元素，无需 data-note 属性。
     // data-note 系列属性是 Paged.js 边注 (margin notes) 使用的，会干扰脚注处理。
     footnoteEl.setAttribute('data-break-before', 'avoid');
-    footnoteEl.innerHTML = content;
+    // 剥掉外层 <p> 包裹，让 ::marker 与内容在同一行，避免 ::marker 额外占行导致 scrollHeight 低估实际高度
+    footnoteEl.innerHTML = content.replace(/^<p>([\s\S]*)<\/p>\s*$/, '$1');
 
     // 插入到引用的父元素后面，而非 <sup> 内部
     // markdown-it 的 footnote-ref 结构为 <sup><a class="footnote-ref">...</a></sup>
