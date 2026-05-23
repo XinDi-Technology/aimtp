@@ -355,6 +355,16 @@ ul.contains-task-list {
   margin: 0;
 }
 
+/* 隐藏 Paged.js 在正文中插入的重复脚注调用标记 */
+.pagedjs_area [data-footnote-call]::after {
+  display: none;
+}
+
+/* 脚注区域与正文的分隔线（仅在有脚注内容时显示） */
+.pagedjs_footnote_area:has(.pagedjs-footnote) {
+  border-top: 1px solid #999;
+}
+
 .cover-page {
   break-after: page;
   display: flex;
