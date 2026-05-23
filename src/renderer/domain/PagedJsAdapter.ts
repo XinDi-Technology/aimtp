@@ -159,9 +159,14 @@ export class PagedJsAdapter implements LayoutEngine {
       // e.g. @page { @footnote { border-top: ... } }
       const pageRules = cssText.match(/@page\s*\{(?:[^{}]|\{[^{}]*\})*\}/g);
 
-      // Extract float: footnote rules and inject them directly into the document
-      // as a <style> tag so the Polisher can discover them.
+      // Extract float: footnote rules
       const footnoteRules = cssText.match(/[^{}]*\{[^}]*float\s*:\s*footnote[^}]*\}/g);
+
+      // Inject float:footnote CSS into the document as a <style> tag.
+      // Also merge it with @page rules into styleInputs so the Paged.js
+      // Polisher processes it via polisher.add() — otherwise the Footnotes
+      // handler's onDeclaration hook never sees the float:footnote declaration
+      // and cannot register the selector.
       if (footnoteRules && footnoteRules.length > 0) {
         const footnoteStyle = doc.createElement('style');
         footnoteStyle.setAttribute('data-aimtp-footnote-css', '');
@@ -169,8 +174,11 @@ export class PagedJsAdapter implements LayoutEngine {
         doc.head.appendChild(footnoteStyle);
       }
 
-      if (pageRules && pageRules.length > 0) {
-        styleInputs.push({ 'about:blank': pageRules.join('\n') });
+      const allCssParts: string[] = [];
+      if (pageRules && pageRules.length > 0) allCssParts.push(pageRules.join('\n'));
+      if (footnoteRules && footnoteRules.length > 0) allCssParts.push(footnoteRules.join('\n'));
+      if (allCssParts.length > 0) {
+        styleInputs.push({ 'about:blank': allCssParts.join('\n') });
       }
     }
 

@@ -87,7 +87,7 @@ const transformFootnotesToPagedJs = (html: string): string => {
     const content = footnoteMap.get(footnoteId);
     if (!content) return;
 
-    const footnoteEl = doc.createElement('span');
+    const footnoteEl = doc.createElement('div');
     footnoteEl.className = 'pagedjs-footnote';
     // Paged.js 通过 CSS float: footnote 识别脚注元素，无需 data-note 属性。
     // data-note 系列属性是 Paged.js 边注 (margin notes) 使用的，会干扰脚注处理。
