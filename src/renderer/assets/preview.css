@@ -351,6 +351,10 @@ ul.contains-task-list {
   color: #555;
 }
 
+.pagedjs-footnote p {
+  margin: 0;
+}
+
 .cover-page {
   break-after: page;
   display: flex;
