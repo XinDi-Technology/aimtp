@@ -348,8 +348,14 @@ ul.contains-task-list {
 }
 
 .footnotes-list {
+  padding-left: 0;
+  list-style-position: inside;
   margin-top: 18px;
   margin-bottom: 14.4px;
+}
+
+.footnote-item p {
+  display: inline;
 }
 
 .footnote-backref {
