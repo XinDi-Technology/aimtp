@@ -133,7 +133,48 @@ export class PagedJsAdapter implements LayoutEngine {
       bridge.registerHandlers(...handlerInstances);
     }
 
-    // 5. Instantiate Previewer and run preview
+    // 5. Inject CSS workarounds BEFORE creating the Previewer.
+    //    Paged.js's Polisher reads document.stylesheets during its setup phase
+    //    (triggered by either the Previewer constructor or preview()). All CSS
+    //    must be in the document before that point, otherwise handlers like
+    //    Footnotes won't see float:footnote / @page declarations.
+
+    // 5a. Inject :root { --pagedjs-margin-* } from author CSS to override
+    //     pagedjs base :root values, since pagedjs addMarginVars() may not
+    //     set correct margin CSS variables on individual page elements.
+    this.injectMarginCssVars(doc);
+
+    // 5b. Extract @page rules and float:footnote rules from author CSS.
+    //     @page rules → passed via styleInputs to preview() (must NOT pass full
+    //     author CSS because pagedjs's @media handler would leak print rules).
+    //     float:footnote rules → injected as a <style> tag so the Polisher
+    //     discovers them via document.stylesheets and triggers the Footnotes
+    //     handler's onDeclaration hook.
+    const aimtpCss = doc.querySelector('style[data-aimtp-css]');
+    const styleInputs: Record<string, string>[] = [];
+    if (aimtpCss) {
+      const cssText = aimtpCss.textContent || '';
+
+      // Extract @page rules, including nested @footnote blocks
+      // e.g. @page { @footnote { border-top: ... } }
+      const pageRules = cssText.match(/@page\s*\{(?:[^{}]|\{[^{}]*\})*\}/g);
+
+      // Extract float: footnote rules and inject them directly into the document
+      // as a <style> tag so the Polisher can discover them.
+      const footnoteRules = cssText.match(/[^{}]*\{[^}]*float\s*:\s*footnote[^}]*\}/g);
+      if (footnoteRules && footnoteRules.length > 0) {
+        const footnoteStyle = doc.createElement('style');
+        footnoteStyle.setAttribute('data-aimtp-footnote-css', '');
+        footnoteStyle.textContent = footnoteRules.join('\n');
+        doc.head.appendChild(footnoteStyle);
+      }
+
+      if (pageRules && pageRules.length > 0) {
+        styleInputs.push({ 'about:blank': pageRules.join('\n') });
+      }
+    }
+
+    // 6. Instantiate Previewer — Polisher.setup() reads stylesheets here.
     this.emitProgress('rendering');
     const previewer = bridge.createPreviewer();
 
@@ -153,43 +194,6 @@ export class PagedJsAdapter implements LayoutEngine {
       fragment.appendChild(doc.body.firstChild);
     }
 
-    // [PAGEDJS_WORKAROUND] Inject :root { --pagedjs-margin-* } from author CSS to
-    // override pagedjs base :root values, since pagedjs addMarginVars() may not
-    // set correct margin CSS variables on individual page elements.
-    this.injectMarginCssVars(doc);
-
-    // [PAGEDJS_WORKAROUND] Pass @page rules to pagedjs polisher so handlers
-    // process @page { size: A4; margin: 25mm ... } and emit correct page size.
-    // Without this, Previewer defaults to 8.5in×11in (Letter).
-    //
-    // We must NOT pass the full author CSS because pagedjs's @media handler
-    // extracts rules from @media print and @media screen blocks, which would
-    // break our gap/shadow styling on screen and leak print rules to all media.
-    const aimtpCss = doc.querySelector('style[data-aimtp-css]');
-    const styleInputs: Record<string, string>[] = [];
-    if (aimtpCss) {
-      const cssText = aimtpCss.textContent || '';
-
-      // Extract @page rules, including nested @footnote blocks
-      // e.g. @page { @footnote { border-top: ... } }
-      const pageRules = cssText.match(/@page\s*\{(?:[^{}]|\{[^{}]*\})*\}/g);
-
-      // Extract float: footnote rules and inject them directly into the document
-      // as a <style> tag. This ensures Paged.js's Polisher can discover footnote
-      // elements via document.stylesheets, avoiding the URL-matching issue that
-      // occurs when passing these rules through styleInputs with 'about:blank'.
-      const footnoteRules = cssText.match(/[^{}]*\{[^}]*float\s*:\s*footnote[^}]*\}/g);
-      if (footnoteRules && footnoteRules.length > 0) {
-        const footnoteStyle = doc.createElement('style');
-        footnoteStyle.setAttribute('data-aimtp-footnote-css', '');
-        footnoteStyle.textContent = footnoteRules.join('\n');
-        doc.head.appendChild(footnoteStyle);
-      }
-
-      if (pageRules && pageRules.length > 0) {
-        styleInputs.push({ 'about:blank': pageRules.join('\n') });
-      }
-    }
     const flow = await previewer.preview(fragment as unknown as HTMLElement, styleInputs, doc.body);
 
     // 5.5. Inject header/footer DOM after Paged.js preview completes
