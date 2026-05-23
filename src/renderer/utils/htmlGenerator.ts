@@ -79,7 +79,7 @@ const transformFootnotesToPagedJs = (html: string): string => {
     footnoteMap.set(id, clone.innerHTML.trim());
   });
 
-  const refs = doc.querySelectorAll('a.footnote-ref');
+  const refs = doc.querySelectorAll('sup.footnote-ref a');
   refs.forEach((ref) => {
     const href = ref.getAttribute('href');
     if (!href) return;
