@@ -343,7 +343,13 @@ ul.contains-task-list {
 }
 
 .footnote-item {
+  font-size: 0.85em;
   margin-bottom: 8px;
+}
+
+.footnotes-list {
+  padding-left: 0;
+  list-style-position: inside;
 }
 
 .footnote-backref {
@@ -353,7 +359,7 @@ ul.contains-task-list {
 .pagedjs-footnote {
   float: footnote;
   font-size: 0.85em;
-  color: #555;
+  line-height: $$fontLineHeight;
 }
 
 .pagedjs-footnote p {
