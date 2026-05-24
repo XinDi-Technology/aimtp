@@ -11,38 +11,39 @@ const initMathJax = async (): Promise<void> => {
   if (mathJaxInitializing && mathJaxInitPromise) return mathJaxInitPromise;
 
   mathJaxInitializing = true;
+  mathJaxInitPromise = (async () => {
+    try {
+      const module = await import('mathjax');
+      MathJax = module.default || module;
 
-  try {
-    const module = await import('mathjax');
-    MathJax = module.default || module;
-
-    mathJaxInitPromise = MathJax.init({
-      loader: {
-        load: ['input/tex', 'output/svg'],
-      },
-      tex: {
-        packages: {
-          '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
+      await MathJax.init({
+        loader: {
+          load: ['input/tex', 'output/svg'],
         },
-      },
-      svg: {
-        fontCache: 'global',
-        localFontPath: '',
-        localFontFamily: '',
-      },
-    });
+        tex: {
+          packages: {
+            '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
+          },
+        },
+        svg: {
+          fontCache: 'global',
+          localFontPath: '',
+          localFontFamily: '',
+        },
+      });
 
-    await mathJaxInitPromise;
-    mathJaxInitialized = true;
-    logger.log('MathJax initialized successfully with SVG output');
-  } catch (error) {
-    mathJaxInitialized = false;
-    mathJaxInitializing = false;
-    mathJaxInitPromise = null;
-    logger.error('Failed to initialize MathJax:', error);
-  } finally {
-    mathJaxInitializing = false;
-  }
+      mathJaxInitialized = true;
+      logger.log('MathJax initialized successfully with SVG output');
+    } catch (error) {
+      mathJaxInitialized = false;
+      mathJaxInitPromise = null;
+      logger.error('Failed to initialize MathJax:', error);
+    } finally {
+      mathJaxInitializing = false;
+    }
+  })();
+
+  await mathJaxInitPromise;
 };
 
 const ensureMathJaxReady = async (): Promise<void> => {
