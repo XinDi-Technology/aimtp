@@ -24,7 +24,14 @@ const initMathJax = async (): Promise<void> => {
         },
       };
 
-      await import('mathjax/tex-svg.js');
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = './vendor/tex-svg.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load MathJax script'));
+        document.head.appendChild(script);
+      });
+
       MathJax = (window as any).MathJax;
 
       mathJaxInitialized = true;
