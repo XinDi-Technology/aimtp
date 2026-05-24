@@ -7,7 +7,6 @@ import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
 import mdGithubAlerts from 'markdown-it-github-alerts';
-import { mathjaxPlugin, initMathJaxInstance } from './mathjaxPlugin';
 import { mermaidPlugin, initMermaidInstance } from './mermaidPlugin';
 
 export interface MarkdownItOptions {
@@ -131,11 +130,6 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
   if (options.githubAlerts) {
     // 使用 GitHub Alerts 插件
     md.use(mdGithubAlerts);
-  }
-
-  if (options.mathJax) {
-    // 使用 MathJax 插件
-    md.use(mathjaxPlugin);
   }
 
   if (options.mermaid) {

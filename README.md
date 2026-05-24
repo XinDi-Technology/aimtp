@@ -31,7 +31,7 @@ Compliance-first Markdown to PDF desktop application
 ### 页面
 
 | 设置 | 可选值 |
-| --- | --- |
+| :-: | :-: |
 | 页面尺寸 | A4 / A3 |
 | 页面方向 | 纵向 / 横向 |
 | 页边距 | 上 / 下 / 左 / 右 |
@@ -40,7 +40,7 @@ Compliance-first Markdown to PDF desktop application
 ### 字体与排版
 
 | 设置 | 可选值 |
-| --- | --- |
+| :-: | :-: |
 | 正文字体 | GWM Sans UI |
 | 代码字体 | JetBrains Mono / Monaspace Argon Frozen |
 | 基础字号 | 可自定义（默认 18） |
@@ -55,17 +55,17 @@ Compliance-first Markdown to PDF desktop application
 -   按 H1 / H2 标题自动分页
 -   下标 / 上标
 -   封面
--   脚注
+-   脚注（当前页底部 / 文档底部）
 -   高亮标记
--   下划线 / 插入
+-   下划线
 -   待办事项
--   Mermaid 图表
--   MathJax 数学公式
+-   Mermaid 图表 （todo）
+-   MathJax 数学公式 （todo）
 
 ### 页眉页脚
 
 | 设置 | 可选值 |
-| --- | --- |
+| :-: | :-: |
 | 页眉字体 | GWM Sans UI |
 | 页眉对齐 | 左对齐 / 居中 / 右对齐 |
 | 页眉内容 | 标题 / 作者 / 日期 |
@@ -77,11 +77,11 @@ Compliance-first Markdown to PDF desktop application
 
 本项目使用以下免费可商用字体，确保生成的 PDF 文档无字体版权纠纷：
 
-| 字体 | 用途 | 许可 |
-| --- | --- | --- |
-| [GWM Sans UI](https://www.gwm.com.cn/gwmsans/fontdownload.html) | 中文正文 / 页眉页脚 | 免费商用 |
-| [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | 代码 | [OFL 1.1](https://github.com/JetBrains/JetBrainsMono?tab=OFL-1.1-1-ov-file) |
-| [Monaspace Argon Frozen](https://monaspace.githubnext.com/) | 代码 | [OFL 1.1](https://github.com/githubnext/monaspace?tab=OFL-1.1-1-ov-file) |
+| 字体 | 用途 | 标准 | 许可 |
+| :-: | :-: | :-: | :-: |
+| [GWM Sans UI](https://www.gwm.com.cn/gwmsans/fontdownload.html) | 中文正文 / 页眉页脚 | GB18030-2022 L2 | 免费商用 |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | 代码 |  | [OFL 1.1](https://github.com/JetBrains/JetBrainsMono?tab=OFL-1.1-1-ov-file) |
+| [Monaspace Argon Frozen](https://monaspace.githubnext.com/) | 代码 |  | [OFL 1.1](https://github.com/githubnext/monaspace?tab=OFL-1.1-1-ov-file) |
 
 ## 风险警告
 

@@ -140,6 +140,15 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     });
 
     let content = markdownWithoutFrontMatter;
+
+    if (extensions.mathJax) {
+      try {
+        content = await preRenderMathJax(content);
+      } catch (error) {
+        logger.error('MathJax pre-render error:', error);
+      }
+    }
+
     let result = md.render(content);
 
     logger.log(`[generateHtml] After markdown render, length: ${result.length}`);
@@ -149,14 +158,6 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
         result = await preRenderMermaid(result);
       } catch (error) {
         logger.error('Mermaid pre-render error:', error);
-      }
-    }
-
-    if (extensions.mathJax) {
-      try {
-        result = await preRenderMathJax(result);
-      } catch (error) {
-        logger.error('MathJax pre-render error:', error);
       }
     }
 
@@ -357,48 +358,49 @@ const preRenderMermaid = async (html: string): Promise<string> => {
   return html;
 };
 
-const preRenderMathJax = async (html: string): Promise<string> => {
-  const inlineRegex = /<span class="math-inline" data-math="([^"]*)">[^<]*<\/span>/g;
-  const inlineMatches = [...html.matchAll(inlineRegex)];
+const preRenderMathJax = async (markdown: string): Promise<string> => {
+  const isLikelyMath = (s: string): boolean => {
+    const trimmed = s.trim();
+    if (!trimmed) return false;
+    return /[a-zA-Z\\{}^_]/.test(trimmed);
+  };
 
-  const displayRegex = /<div class="math-display" data-math="([^"]*)">[^<]*<\/div>/g;
-  const displayMatches = [...html.matchAll(displayRegex)];
+  const replaceMathAsync = async (text: string, regex: RegExp, display: boolean): Promise<string> => {
+    const matches = [...text.matchAll(regex)];
+    if (matches.length === 0) return text;
 
-  const totalMatches = inlineMatches.length + displayMatches.length;
+    logger.log(`Pre-rendering ${matches.length} MathJax formula(s)...`);
 
-  if (totalMatches === 0) {
-    return html;
-  }
+    let result = '';
+    let lastIndex = 0;
 
-  logger.log(`Pre-rendering ${totalMatches} MathJax formula(s)...`);
+    for (const match of matches) {
+      result += text.slice(lastIndex, match.index);
+      const math = match[1].trim();
+      const fullMatchLen = match[0].length;
 
-  for (const match of inlineMatches) {
-    const fullMatch = match[0];
-    const encoded = match[1];
-    const math = decodeURIComponent(encoded);
+      if (isLikelyMath(math)) {
+        try {
+          const svg = display
+            ? await renderMathDisplayAsync(math)
+            : await renderMathInlineAsync(math);
+          result += svg;
+        } catch (error) {
+          logger.error(`Failed to render math:`, error);
+          result += match[0];
+        }
+      } else {
+        result += match[0];
+      }
 
-    try {
-      const svg = await renderMathInlineAsync(math);
-      html = html.replace(fullMatch, svg);
-    } catch (error) {
-      logger.error(`Failed to render inline math:`, error);
-      html = html.replace(fullMatch, `<span style="color: #d4462a;">公式渲染失败</span>`);
+      lastIndex = match.index + fullMatchLen;
     }
-  }
 
-  for (const match of displayMatches) {
-    const fullMatch = match[0];
-    const encoded = match[1];
-    const math = decodeURIComponent(encoded);
+    result += text.slice(lastIndex);
+    return result;
+  };
 
-    try {
-      const svg = await renderMathDisplayAsync(math);
-      html = html.replace(fullMatch, svg);
-    } catch (error) {
-      logger.error(`Failed to render display math:`, error);
-      html = html.replace(fullMatch, `<div style="color: #d4462a; padding: 12px;">公式渲染失败</div>`);
-    }
-  }
-
-  return html;
+  markdown = await replaceMathAsync(markdown, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true);
+  markdown = await replaceMathAsync(markdown, /(?<!\\)\$([^$\n\r]+?)\$/g, false);
+  return markdown;
 };
