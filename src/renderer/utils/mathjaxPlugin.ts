@@ -13,13 +13,10 @@ const initMathJax = async (): Promise<void> => {
   mathJaxInitializing = true;
   mathJaxInitPromise = (async () => {
     try {
-      const module = await import('mathjax');
-      MathJax = module.default || module;
+      await import('mathjax/tex-svg.js');
+      MathJax = (window as any).MathJax;
 
       await MathJax.init({
-        loader: {
-          load: ['input/tex', 'output/svg'],
-        },
         tex: {
           packages: {
             '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
