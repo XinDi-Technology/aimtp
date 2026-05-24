@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // MathJax 需要这个 polyfill
+      // MathJax 需要这些 polyfill
       if (typeof global === 'undefined') {
         window.global = window;
+      }
+      if (typeof __dirname === 'undefined') {
+        window.__dirname = '';
       }
     </script>
     <title>Aimtp</title>
