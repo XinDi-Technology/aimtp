@@ -16,13 +16,11 @@ const initMathJax = async (): Promise<void> => {
       (window as any).MathJax = {
         tex: {
           packages: {
-            '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
+            '[+]': ['ams', 'newcommand', 'configmacros'],
           },
         },
         svg: {
           fontCache: 'global',
-          localFontPath: '',
-          localFontFamily: '',
         },
       };
 
