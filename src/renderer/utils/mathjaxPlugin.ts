@@ -13,10 +13,7 @@ const initMathJax = async (): Promise<void> => {
   mathJaxInitializing = true;
   mathJaxInitPromise = (async () => {
     try {
-      await import('mathjax/tex-svg.js');
-      MathJax = (window as any).MathJax;
-
-      await MathJax.init({
+      (window as any).MathJax = {
         tex: {
           packages: {
             '[+]': ['ams', 'newcommand', 'configmacros', 'bbox', 'extpfeil'],
@@ -27,7 +24,10 @@ const initMathJax = async (): Promise<void> => {
           localFontPath: '',
           localFontFamily: '',
         },
-      });
+      };
+
+      await import('mathjax/tex-svg.js');
+      MathJax = (window as any).MathJax;
 
       mathJaxInitialized = true;
       logger.log('MathJax initialized successfully with SVG output');
