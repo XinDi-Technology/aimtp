@@ -37,7 +37,13 @@ const handleError = (error: Error, source?: string) => {
 };
 
 window.addEventListener('error', (event) => {
-  console.error('[Aimtp] Global error handler caught:', event.error);
+  console.error('[Aimtp] Global error handler caught:', event.error, (event.target as HTMLElement)?.tagName, (event.target as HTMLElement)?.getAttribute?.('src') || (event.target as HTMLElement)?.getAttribute?.('href') || '');
+
+  if (!event.error) {
+    // 资源加载失败（字体、图片、脚本等）不销毁整个页面
+    return;
+  }
+
   handleError(event.error, 'global error handler');
 });
 
