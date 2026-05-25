@@ -372,60 +372,118 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
   };
 
   // 找出代码块在原文中的位置范围 [start, end)
-  // 数学匹配落在这些范围内的将被跳过，避免代码块中的 $...$ 被误渲染
   const findCodeBlockRanges = (text: string): [number, number][] => {
     const ranges: [number, number][] = [];
-    // 围栏代码块 ```...```
     for (const m of text.matchAll(/```[\s\S]*?```/g)) {
       if (m.index !== undefined) ranges.push([m.index, m.index + m[0].length]);
     }
-    // 行内代码 `...`
     for (const m of text.matchAll(/`[^`]+`/g)) {
       if (m.index !== undefined) ranges.push([m.index, m.index + m[0].length]);
     }
     return ranges;
   };
 
-  const isInCodeBlock = (start: number, end: number, ranges: [number, number][]): boolean => {
-    return ranges.some(([rs, re]) => start < re && end > rs);
+  const isInCodeBlock = (pos: number, ranges: [number, number][]): boolean => {
+    return ranges.some(([rs, re]) => pos >= rs && pos < re);
   };
 
-  const replaceMathAsync = async (
+  // 找出所有 $$ 的位置，过滤掉代码块内的和转义的，然后手动配对
+  // 这避免了正则引擎跨代码块配对的问题（如代码块内的 $$ 和块外的 $$ 被配对）
+  const replaceDisplayMath = async (
     text: string,
-    regex: RegExp,
-    display: boolean,
     codeRanges: [number, number][],
   ): Promise<string> => {
+    // 找出所有非转义 $$ 的位置
+    const delimiterPositions: number[] = [];
+    for (let i = 0; i < text.length - 1; i++) {
+      if (text[i] === '$' && text[i + 1] === '$') {
+        // 检查前面是否有奇数个反斜杠（转义）
+        let backslashes = 0;
+        let j = i - 1;
+        while (j >= 0 && text[j] === '\\') {
+          backslashes++;
+          j--;
+        }
+        if (backslashes % 2 === 1) continue; // 被转义，跳过
+        // 检查是否在代码块内
+        if (isInCodeBlock(i, codeRanges)) continue;
+        delimiterPositions.push(i);
+        i++; // 跳过第二个 $，避免重复匹配
+      }
+    }
+
+    if (delimiterPositions.length < 2) return text;
+
+    // 手动配对：奇数位为开 $$，偶数位为闭 $$
+    const pairs: { start: number; end: number }[] = [];
+    for (let i = 0; i + 1 < delimiterPositions.length; i += 2) {
+      pairs.push({ start: delimiterPositions[i], end: delimiterPositions[i + 1] + 2 });
+    }
+
+    logger.log(`Pre-rendering ${pairs.length} display math formula(s)...`);
+
+    let result = '';
+    let lastIndex = 0;
+
+    for (const pair of pairs) {
+      // 添加 $$ 之前的文本
+      result += text.slice(lastIndex, pair.start);
+      // 提取公式内容（两个 $$ 之间）
+      const math = text.slice(pair.start + 2, pair.end - 2).trim();
+
+      if (isLikelyMath(math)) {
+        try {
+          const svg = await renderMathDisplayAsync(math);
+          result += svg;
+        } catch (error) {
+          logger.error('Failed to render display math:', error);
+          result += text.slice(pair.start, pair.end);
+        }
+      } else {
+        result += text.slice(pair.start, pair.end);
+      }
+
+      lastIndex = pair.end;
+    }
+
+    result += text.slice(lastIndex);
+    return result;
+  };
+
+  // 行内公式 $...$（不会跨行，正则不会跨代码块配对）
+  const replaceInlineMath = async (
+    text: string,
+    codeRanges: [number, number][],
+  ): Promise<string> => {
+    const regex = /(?<!\\)\$([^$\n\r]+?)\$/g;
     const matches = [...text.matchAll(regex)];
     if (matches.length === 0) return text;
 
-    logger.log(`Pre-rendering ${matches.length} MathJax formula(s)...`);
+    logger.log(`Pre-rendering ${matches.length} inline math formula(s)...`);
 
     let result = '';
     let lastIndex = 0;
 
     for (const match of matches) {
-      result += text.slice(lastIndex, match.index);
-      const math = match[1].trim();
-      const fullMatchLen = match[0].length;
       const matchStart = match.index!;
-      const matchEnd = matchStart + fullMatchLen;
+      const matchEnd = matchStart + match[0].length;
 
       // 跳过代码块内的匹配
-      if (isInCodeBlock(matchStart, matchEnd, codeRanges)) {
-        result += match[0];
+      if (isInCodeBlock(matchStart, codeRanges)) {
+        result += text.slice(lastIndex, matchEnd);
         lastIndex = matchEnd;
         continue;
       }
 
+      result += text.slice(lastIndex, matchStart);
+      const math = match[1].trim();
+
       if (isLikelyMath(math)) {
         try {
-          const svg = display
-            ? await renderMathDisplayAsync(math)
-            : await renderMathInlineAsync(math);
+          const svg = await renderMathInlineAsync(math);
           result += svg;
         } catch (error) {
-          logger.error(`Failed to render math:`, error);
+          logger.error('Failed to render inline math:', error);
           result += match[0];
         }
       } else {
@@ -439,12 +497,12 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
     return result;
   };
 
-  // 1. 找出代码块位置（基于原始文本，避免修改文本导致偏移变化）
+  // 1. 找出代码块位置
   const codeRanges = findCodeBlockRanges(markdown);
-  // 2. 替换数学公式，跳过代码块内的匹配
-  let result = await replaceMathAsync(markdown, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true, codeRanges);
-  // 注意：显示公式替换后文本长度变化，需要重新计算行内代码块位置
+  // 2. 替换显示公式（手动配对 $$，避免跨代码块配对）
+  let result = await replaceDisplayMath(markdown, codeRanges);
+  // 3. 替换行内公式（不会跨行，可以用正则 + 位置过滤）
   const codeRangesAfterDisplay = findCodeBlockRanges(result);
-  result = await replaceMathAsync(result, /(?<!\\)\$([^$\n\r]+?)\$/g, false, codeRangesAfterDisplay);
+  result = await replaceInlineMath(result, codeRangesAfterDisplay);
   return result;
 };
