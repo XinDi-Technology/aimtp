@@ -15,6 +15,14 @@
         },
         svg: {
           fontCache: 'local',
+          dynamicPrefix: './vendor/mathjax-newcm-font/svg/dynamic',
+        },
+        loader: {
+          paths: {
+            // 脚本内部 loader.paths.fonts 默认指向 CDN，这里覆盖为本地路径
+            // @mathjax/* 包会解析为 ./vendor/* （如 @mathjax/mathjax-newcm-font → ./vendor/mathjax-newcm-font）
+            fonts: './vendor',
+          },
         },
         startup: {
           typeset: false,
