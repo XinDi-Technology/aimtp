@@ -54,7 +54,7 @@ const loadMathJaxScript = (): Promise<void> => {
 
 /**
  * 等待 MathJax v4 内部初始化完成。
- * tex-svg.js 加载后，MathJax 会异步初始化组件，需要轮询等待 typesetPromise 可用。
+ * tex-svg.js 加载后，MathJax 会异步初始化组件，轮询等待 typesetPromise 可用。
  */
 const waitForMathJaxReady = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -63,7 +63,7 @@ const waitForMathJaxReady = (): Promise<void> => {
     const check = () => {
       const mj = (window as any).MathJax;
       if (mj && typeof mj.typesetPromise === 'function') {
-        logger.log('MathJax v4 ready (typesetPromise available)');
+        logger.log('MathJax v4 ready');
         resolve();
         return;
       }
@@ -124,18 +124,40 @@ const ensureMathJaxReady = async (): Promise<void> => {
 };
 
 /**
- * 使用 MathJax v4 的 tex2svg API 渲染数学公式。
+ * 使用 MathJax v4 的 typesetPromise API 渲染数学公式。
+ * v4 没有 tex2svg 方法，必须通过 DOM 容器 + typesetPromise 渲染。
  */
-const renderMath = (math: string, display: boolean): string => {
-  const mj = MathJax;
-  const svg = mj.tex2svg(math, { display });
-  return mj.startup.adaptor.outerHTML(svg);
+const renderMathViaDom = async (math: string, display: boolean): Promise<string> => {
+  await ensureMathJaxReady();
+
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '-9999px';
+  container.style.visibility = 'hidden';
+  container.style.pointerEvents = 'none';
+
+  // 使用 MathJax 默认识别的分隔符：display 用 $$，inline 用 \(...\)
+  if (display) {
+    container.textContent = `$$${math}$$`;
+  } else {
+    container.textContent = `\\(${math}\\)`;
+  }
+
+  document.body.appendChild(container);
+
+  try {
+    await MathJax.typesetPromise([container]);
+    const html = container.innerHTML;
+    return html;
+  } finally {
+    container.remove();
+  }
 };
 
 export const renderMathInlineAsync = async (math: string): Promise<string> => {
   try {
-    await ensureMathJaxReady();
-    return renderMath(math, false);
+    return await renderMathViaDom(math, false);
   } catch (error) {
     logger.error('MathJax inline math render error:', error);
     return `\\(${math}\\)`;
@@ -144,8 +166,8 @@ export const renderMathInlineAsync = async (math: string): Promise<string> => {
 
 export const renderMathDisplayAsync = async (math: string): Promise<string> => {
   try {
-    await ensureMathJaxReady();
-    return `<div class="math-display">${renderMath(math, true)}</div>`;
+    const html = await renderMathViaDom(math, true);
+    return `<div class="math-display">${html}</div>`;
   } catch (error) {
     logger.error('MathJax display math render error:', error);
     return `<div class="math-display">\\[${math}\\]</div>`;
