@@ -21,6 +21,7 @@ import pagedJsIifeCode from '../assets/vendor/pagedjs.iife.js?raw';
 const FONT_READY_TIMEOUT = 5000;
 const DOCUMENT_READY_TIMEOUT = 2000;
 const PAGEDJS_READY_TIMEOUT = 10000;
+const PREVIEW_TIMEOUT = 30000; // previewer.preview() 超时 30s，防止 Paged.js 卡死
 
 /** 分页进度回调 */
 export type LayoutProgressCallback = (
@@ -202,7 +203,12 @@ export class PagedJsAdapter implements LayoutEngine {
       fragment.appendChild(doc.body.firstChild);
     }
 
-    const flow = await previewer.preview(fragment as unknown as HTMLElement, styleInputs, doc.body);
+    const flow = await Promise.race([
+      previewer.preview(fragment as unknown as HTMLElement, styleInputs, doc.body),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Paged.js preview timed out after 30s')), PREVIEW_TIMEOUT),
+      ),
+    ]);
 
     // 5.5. Inject header/footer DOM after Paged.js preview completes
     if (this.handlerConfig?.enabled) {
