@@ -5,25 +5,25 @@ let MathJax: any = null;
 let mathJaxInitialized = false;
 let mathJaxInitializing = false;
 let mathJaxInitPromise: Promise<void> | null = null;
-let mathJaxLoadFailed = false; // 加载永久失败后不再重试
+let mathJaxLoadFailed = false;
 
-const MATHJAX_SCRIPT_TIMEOUT = 15000; // tex-svg.js 加载超时 15s
+const MATHJAX_SCRIPT_TIMEOUT = 15000;
+const MATHJAX_INIT_POLL_INTERVAL = 50;
+const MATHJAX_INIT_TIMEOUT = 10000;
 
 /**
- * 动态按需加载 MathJax tex-svg.js 脚本。
- * 只在首次需要使用 MathJax 时才加载，避免启动时无条件加载 1.76 MB 脚本。
+ * 动态按需加载 MathJax v4 tex-svg.js 脚本。
  */
 const loadMathJaxScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    // 如果脚本已通过其他方式加载，直接返回
-    const mj = (window as any).MathJax;
-    if (mj && mj.tex2svgPromise) {
+    if (document.querySelector('script[data-mathjax-tex-svg]')) {
       resolve();
       return;
     }
 
     const script = document.createElement('script');
     script.src = './vendor/tex-svg.js';
+    script.setAttribute('data-mathjax-tex-svg', 'true');
 
     const timeout = setTimeout(() => {
       cleanup();
@@ -52,6 +52,34 @@ const loadMathJaxScript = (): Promise<void> => {
   });
 };
 
+/**
+ * 等待 MathJax v4 内部初始化完成。
+ * tex-svg.js 加载后，MathJax 会异步初始化组件，需要轮询等待 typesetPromise 可用。
+ */
+const waitForMathJaxReady = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const check = () => {
+      const mj = (window as any).MathJax;
+      if (mj && typeof mj.typesetPromise === 'function') {
+        logger.log('MathJax v4 ready (typesetPromise available)');
+        resolve();
+        return;
+      }
+
+      if (Date.now() - startTime > MATHJAX_INIT_TIMEOUT) {
+        reject(new Error('MathJax v4 initialization timeout'));
+        return;
+      }
+
+      setTimeout(check, MATHJAX_INIT_POLL_INTERVAL);
+    };
+
+    check();
+  });
+};
+
 const initMathJax = async (): Promise<void> => {
   if (mathJaxInitialized) return;
   if (mathJaxLoadFailed) {
@@ -62,23 +90,23 @@ const initMathJax = async (): Promise<void> => {
   mathJaxInitializing = true;
   mathJaxInitPromise = (async () => {
     try {
-      // 动态加载 tex-svg.js（仅在首次需要时）
       await loadMathJaxScript();
+      await waitForMathJaxReady();
 
       const mj = (window as any).MathJax;
-      if (!mj || !mj.tex2svgPromise) {
-        throw new Error('MathJax script loaded but tex2svgPromise not available');
+      if (!mj || typeof mj.typesetPromise !== 'function') {
+        throw new Error('MathJax v4 initialized but typesetPromise not available');
       }
-      MathJax = mj;
 
+      MathJax = mj;
       mathJaxInitialized = true;
-      logger.log('MathJax initialized successfully with SVG output');
+      logger.log('MathJax v4 initialized successfully');
     } catch (error) {
       mathJaxInitialized = false;
       mathJaxLoadFailed = true;
       mathJaxInitPromise = null;
-      logger.error('Failed to initialize MathJax:', error);
-      throw error; // 上抛给调用方处理
+      logger.error('Failed to initialize MathJax v4:', error);
+      throw error;
     } finally {
       mathJaxInitializing = false;
     }
@@ -95,11 +123,19 @@ const ensureMathJaxReady = async (): Promise<void> => {
   }
 };
 
+/**
+ * 使用 MathJax v4 的 tex2svg API 渲染数学公式。
+ */
+const renderMath = (math: string, display: boolean): string => {
+  const mj = MathJax;
+  const svg = mj.tex2svg(math, { display });
+  return mj.startup.adaptor.outerHTML(svg);
+};
+
 export const renderMathInlineAsync = async (math: string): Promise<string> => {
   try {
     await ensureMathJaxReady();
-    const svg = await MathJax.tex2svgPromise(math, { display: false });
-    return MathJax.startup.adaptor.outerHTML(svg);
+    return renderMath(math, false);
   } catch (error) {
     logger.error('MathJax inline math render error:', error);
     return `\\(${math}\\)`;
@@ -109,8 +145,7 @@ export const renderMathInlineAsync = async (math: string): Promise<string> => {
 export const renderMathDisplayAsync = async (math: string): Promise<string> => {
   try {
     await ensureMathJaxReady();
-    const svg = await MathJax.tex2svgPromise(math, { display: true });
-    return `<div class="math-display">${MathJax.startup.adaptor.outerHTML(svg)}</div>`;
+    return `<div class="math-display">${renderMath(math, true)}</div>`;
   } catch (error) {
     logger.error('MathJax display math render error:', error);
     return `<div class="math-display">\\[${math}\\]</div>`;
