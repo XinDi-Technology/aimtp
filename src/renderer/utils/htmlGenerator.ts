@@ -372,17 +372,20 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
   };
 
   // 用占位符保护代码块内容，避免代码块中的 $...$ 被误当作数学公式渲染
+  // 使用 HTML 注释格式作为占位符，markdown-it 会保留 HTML 注释不被吞掉
   const codeBlockPlaceholders: string[] = [];
+  const CODE_BLOCK_PLACEHOLDER = (idx: number) => `<!--AIMTP_CODE_BLOCK_${idx}-->`;
+
   const protectCodeBlocks = (text: string): string => {
     // 保护围栏代码块 ```...```（可能带语言标识，如 ```python）
     let result = text.replace(/```[\s\S]*?```/g, (match) => {
-      const placeholder = `\x00CODE_BLOCK_${codeBlockPlaceholders.length}\x00`;
+      const placeholder = CODE_BLOCK_PLACEHOLDER(codeBlockPlaceholders.length);
       codeBlockPlaceholders.push(match);
       return placeholder;
     });
     // 保护行内代码 `...`
     result = result.replace(/`[^`]+`/g, (match) => {
-      const placeholder = `\x00CODE_BLOCK_${codeBlockPlaceholders.length}\x00`;
+      const placeholder = CODE_BLOCK_PLACEHOLDER(codeBlockPlaceholders.length);
       codeBlockPlaceholders.push(match);
       return placeholder;
     });
@@ -390,7 +393,7 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
   };
 
   const restoreCodeBlocks = (text: string): string => {
-    return text.replace(/\x00CODE_BLOCK_(\d+)\x00/g, (_, idx) => {
+    return text.replace(/<!--AIMTP_CODE_BLOCK_(\d+)-->/g, (_, idx) => {
       return codeBlockPlaceholders[parseInt(idx)] || '';
     });
   };
