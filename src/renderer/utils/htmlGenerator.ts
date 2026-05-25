@@ -371,34 +371,31 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
     return /[a-zA-Z\\{}^_]/.test(trimmed);
   };
 
-  // 用占位符保护代码块内容，避免代码块中的 $...$ 被误当作数学公式渲染
-  // 使用 HTML 注释格式作为占位符，markdown-it 会保留 HTML 注释不被吞掉
-  const codeBlockPlaceholders: string[] = [];
-  const CODE_BLOCK_PLACEHOLDER = (idx: number) => `<!--AIMTP_CODE_BLOCK_${idx}-->`;
-
-  const protectCodeBlocks = (text: string): string => {
-    // 保护围栏代码块 ```...```（可能带语言标识，如 ```python）
-    let result = text.replace(/```[\s\S]*?```/g, (match) => {
-      const placeholder = CODE_BLOCK_PLACEHOLDER(codeBlockPlaceholders.length);
-      codeBlockPlaceholders.push(match);
-      return placeholder;
-    });
-    // 保护行内代码 `...`
-    result = result.replace(/`[^`]+`/g, (match) => {
-      const placeholder = CODE_BLOCK_PLACEHOLDER(codeBlockPlaceholders.length);
-      codeBlockPlaceholders.push(match);
-      return placeholder;
-    });
-    return result;
+  // 找出代码块在原文中的位置范围 [start, end)
+  // 数学匹配落在这些范围内的将被跳过，避免代码块中的 $...$ 被误渲染
+  const findCodeBlockRanges = (text: string): [number, number][] => {
+    const ranges: [number, number][] = [];
+    // 围栏代码块 ```...```
+    for (const m of text.matchAll(/```[\s\S]*?```/g)) {
+      if (m.index !== undefined) ranges.push([m.index, m.index + m[0].length]);
+    }
+    // 行内代码 `...`
+    for (const m of text.matchAll(/`[^`]+`/g)) {
+      if (m.index !== undefined) ranges.push([m.index, m.index + m[0].length]);
+    }
+    return ranges;
   };
 
-  const restoreCodeBlocks = (text: string): string => {
-    return text.replace(/<!--AIMTP_CODE_BLOCK_(\d+)-->/g, (_, idx) => {
-      return codeBlockPlaceholders[parseInt(idx)] || '';
-    });
+  const isInCodeBlock = (start: number, end: number, ranges: [number, number][]): boolean => {
+    return ranges.some(([rs, re]) => start < re && end > rs);
   };
 
-  const replaceMathAsync = async (text: string, regex: RegExp, display: boolean): Promise<string> => {
+  const replaceMathAsync = async (
+    text: string,
+    regex: RegExp,
+    display: boolean,
+    codeRanges: [number, number][],
+  ): Promise<string> => {
     const matches = [...text.matchAll(regex)];
     if (matches.length === 0) return text;
 
@@ -411,6 +408,15 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
       result += text.slice(lastIndex, match.index);
       const math = match[1].trim();
       const fullMatchLen = match[0].length;
+      const matchStart = match.index!;
+      const matchEnd = matchStart + fullMatchLen;
+
+      // 跳过代码块内的匹配
+      if (isInCodeBlock(matchStart, matchEnd, codeRanges)) {
+        result += match[0];
+        lastIndex = matchEnd;
+        continue;
+      }
 
       if (isLikelyMath(math)) {
         try {
@@ -426,18 +432,19 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
         result += match[0];
       }
 
-      lastIndex = match.index + fullMatchLen;
+      lastIndex = matchEnd;
     }
 
     result += text.slice(lastIndex);
     return result;
   };
 
-  // 1. 先保护代码块
-  let protectedText = protectCodeBlocks(markdown);
-  // 2. 在受保护文本上替换数学公式
-  protectedText = await replaceMathAsync(protectedText, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true);
-  protectedText = await replaceMathAsync(protectedText, /(?<!\\)\$([^$\n\r]+?)\$/g, false);
-  // 3. 恢复代码块
-  return restoreCodeBlocks(protectedText);
+  // 1. 找出代码块位置（基于原始文本，避免修改文本导致偏移变化）
+  const codeRanges = findCodeBlockRanges(markdown);
+  // 2. 替换数学公式，跳过代码块内的匹配
+  let result = await replaceMathAsync(markdown, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true, codeRanges);
+  // 注意：显示公式替换后文本长度变化，需要重新计算行内代码块位置
+  const codeRangesAfterDisplay = findCodeBlockRanges(result);
+  result = await replaceMathAsync(result, /(?<!\\)\$([^$\n\r]+?)\$/g, false, codeRangesAfterDisplay);
+  return result;
 };
