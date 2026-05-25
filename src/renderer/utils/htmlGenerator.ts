@@ -371,6 +371,30 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
     return /[a-zA-Z\\{}^_]/.test(trimmed);
   };
 
+  // 用占位符保护代码块内容，避免代码块中的 $...$ 被误当作数学公式渲染
+  const codeBlockPlaceholders: string[] = [];
+  const protectCodeBlocks = (text: string): string => {
+    // 保护围栏代码块 ```...```（可能带语言标识，如 ```python）
+    let result = text.replace(/```[\s\S]*?```/g, (match) => {
+      const placeholder = `\x00CODE_BLOCK_${codeBlockPlaceholders.length}\x00`;
+      codeBlockPlaceholders.push(match);
+      return placeholder;
+    });
+    // 保护行内代码 `...`
+    result = result.replace(/`[^`]+`/g, (match) => {
+      const placeholder = `\x00CODE_BLOCK_${codeBlockPlaceholders.length}\x00`;
+      codeBlockPlaceholders.push(match);
+      return placeholder;
+    });
+    return result;
+  };
+
+  const restoreCodeBlocks = (text: string): string => {
+    return text.replace(/\x00CODE_BLOCK_(\d+)\x00/g, (_, idx) => {
+      return codeBlockPlaceholders[parseInt(idx)] || '';
+    });
+  };
+
   const replaceMathAsync = async (text: string, regex: RegExp, display: boolean): Promise<string> => {
     const matches = [...text.matchAll(regex)];
     if (matches.length === 0) return text;
@@ -406,7 +430,11 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
     return result;
   };
 
-  markdown = await replaceMathAsync(markdown, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true);
-  markdown = await replaceMathAsync(markdown, /(?<!\\)\$([^$\n\r]+?)\$/g, false);
-  return markdown;
+  // 1. 先保护代码块
+  let protected = protectCodeBlocks(markdown);
+  // 2. 在受保护文本上替换数学公式
+  protected = await replaceMathAsync(protected, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true);
+  protected = await replaceMathAsync(protected, /(?<!\\)\$([^$\n\r]+?)\$/g, false);
+  // 3. 恢复代码块
+  return restoreCodeBlocks(protected);
 };

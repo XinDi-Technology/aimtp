@@ -9,8 +9,10 @@ const MATHJAX_SCRIPT_TIMEOUT = 15000;
 const MATHJAX_FONT_LOAD_TIMEOUT = 30000;
 const MATHJAX_RENDER_TIMEOUT = 8000;
 
-// 本地字体文件路径（与 index.html 中 svg.dynamicPrefix 一致）
-const LOCAL_DYNAMIC_PREFIX = './vendor/mathjax-newcm-font/svg/dynamic';
+// 本地字体文件路径（相对于 MathJax 脚本所在目录 vendor/）
+// 注意：MathJax 从脚本所在目录解析 dynamicPrefix，而脚本在 vendor/ 下，
+// 所以路径是 ./mathjax-newcm-font/svg/dynamic，而不是 ./vendor/mathjax-newcm-font/svg/dynamic
+const LOCAL_DYNAMIC_PREFIX = './mathjax-newcm-font/svg/dynamic';
 
 /**
  * 动态按需加载 MathJax v4 tex-mml-svg-mathjax-newcm.js 脚本。
