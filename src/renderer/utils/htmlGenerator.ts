@@ -431,10 +431,10 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
   };
 
   // 1. 先保护代码块
-  let protected = protectCodeBlocks(markdown);
+  let protectedText = protectCodeBlocks(markdown);
   // 2. 在受保护文本上替换数学公式
-  protected = await replaceMathAsync(protected, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true);
-  protected = await replaceMathAsync(protected, /(?<!\\)\$([^$\n\r]+?)\$/g, false);
+  protectedText = await replaceMathAsync(protectedText, /(?<!\\)\$\$([\s\S]*?)\$\$/g, true);
+  protectedText = await replaceMathAsync(protectedText, /(?<!\\)\$([^$\n\r]+?)\$/g, false);
   // 3. 恢复代码块
-  return restoreCodeBlocks(protected);
+  return restoreCodeBlocks(protectedText);
 };
