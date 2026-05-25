@@ -13,26 +13,11 @@ const initMathJax = async (): Promise<void> => {
   mathJaxInitializing = true;
   mathJaxInitPromise = (async () => {
     try {
-      (window as any).MathJax = {
-        tex: {
-          packages: {
-            '[+]': ['ams', 'newcommand', 'configmacros'],
-          },
-        },
-        svg: {
-          fontCache: 'global',
-        },
-      };
-
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = './vendor/tex-svg.js';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load MathJax script'));
-        document.head.appendChild(script);
-      });
-
-      MathJax = (window as any).MathJax;
+      const mj = (window as any).MathJax;
+      if (!mj || !mj.tex2svgPromise) {
+        throw new Error('MathJax script not loaded correctly');
+      }
+      MathJax = mj;
 
       mathJaxInitialized = true;
       logger.log('MathJax initialized successfully with SVG output');
