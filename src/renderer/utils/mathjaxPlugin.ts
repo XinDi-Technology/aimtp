@@ -1,22 +1,20 @@
 import { logger } from './logger';
 
-let MathJax: any = null;
-
 let mathJaxInitialized = false;
 let mathJaxInitializing = false;
 let mathJaxInitPromise: Promise<void> | null = null;
 let mathJaxLoadFailed = false;
 
 const MATHJAX_SCRIPT_TIMEOUT = 15000;
-const MATHJAX_INIT_POLL_INTERVAL = 50;
-const MATHJAX_INIT_TIMEOUT = 10000;
 
 /**
  * 动态按需加载 MathJax v4 tex-svg.js 脚本。
  */
 const loadMathJaxScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (document.querySelector('script[data-mathjax-tex-svg]')) {
+    const existing = document.querySelector('script[data-mathjax-tex-svg]');
+    if (existing) {
+      console.warn('[MathJax] Script tag already exists, skipping load');
       resolve();
       return;
     }
@@ -24,9 +22,11 @@ const loadMathJaxScript = (): Promise<void> => {
     const script = document.createElement('script');
     script.src = './vendor/tex-svg.js';
     script.setAttribute('data-mathjax-tex-svg', 'true');
+    console.warn('[MathJax] Loading script from:', script.src);
 
     const timeout = setTimeout(() => {
       cleanup();
+      console.error('[MathJax] Script load TIMEOUT after', MATHJAX_SCRIPT_TIMEOUT, 'ms');
       reject(new Error('MathJax script load timeout'));
     }, MATHJAX_SCRIPT_TIMEOUT);
 
@@ -38,11 +38,13 @@ const loadMathJaxScript = (): Promise<void> => {
 
     const onLoad = () => {
       cleanup();
+      console.warn('[MathJax] Script load event fired');
       resolve();
     };
 
-    const onError = () => {
+    const onError = (e: Event) => {
       cleanup();
+      console.error('[MathJax] Script load ERROR:', e);
       reject(new Error('MathJax script failed to load'));
     };
 
@@ -53,31 +55,39 @@ const loadMathJaxScript = (): Promise<void> => {
 };
 
 /**
- * 等待 MathJax v4 内部初始化完成。
- * tex-svg.js 加载后，MathJax 会异步初始化组件，轮询等待 typesetPromise 可用。
+ * 等待 MathJax v4 初始化完成。
+ * 使用 MathJax.startup.promise（官方推荐方式）等待 MathJax 完全就绪。
  */
-const waitForMathJaxReady = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
+const waitForMathJaxReady = async (): Promise<void> => {
+  const mj = (window as any).MathJax;
+
+  if (!mj) {
+    throw new Error('MathJax global object not found after script load');
+  }
+
+  if (mj.startup && typeof mj.startup.promise?.then === 'function') {
+    console.warn('[MathJax] Waiting for startup.promise...');
+    await mj.startup.promise;
+    console.warn('[MathJax] startup.promise resolved');
+  } else {
+    // 回退：轮询等待 tex2svgPromise 可用
+    console.warn('[MathJax] No startup.promise, polling for tex2svgPromise...');
     const startTime = Date.now();
-
-    const check = () => {
-      const mj = (window as any).MathJax;
-      if (mj && typeof mj.typesetPromise === 'function') {
-        logger.log('MathJax v4 ready');
-        resolve();
-        return;
+    while (typeof mj.tex2svgPromise !== 'function') {
+      if (Date.now() - startTime > 10000) {
+        throw new Error('MathJax init timeout: tex2svgPromise not available');
       }
+      await new Promise(r => setTimeout(r, 100));
+    }
+  }
 
-      if (Date.now() - startTime > MATHJAX_INIT_TIMEOUT) {
-        reject(new Error('MathJax v4 initialization timeout'));
-        return;
-      }
+  // 验证关键 API
+  if (typeof mj.tex2svgPromise !== 'function') {
+    console.error('[MathJax] tex2svgPromise not available after init. Available keys:', Object.keys(mj).join(','));
+    throw new Error('MathJax initialized but tex2svgPromise not available');
+  }
 
-      setTimeout(check, MATHJAX_INIT_POLL_INTERVAL);
-    };
-
-    check();
-  });
+  console.warn('[MathJax] Ready. tex2svgPromise:', typeof mj.tex2svgPromise, 'adaptor:', !!mj.startup?.adaptor);
 };
 
 const initMathJax = async (): Promise<void> => {
@@ -88,24 +98,19 @@ const initMathJax = async (): Promise<void> => {
   if (mathJaxInitializing && mathJaxInitPromise) return mathJaxInitPromise;
 
   mathJaxInitializing = true;
+  console.warn('[MathJax] Starting initialization...');
+
   mathJaxInitPromise = (async () => {
     try {
       await loadMathJaxScript();
       await waitForMathJaxReady();
-
-      const mj = (window as any).MathJax;
-      if (!mj || typeof mj.typesetPromise !== 'function') {
-        throw new Error('MathJax v4 initialized but typesetPromise not available');
-      }
-
-      MathJax = mj;
       mathJaxInitialized = true;
-      logger.log('MathJax v4 initialized successfully');
+      console.warn('[MathJax] Initialized successfully');
     } catch (error) {
       mathJaxInitialized = false;
       mathJaxLoadFailed = true;
       mathJaxInitPromise = null;
-      logger.error('Failed to initialize MathJax v4:', error);
+      console.error('[MathJax] Init FAILED:', error);
       throw error;
     } finally {
       mathJaxInitializing = false;
@@ -124,52 +129,51 @@ const ensureMathJaxReady = async (): Promise<void> => {
 };
 
 /**
- * 使用 MathJax v4 的 typesetPromise API 渲染数学公式。
- * v4 没有 tex2svg 方法，必须通过 DOM 容器 + typesetPromise 渲染。
+ * 使用 MathJax v4 的 tex2svgPromise 渲染数学公式。
+ * 这是 MathJax v4 官方推荐的异步 API，能正确处理动态字体加载。
+ *
+ * 返回值通过 startup.adaptor.outerHTML() 序列化为 HTML 字符串。
  */
-const renderMathViaDom = async (math: string, display: boolean): Promise<string> => {
+const renderMath = async (math: string, display: boolean): Promise<string> => {
   await ensureMathJaxReady();
 
-  const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '-9999px';
-  container.style.visibility = 'hidden';
-  container.style.pointerEvents = 'none';
-
-  // 使用 MathJax 默认识别的分隔符：display 用 $$，inline 用 \(...\)
-  if (display) {
-    container.textContent = `$$${math}$$`;
-  } else {
-    container.textContent = `\\(${math}\\)`;
-  }
-
-  document.body.appendChild(container);
+  const mj = (window as any).MathJax;
 
   try {
-    await MathJax.typesetPromise([container]);
-    const html = container.innerHTML;
-    return html;
-  } finally {
-    container.remove();
+    const node = await mj.tex2svgPromise(math, { display });
+
+    // 使用 startup.adaptor 序列化（官方推荐方式）
+    if (mj.startup?.adaptor?.outerHTML) {
+      return mj.startup.adaptor.outerHTML(node);
+    }
+
+    // 回退：浏览器原生序列化
+    if (node && typeof node.outerHTML === 'string') {
+      return node.outerHTML;
+    }
+
+    throw new Error('Cannot serialize MathJax output');
+  } catch (error) {
+    console.error('[MathJax] tex2svgPromise render failed:', error);
+    throw error;
   }
 };
 
 export const renderMathInlineAsync = async (math: string): Promise<string> => {
   try {
-    return await renderMathViaDom(math, false);
+    return await renderMath(math, false);
   } catch (error) {
-    logger.error('MathJax inline math render error:', error);
+    console.error('[MathJax] Inline render error:', error);
     return `\\(${math}\\)`;
   }
 };
 
 export const renderMathDisplayAsync = async (math: string): Promise<string> => {
   try {
-    const html = await renderMathViaDom(math, true);
+    const html = await renderMath(math, true);
     return `<div class="math-display">${html}</div>`;
   } catch (error) {
-    logger.error('MathJax display math render error:', error);
+    console.error('[MathJax] Display render error:', error);
     return `<div class="math-display">\\[${math}\\]</div>`;
   }
 };
