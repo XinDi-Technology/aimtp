@@ -163,9 +163,9 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
 
     try {
       const sanitized = DOMPurify.sanitize(result, {
-        ADD_ATTR: ['target', 'id', 'data-processed'],
-        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon', 'input', 'ins', 'mark', 'sub', 'sup', 'b', 's', 'section'],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'id', 'data-processed', 'd', 'fill', 'stroke', 'stroke-width', 'transform', 'x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'viewBox', 'preserveAspectRatio', 'xmlns', 'font-family', 'font-size', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'type', 'checked', 'data-line', 'data-math', 'aria-label', 'role', 'rev'],
+        ADD_ATTR: ['target', 'id', 'data-processed', 'xlink:href', 'xmlns:xlink', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize', 'data-*'],
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon', 'input', 'ins', 'mark', 'sub', 'sup', 'b', 's', 'section', 'defs', 'use', 'clipPath', 'symbol', 'desc', 'title', 'style'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'id', 'data-processed', 'd', 'fill', 'stroke', 'stroke-width', 'transform', 'x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'viewBox', 'preserveAspectRatio', 'xmlns', 'font-family', 'font-size', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'type', 'checked', 'data-line', 'data-math', 'aria-label', 'role', 'rev', 'xlink:href', 'xmlns:xlink', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize'],
       } as any);
       result = (sanitized as unknown) as string;
 
