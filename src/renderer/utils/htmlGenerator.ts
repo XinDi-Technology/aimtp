@@ -386,8 +386,8 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
       codeBlockPlaceholders.push(match);
       return placeholder;
     });
-    // 保护行内代码 `...`
-    result = result.replace(/`[^`]+`/g, (match) => {
+    // 保护行内代码 `...` 和 ``...``（使用反向引用匹配相同数量的反引号，避免双反引号导致悬空反引号跨行吞噬）
+    result = result.replace(/(`+)([\s\S]*?)\1/g, (match) => {
       const placeholder = cbPlaceholder(codeBlockPlaceholders.length);
       codeBlockPlaceholders.push(match);
       return placeholder;
