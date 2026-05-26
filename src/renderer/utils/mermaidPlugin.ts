@@ -78,7 +78,6 @@ const defaultMermaidConfig: MermaidConfig = {
   fontFamily: '"GWM Sans UI", "JetBrains Mono"',  // TODO: 待字体问题解决后确认是否需要保留 JetBrains Mono fallback
   flowchart: {
     curve: 'basis',
-    htmlLabels: false,
     useMaxWidth: true,
     padding: 15,
   },
