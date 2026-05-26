@@ -380,8 +380,8 @@ const preRenderMathJax = async (markdown: string): Promise<string> => {
   const cbPlaceholder = (idx: number) => `§§AIMTP_CB_${idx}§§`;
 
   const protectCodeBlocks = (text: string): string => {
-    // 保护围栏代码块 ```...```
-    let result = text.replace(/```[\s\S]*?```/g, (match) => {
+    // 保护围栏代码块 ```...```（要求开闭标记在行首，最多3空格缩进，与 markdown-it/CommonMark 一致）
+    let result = text.replace(/^ {0,3}`{3,}[^\n]*\n[\s\S]*?^ {0,3}`{3,}[ \t]*$/gm, (match) => {
       const placeholder = cbPlaceholder(codeBlockPlaceholders.length);
       codeBlockPlaceholders.push(match);
       return placeholder;
