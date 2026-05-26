@@ -257,29 +257,25 @@ export const renderMermaidSync = async (
  * ```
  */
 export const mermaidPlugin = (md: MarkdownIt): void => {
-  // 初始化 Mermaid（幂等操作）
-  initializeMermaid();
+  try {
+    initializeMermaid();
+  } catch {
+    logger.warn('Mermaid initialization failed, mermaid diagrams will not be rendered');
+    return;
+  }
 
-  // 保存默认的 fence 渲染规则
   const defaultFenceRender = md.renderer.rules.fence;
 
-  // 重写 fence 规则
   md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     const token = tokens[idx];
     const info = token.info.trim().toLowerCase();
     const content = token.content.trim();
 
-    // 检查是否是 Mermaid 代码块
     if (info === 'mermaid') {
-      // 生成唯一 ID
       const chartId = generateMermaidId();
-
-      // 返回带有 class="mermaid" 的 pre 标签
-      // Mermaid 会自动查找并渲染这些标签
       return `<pre class="mermaid" id="${chartId}">${escapeHtml(content)}</pre>`;
     }
 
-    // 对于其他代码块，使用默认渲染
     return defaultFenceRender
       ? defaultFenceRender(tokens, idx, options, env, self)
       : self.renderToken(tokens, idx, options);

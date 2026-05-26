@@ -164,8 +164,8 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     try {
       const sanitized = DOMPurify.sanitize(result, {
         ADD_ATTR: ['target', 'id', 'data-processed', 'xlink:href', 'xmlns:xlink', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize', 'data-*', 'aria-hidden'],
-        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon', 'input', 'ins', 'mark', 'sub', 'sup', 'b', 's', 'section', 'defs', 'use', 'clipPath', 'symbol', 'desc', 'title', 'style', 'math', 'mrow', 'mi', 'mn', 'mo', 'mtext', 'mfrac', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'mspace', 'mphantom', 'mpadded', 'menclose', 'maction', 'mstyle', 'ms', 'annotation', 'semantics'],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'id', 'data-processed', 'd', 'fill', 'stroke', 'stroke-width', 'transform', 'x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'viewBox', 'preserveAspectRatio', 'xmlns', 'font-family', 'font-size', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'type', 'checked', 'data-line', 'data-math', 'aria-label', 'role', 'rev', 'xlink:href', 'xmlns:xlink', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize', 'aria-hidden', 'alttext', 'jax', 'scriptlevel', 'displaystyle', 'mathsize', 'dir', 'mathspacing', 'form', 'fence', 'separator', 'accent', 'accentunder', 'align', 'close', 'open', 'bevelled', 'denomalign', 'numalign', 'linethickness', 'subscriptshift', 'superscriptshift', 'notation', 'depth', 'voffset', 'offset', 'position', 'columnalign', 'rowalign', 'columnspacing', 'rowspacing', 'columnlines', 'rowlines', 'frame', 'framespacing', 'equalcolumns', 'equalrows', 'side', 'selection', 'actiontype', 'name', 'cdgroup', 'encoding', 'definitionurl', 'nth', 'scope', 'stackalign', 'charalign', 'charspacing', 'longdivstyle'],
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon', 'input', 'ins', 'mark', 'sub', 'sup', 'b', 's', 'section', 'defs', 'use', 'clipPath', 'symbol', 'desc', 'title', 'style', 'foreignObject', 'marker', 'stop', 'linearGradient', 'radialGradient', 'filter', 'feGaussianBlur', 'feOffset', 'feMerge', 'feMergeNode', 'feFlood', 'feColorMatrix', 'feComponentTransfer', 'feFuncA', 'feFuncR', 'feFuncG', 'feFuncB', 'feBlend', 'feComposite', 'feDropShadow', 'mask', 'pattern', 'image', 'textPath', 'animate', 'animateTransform', 'set', 'math', 'mrow', 'mi', 'mn', 'mo', 'mtext', 'mfrac', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'mspace', 'mphantom', 'mpadded', 'menclose', 'maction', 'mstyle', 'ms', 'annotation', 'semantics'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'id', 'data-processed', 'd', 'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 'fill-opacity', 'opacity', 'transform', 'x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'viewBox', 'preserveAspectRatio', 'xmlns', 'xmlns:xlink', 'font-family', 'font-size', 'font-weight', 'font-style', 'text-anchor', 'dominant-baseline', 'alignment-baseline', 'baseline-shift', 'letter-spacing', 'word-spacing', 'text-decoration', 'marker-end', 'marker-start', 'marker-mid', 'clip-rule', 'fill-rule', 'clip-path', 'mask', 'type', 'checked', 'data-line', 'data-math', 'aria-label', 'role', 'rev', 'xlink:href', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize', 'aria-hidden', 'alttext', 'jax', 'scriptlevel', 'displaystyle', 'mathsize', 'dir', 'mathspacing', 'form', 'fence', 'separator', 'accent', 'accentunder', 'align', 'close', 'open', 'bevelled', 'denomalign', 'numalign', 'linethickness', 'subscriptshift', 'superscriptshift', 'notation', 'depth', 'voffset', 'offset', 'position', 'columnalign', 'rowalign', 'columnspacing', 'rowspacing', 'columnlines', 'rowlines', 'frame', 'framespacing', 'equalcolumns', 'equalrows', 'side', 'selection', 'actiontype', 'name', 'cdgroup', 'encoding', 'definitionurl', 'nth', 'scope', 'stackalign', 'charalign', 'charspacing', 'longdivstyle', 'color-interpolation', 'color-interpolation-filters', 'color-rendering', 'shape-rendering', 'text-rendering', 'image-rendering'],
         // MathJax v4 使用 mjx-* 自定义元素（Custom Elements），用 CUSTOM_ELEMENT_HANDLING 统一放行
         CUSTOM_ELEMENT_HANDLING: {
           tagNameCheck: /^mjx-/,
@@ -335,6 +335,17 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
   }
 };
 
+const decodeHtmlEntities = (text: string): string => {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/');
+};
+
 const preRenderMermaid = async (html: string): Promise<string> => {
   const mermaidRegex = /<pre class="mermaid"[^>]*>([\s\S]*?)<\/pre>/g;
   const matches = [...html.matchAll(mermaidRegex)];
@@ -347,7 +358,7 @@ const preRenderMermaid = async (html: string): Promise<string> => {
 
   for (const match of matches) {
     const fullMatch = match[0];
-    const code = match[1].trim();
+    const code = decodeHtmlEntities(match[1].trim());
 
     try {
       const svg = await renderMermaidSync(code);
