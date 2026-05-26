@@ -26,11 +26,17 @@
           // 关闭版本警告，避免动态字体组件文件（无版本字段）产生大量 console.warn
           versionWarnings: false,
         },
-        a11y: {
-          // 关闭语音和盲文功能，避免在 Electron ASAR 中加载 SRE Web Worker 失败
-          // speech-worker.js 通过 importScripts() 在 Worker 内加载，无法访问 ASAR 内路径
-          speech: false,
-          braille: false,
+        options: {
+          // 本应用不需要语音朗读和盲文功能
+          // enableSpeech/enableBraille 直接控制 Web Worker 的创建条件
+          enableSpeech: false,
+          enableBraille: false,
+          menuOptions: {
+            settings: {
+              speech: false,
+              braille: false,
+            },
+          },
         },
         startup: {
           typeset: false,
