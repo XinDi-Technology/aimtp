@@ -43,6 +43,14 @@
         },
       };
     </script>
+    <!-- 预加载字体，避免 Chromium "Slow network" 干预
+         生产环境字体经过 Vite 处理后输出到 assets/fonts/ -->
+    <link rel="preload" href="./assets/fonts/GWMSansUI-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/GWMSansUI-Bold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/GWMSansUI-Light.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/JetBrainsMono-Light.woff2" as="font" type="font/woff2" crossorigin>
     <title>Aimtp</title>
   </head>
   <body>

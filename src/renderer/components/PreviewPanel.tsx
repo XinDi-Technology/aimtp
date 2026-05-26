@@ -331,6 +331,13 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
 
         const sourceHash = layoutDOMManager['hashContent'](markdown);
 
+        // 确保 adapter 配置已设置，以便 orchestrator 降级到完整渲染时
+        // 能正确调用 injectHeaderFooterDom()
+        pagedJsAdapter.setHeaderFooterConfig(
+          buildHeaderFooterConfig(next.headerFooter),
+          extractFrontMatter(markdown),
+        );
+
         const context: RenderContext = {
           generateHtml: () => generateHtml({ markdown, locale, page, font, extensions, cover, headerFooter, preview }),
           iframe: frame,
