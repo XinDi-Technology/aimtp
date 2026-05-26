@@ -23,6 +23,8 @@
             // @mathjax/* 包会解析为 ./vendor/* （如 @mathjax/mathjax-newcm-font → ./vendor/mathjax-newcm-font）
             fonts: './vendor',
           },
+          // 关闭版本警告，避免动态字体组件文件（无版本字段）产生大量 console.warn
+          versionWarnings: false,
         },
         startup: {
           typeset: false,

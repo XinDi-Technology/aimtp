@@ -1,5 +1,17 @@
 import { logger } from './logger';
 
+// 过滤 MathJax 内部字体版本检查的噪音日志
+const _suppressVersionWarn = () => {
+  const origWarn = console.warn;
+  console.warn = (...args) => {
+    if (args.length > 0 && typeof args[0] === 'string' && args[0].includes('No version information')) {
+      return;
+    }
+    origWarn.apply(console, args);
+  };
+  return () => { console.warn = origWarn; };
+};
+
 let mathJaxInitialized = false;
 let mathJaxInitializing = false;
 let mathJaxInitPromise: Promise<void> | null = null;
@@ -149,6 +161,7 @@ const preloadDynamicFonts = async (): Promise<void> => {
 
   if (typeof font.loadDynamicFiles === 'function') {
     logger.log('[MathJax] Preloading all dynamic font files...');
+    const restore = _suppressVersionWarn();
     try {
       await Promise.race([
         font.loadDynamicFiles(),
@@ -159,6 +172,8 @@ const preloadDynamicFonts = async (): Promise<void> => {
       logger.log('[MathJax] Dynamic font files preloaded successfully');
     } catch (error) {
       logger.warn('[MathJax] Font preload failed (will try per-character loading):', error);
+    } finally {
+      restore();
     }
   } else {
     logger.log('[MathJax] loadDynamicFiles not available on font object, fonts will load on demand');

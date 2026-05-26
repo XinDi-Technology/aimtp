@@ -38,9 +38,7 @@ const handleError = (error: Error, source?: string) => {
 
 window.addEventListener('error', (event) => {
   if (!event.error) {
-    const target = event.target as HTMLElement | null;
-    const src = target?.getAttribute?.('src') || target?.getAttribute?.('href') || target?.tagName || 'unknown';
-    console.log('[Aimtp] Resource load error (harmless):', src);
+    // 资源加载失败（字体、图片、脚本等）不销毁页面，不打印日志
     return;
   }
 
