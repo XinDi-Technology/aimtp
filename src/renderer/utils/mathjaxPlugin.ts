@@ -25,7 +25,7 @@ const loadMathJaxScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector('script[data-mathjax-tex-svg]');
     if (existing) {
-      console.warn('[MathJax] Script tag already exists, skipping load');
+      logger.log('[MathJax] Script tag already exists, skipping load');
       resolve();
       return;
     }
@@ -33,11 +33,11 @@ const loadMathJaxScript = (): Promise<void> => {
     const script = document.createElement('script');
     script.src = './vendor/tex-mml-svg-mathjax-newcm.js';
     script.setAttribute('data-mathjax-tex-svg', 'true');
-    console.warn('[MathJax] Loading script from:', script.src);
+    logger.log('[MathJax] Loading script from:', script.src);
 
     const timeout = setTimeout(() => {
       cleanup();
-      console.error('[MathJax] Script load TIMEOUT after', MATHJAX_SCRIPT_TIMEOUT, 'ms');
+      logger.error('[MathJax] Script load TIMEOUT after', MATHJAX_SCRIPT_TIMEOUT, 'ms');
       reject(new Error('MathJax script load timeout'));
     }, MATHJAX_SCRIPT_TIMEOUT);
 
@@ -49,13 +49,13 @@ const loadMathJaxScript = (): Promise<void> => {
 
     const onLoad = () => {
       cleanup();
-      console.warn('[MathJax] Script load event fired');
+      logger.log('[MathJax] Script load event fired');
       resolve();
     };
 
     const onError = (e: Event) => {
       cleanup();
-      console.error('[MathJax] Script load ERROR:', e);
+      logger.error('[MathJax] Script load ERROR:', e);
       reject(new Error('MathJax script failed to load'));
     };
 
@@ -81,11 +81,11 @@ const waitForMathJaxReady = async (): Promise<void> => {
   }
 
   if (mj.startup && typeof mj.startup.promise?.then === 'function') {
-    console.warn('[MathJax] Waiting for startup.promise...');
+    logger.log('[MathJax] Waiting for startup.promise...');
     await mj.startup.promise;
-    console.warn('[MathJax] startup.promise resolved');
+    logger.log('[MathJax] startup.promise resolved');
   } else {
-    console.warn('[MathJax] No startup.promise, polling for API...');
+    logger.log('[MathJax] No startup.promise, polling for API...');
     const startTime = Date.now();
     while (typeof mj.tex2svg !== 'function') {
       if (Date.now() - startTime > 10000) {
@@ -103,18 +103,18 @@ const waitForMathJaxReady = async (): Promise<void> => {
     if (outputJax?.font?.options) {
       const oldPrefix = outputJax.font.options.dynamicPrefix;
       outputJax.font.options.dynamicPrefix = LOCAL_DYNAMIC_PREFIX;
-      console.warn('[MathJax] Forced dynamicPrefix:', oldPrefix, '->', LOCAL_DYNAMIC_PREFIX);
+      logger.log('[MathJax] Forced dynamicPrefix:', oldPrefix, '->', LOCAL_DYNAMIC_PREFIX);
     } else {
-      console.warn('[MathJax] Could not find outputJax.font.options to override dynamicPrefix');
+      logger.warn('[MathJax] Could not find outputJax.font.options to override dynamicPrefix');
     }
   } catch (e) {
-    console.error('[MathJax] Failed to override dynamicPrefix:', e);
+    logger.error('[MathJax] Failed to override dynamicPrefix:', e);
   }
 
   const hasSync = typeof mj.tex2svg === 'function';
   const hasPromise = typeof mj.tex2svgPromise === 'function';
   const hasAdaptor = !!(mj.startup?.adaptor?.outerHTML);
-  console.warn('[MathJax] Ready. tex2svg:', hasSync, 'tex2svgPromise:', hasPromise, 'adaptor:', hasAdaptor);
+  logger.log('[MathJax] Ready. tex2svg:', hasSync, 'tex2svgPromise:', hasPromise, 'adaptor:', hasAdaptor);
 
   if (!hasSync && !hasPromise) {
     throw new Error('MathJax initialized but no rendering API available');
@@ -141,14 +141,14 @@ const preloadDynamicFonts = async (): Promise<void> => {
     null;
 
   if (!font) {
-    console.warn('[MathJax] No font object found, skipping font preloading');
+    logger.log('[MathJax] No font object found, skipping font preloading');
     return;
   }
 
-  console.warn('[MathJax] Font object found. loadDynamicFiles:', typeof font.loadDynamicFiles, 'dynamicPrefix:', font.options?.dynamicPrefix);
+  logger.log('[MathJax] Font object found. loadDynamicFiles:', typeof font.loadDynamicFiles, 'dynamicPrefix:', font.options?.dynamicPrefix);
 
   if (typeof font.loadDynamicFiles === 'function') {
-    console.warn('[MathJax] Preloading all dynamic font files...');
+    logger.log('[MathJax] Preloading all dynamic font files...');
     try {
       await Promise.race([
         font.loadDynamicFiles(),
@@ -156,12 +156,12 @@ const preloadDynamicFonts = async (): Promise<void> => {
           setTimeout(() => reject(new Error('Font preload timeout')), MATHJAX_FONT_LOAD_TIMEOUT),
         ),
       ]);
-      console.warn('[MathJax] Dynamic font files preloaded successfully');
+      logger.log('[MathJax] Dynamic font files preloaded successfully');
     } catch (error) {
-      console.warn('[MathJax] Font preload failed (will try per-character loading):', error);
+      logger.warn('[MathJax] Font preload failed (will try per-character loading):', error);
     }
   } else {
-    console.warn('[MathJax] loadDynamicFiles not available on font object, fonts will load on demand');
+    logger.log('[MathJax] loadDynamicFiles not available on font object, fonts will load on demand');
   }
 };
 
@@ -173,7 +173,7 @@ const initMathJax = async (): Promise<void> => {
   if (mathJaxInitializing && mathJaxInitPromise) return mathJaxInitPromise;
 
   mathJaxInitializing = true;
-  console.warn('[MathJax] Starting initialization...');
+  logger.log('[MathJax] Starting initialization...');
 
   mathJaxInitPromise = (async () => {
     try {
@@ -181,12 +181,12 @@ const initMathJax = async (): Promise<void> => {
       await waitForMathJaxReady();
       await preloadDynamicFonts();
       mathJaxInitialized = true;
-      console.warn('[MathJax] Initialized successfully');
+      logger.log('[MathJax] Initialized successfully');
     } catch (error) {
       mathJaxInitialized = false;
       mathJaxLoadFailed = true;
       mathJaxInitPromise = null;
-      console.error('[MathJax] Init FAILED:', error);
+      logger.error('[MathJax] Init FAILED:', error);
       throw error;
     } finally {
       mathJaxInitializing = false;
@@ -205,28 +205,30 @@ const ensureMathJaxReady = async (): Promise<void> => {
 };
 
 /**
- * 将 MathJax 输出节点序列化为 HTML 字符串
+ * 将 MathJax 输出节点序列化为 HTML 字符串（重复警告 5s 内只打印一次）
  */
+let _lastSerializeWarn = 0;
 const serializeNode = (node: any, mj: any): string => {
   if (!node) {
-    console.error('[MathJax] serializeNode: node is null/undefined');
+    logger.error('[MathJax] serializeNode: node is null/undefined');
     return '';
   }
 
-  // 优先使用 startup.adaptor（官方推荐序列化方式）
   if (mj.startup?.adaptor?.outerHTML) {
     try {
       const html = mj.startup.adaptor.outerHTML(node);
       if (html && html.length > 0) {
         return html;
       }
-      console.warn('[MathJax] adaptor.outerHTML returned empty');
+      if (Date.now() - _lastSerializeWarn > 5000) {
+        _lastSerializeWarn = Date.now();
+        logger.warn('[MathJax] adaptor.outerHTML returned empty');
+      }
     } catch (e) {
-      console.error('[MathJax] adaptor.outerHTML threw:', e);
+      logger.error('[MathJax] adaptor.outerHTML threw:', e);
     }
   }
 
-  // 回退：浏览器原生序列化
   try {
     if (typeof node.outerHTML === 'string') {
       return node.outerHTML;
@@ -238,7 +240,7 @@ const serializeNode = (node: any, mj: any): string => {
   try {
     return String(node);
   } catch (e) {
-    console.error('[MathJax] All serialization methods failed');
+    logger.error('[MathJax] All serialization methods failed');
     return '';
   }
 };
@@ -268,15 +270,14 @@ const renderMath = async (math: string, display: boolean): Promise<string> => {
   await ensureMathJaxReady();
 
   const mj = (window as any).MathJax;
-  console.warn('[MathJax] renderMath called, display:', display, 'math length:', math.length);
+  logger.log('[MathJax] renderMath called, display:', display, 'math length:', math.length);
 
   // 方法 1: tex2svg 同步 + handleRetriesFor（字体预加载后最可靠）
   if (typeof mj.tex2svg === 'function') {
     try {
-      console.warn('[MathJax] Trying tex2svg (sync) with handleRetriesFor...');
+      logger.log('[MathJax] Trying tex2svg (sync) with handleRetriesFor...');
       let node: any;
       if (typeof mj.handleRetriesFor === 'function') {
-        // handleRetriesFor 可能因字体加载而无限重试，必须加超时
         node = await withTimeout(
           mj.handleRetriesFor(() => mj.tex2svg(math, { display })),
           MATHJAX_RENDER_TIMEOUT,
@@ -287,19 +288,18 @@ const renderMath = async (math: string, display: boolean): Promise<string> => {
       }
       const html = serializeNode(node, mj);
       if (html) {
-        console.warn('[MathJax] tex2svg succeeded, HTML length:', html.length);
+        logger.log('[MathJax] tex2svg succeeded, HTML length:', html.length);
         return html;
       }
-      console.warn('[MathJax] tex2svg returned empty result');
+      logger.warn('[MathJax] tex2svg returned empty result');
     } catch (error) {
-      console.error('[MathJax] tex2svg failed:', error);
+      logger.error('[MathJax] tex2svg failed:', error);
     }
   }
 
   // 方法 2: tex2svgPromise（带超时防护）
   if (typeof mj.tex2svgPromise === 'function') {
     try {
-      console.warn('[MathJax] Trying tex2svgPromise (5s timeout)...');
       const node = await withTimeout(
         mj.tex2svgPromise(math, { display }),
         5000,
@@ -307,18 +307,17 @@ const renderMath = async (math: string, display: boolean): Promise<string> => {
       );
       const html = serializeNode(node, mj);
       if (html) {
-        console.warn('[MathJax] tex2svgPromise succeeded, HTML length:', html.length);
+        logger.log('[MathJax] tex2svgPromise succeeded, HTML length:', html.length);
         return html;
       }
     } catch (error) {
-      console.error('[MathJax] tex2svgPromise failed:', error);
+      logger.error('[MathJax] tex2svgPromise failed:', error);
     }
   }
 
   // 方法 3: typesetPromise（DOM 排版方式）
   if (typeof mj.typesetPromise === 'function') {
     try {
-      console.warn('[MathJax] Trying typesetPromise (DOM, 10s timeout)...');
       const container = document.createElement('div');
       container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;pointer-events:none';
       container.textContent = display ? `$$${math}$$` : `\\(${math}\\)`;
@@ -329,11 +328,11 @@ const renderMath = async (math: string, display: boolean): Promise<string> => {
       const html = container.innerHTML;
       container.remove();
       if (html) {
-        console.warn('[MathJax] typesetPromise succeeded, HTML length:', html.length);
+        logger.log('[MathJax] typesetPromise succeeded, HTML length:', html.length);
         return html;
       }
     } catch (error) {
-      console.error('[MathJax] typesetPromise failed:', error);
+      logger.error('[MathJax] typesetPromise failed:', error);
     }
   }
 
@@ -344,7 +343,7 @@ export const renderMathInlineAsync = async (math: string): Promise<string> => {
   try {
     return await renderMath(math, false);
   } catch (error) {
-    console.error('[MathJax] Inline render error:', error);
+    logger.error('[MathJax] Inline render error:', error);
     return `\\(${math}\\)`;
   }
 };
@@ -354,7 +353,7 @@ export const renderMathDisplayAsync = async (math: string): Promise<string> => {
     const html = await renderMath(math, true);
     return `<div class="math-display">${html}</div>`;
   } catch (error) {
-    console.error('[MathJax] Display render error:', error);
+    logger.error('[MathJax] Display render error:', error);
     return `<div class="math-display">\\[${math}\\]</div>`;
   }
 };
