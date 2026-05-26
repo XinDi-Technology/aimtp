@@ -357,7 +357,15 @@ export class PagedJsAdapter implements LayoutEngine {
       .replace(/--pagedjs-margin-top:\s*1in;/g, '')
       .replace(/--pagedjs-margin-right:\s*1in;/g, '')
       .replace(/--pagedjs-margin-bottom:\s*1in;/g, '')
-      .replace(/--pagedjs-margin-left:\s*1in;/g, '');
+      .replace(/--pagedjs-margin-left:\s*1in;/g, '')
+      // [PAGEDJS_WORKAROUND] Guard SVG elements in findOverflow width assignment.
+      // Paged.js sets childNode.width = getComputedStyle(childNode).width on every
+      // child of check.parentElement. SVG elements (rect, text, etc.) have a readonly
+      // .width getter, throwing "Cannot set property width of #<SVGRectElement>".
+      .replace(
+        /(Array\.from\((\w+)\.parentElement\.children\)\.forEach\((\w+)=>\{)\3\.width=getComputedStyle\(\3\)\.width\}/,
+        '$1if(!($3 instanceof SVGElement)){$3.width=getComputedStyle($3).width}}'
+      );
 
     const scriptEl = doc.createElement('script');
     scriptEl.textContent = code;
