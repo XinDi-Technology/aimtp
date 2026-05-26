@@ -78,7 +78,7 @@ const defaultMermaidConfig: MermaidConfig = {
   fontFamily: '"GWM Sans UI", "JetBrains Mono"',  // TODO: 待字体问题解决后确认是否需要保留 JetBrains Mono fallback
   flowchart: {
     curve: 'basis',
-    htmlLabels: true,
+    htmlLabels: false,
     useMaxWidth: true,
     padding: 15,
   },
@@ -256,6 +256,41 @@ export const renderMermaidSync = async (
  * renderMermaid(container);
  * ```
  */
+const MERMAID_TYPE_ALIASES: Record<string, string | null> = {
+  sequence: 'sequenceDiagram',
+  flowchart: null,
+  flow: null,
+  graph: null,
+  class: 'classDiagram',
+  state: 'stateDiagram-v2',
+  statediagram: 'stateDiagram-v2',
+  er: 'erDiagram',
+  erdiagram: 'erDiagram',
+  journey: 'journey',
+  userjourney: 'journey',
+  requirement: 'requirementDiagram',
+  requirementdiagram: 'requirementDiagram',
+  req: 'requirementDiagram',
+  zenuml: null,
+  sankey: null,
+  xychart: null,
+  xy: null,
+  block: null,
+  packet: null,
+};
+
+const MERMAID_TYPE_RE = /^(sequenceDiagram|classDiagram|stateDiagram-v2|stateDiagram|erDiagram|gantt|pie|journey|gitgraph|mindmap|timeline|quadrantChart|requirementDiagram|zenuml|sankey|xyChart|xychart|block|packet|C4Context|C4Container|C4Component|C4Deployment|flowchart|graph)\b/i;
+
+const normalizeMermaidCode = (info: string, content: string): string => {
+  const lowerInfo = info.toLowerCase();
+  if (lowerInfo === 'mermaid') return content;
+  const typeDecl = MERMAID_TYPE_ALIASES[lowerInfo];
+  if (typeDecl && !MERMAID_TYPE_RE.test(content)) {
+    return `${typeDecl}\n${content}`;
+  }
+  return content;
+};
+
 export const mermaidPlugin = (md: MarkdownIt): void => {
   try {
     initializeMermaid();
@@ -271,9 +306,10 @@ export const mermaidPlugin = (md: MarkdownIt): void => {
     const info = token.info.trim().toLowerCase();
     const content = token.content.trim();
 
-    if (info === 'mermaid') {
+    if (info === 'mermaid' || info in MERMAID_TYPE_ALIASES) {
       const chartId = generateMermaidId();
-      return `<pre class="mermaid" id="${chartId}">${escapeHtml(content)}</pre>`;
+      const normalized = normalizeMermaidCode(info, content);
+      return `<pre class="mermaid" id="${chartId}">${escapeHtml(normalized)}</pre>`;
     }
 
     return defaultFenceRender
