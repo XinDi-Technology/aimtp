@@ -83,16 +83,19 @@ const defaultMermaidConfig: MermaidConfig = {
   },
   sequence: {
     showSequenceNumbers: true,
-    diagramMarginX: 20,
-    diagramMarginY: 20,
-    actorMargin: 50,
-    width: 150,
-    height: 65,
-    boxMargin: 10,
-    boxTextMargin: 5,
-    noteMargin: 10,
-    messageMargin: 35,
-    mirrorActors: false,
+    diagramMarginX: 50,      // 图表左右边距（像素）
+    diagramMarginY: 30,      // 图表上下边距（像素）
+    actorMargin: 80,         // 参与者之间的水平间距（像素）
+    width: 200,              // 参与者框宽度（像素）
+    height: 80,              // 参与者框高度（像素）
+    boxMargin: 15,           // 分组框的内边距（像素）
+    boxTextMargin: 8,        // 分组框标题的边距（像素）
+    noteMargin: 15,          // 注释框的边距（像素）
+    messageMargin: 45,       // 消息行之间的垂直间距（像素）
+    mirrorActors: true,      // 是否在图表底部也显示参与者
+    bottomMarginAdj: 2,      // 底部边距调整系数，防止宽边框裁剪
+    rightAngles: false,      // 是否使用直角连接线（false=使用曲线）
+    showManyErrors: true,    // 是否在图中显示多个错误（而非仅第一个）
   },
 };
 
