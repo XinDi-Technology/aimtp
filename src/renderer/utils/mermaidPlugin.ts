@@ -43,6 +43,7 @@ export interface MermaidConfig {
   startOnLoad?: boolean;
   maxTextSize?: number;
   fontFamily?: string;
+  htmlLabels?: boolean;
   flowchart?: {
     curve?: 'basis' | 'linear' | 'cardinal' | 'monotoneY';
     htmlLabels?: boolean;
@@ -76,8 +77,10 @@ const defaultMermaidConfig: MermaidConfig = {
   securityLevel: 'loose',  // 本地应用允许较宽松的安全级别
   maxTextSize: 50000,
   fontFamily: '"GWM Sans UI", "JetBrains Mono"',  // TODO: 待字体问题解决后确认是否需要保留 JetBrains Mono fallback
+  htmlLabels: false,  // 全局禁用 foreignObject，使用纯 SVG <text> 渲染文字，避免 DOMPurify 清洗导致文字消失
   flowchart: {
     curve: 'basis',
+    htmlLabels: false,
     useMaxWidth: true,
     padding: 15,
   },
