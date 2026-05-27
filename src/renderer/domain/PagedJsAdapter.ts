@@ -127,24 +127,33 @@ export class PagedJsAdapter implements LayoutEngine {
     // - Has style but no display: → prepend "display:inline; "
     // - Has style with display: → leave as-is
     // SVG elements default to display:inline, so this doesn't change visual behavior.
+    let diagSvgCount = 0;
+    let diagElCount = 0;
+    let diagStyleAdded = 0;
+    let diagStylePrepended = 0;
     for (const svg of doc.querySelectorAll('svg')) {
+      diagSvgCount++;
       for (const el of svg.querySelectorAll('*')) {
-        // NOTE: Do NOT use `el instanceof Element` here — elements inside the
-        // iframe belong to the iframe's window, so instanceof against the parent
-        // window's Element always returns false (cross-frame instanceof trap).
-        // querySelectorAll('*') only returns Element nodes, so no check is needed.
+        diagElCount++;
         const styleAttr = el.getAttribute('style');
         if (!styleAttr) {
           el.setAttribute('style', 'display:inline');
+          diagStyleAdded++;
         } else if (!/\bdisplay\s*:/i.test(styleAttr)) {
           el.setAttribute('style', `display:inline; ${styleAttr}`);
+          diagStylePrepended++;
         }
       }
     }
+    console.log(`[DIAG] Workaround 1.6: found ${diagSvgCount} SVGs, ${diagElCount} children, ${diagStyleAdded} style added, ${diagStylePrepended} style prepended`);
 
-    // [DIAG] Check SVG rect count BEFORE pagedjs
+    // [DIAG] Check SVG rect count and style BEFORE pagedjs
     const svgRectsBefore = doc.querySelectorAll('svg rect').length;
     console.log(`[DIAG] SVG <rect> count BEFORE pagedjs: ${svgRectsBefore}`);
+    const rectsBefore = doc.querySelectorAll('svg rect');
+    for (const r of rectsBefore) {
+      console.log(`[DIAG] BEFORE: rect class="${r.getAttribute('class')}" style="${r.getAttribute('style')}" fill="${r.getAttribute('fill')}"`);
+    }
 
     // 2. Inject pagedjs IIFE into iframe
     this.emitProgress('injecting');
