@@ -129,7 +129,10 @@ export class PagedJsAdapter implements LayoutEngine {
     // SVG elements default to display:inline, so this doesn't change visual behavior.
     for (const svg of doc.querySelectorAll('svg')) {
       for (const el of svg.querySelectorAll('*')) {
-        if (!(el instanceof Element)) continue;
+        // NOTE: Do NOT use `el instanceof Element` here — elements inside the
+        // iframe belong to the iframe's window, so instanceof against the parent
+        // window's Element always returns false (cross-frame instanceof trap).
+        // querySelectorAll('*') only returns Element nodes, so no check is needed.
         const styleAttr = el.getAttribute('style');
         if (!styleAttr) {
           el.setAttribute('style', 'display:inline');
