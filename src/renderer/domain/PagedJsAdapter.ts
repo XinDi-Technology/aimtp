@@ -113,6 +113,26 @@ export class PagedJsAdapter implements LayoutEngine {
     // Remove this if pagedjs upstream fully fixes lastChildCheck exclusion.
     this.protectStructuralElements(doc);
 
+    // [PAGEDJS_WORKAROUND] 1.6. Prevent UndisplayedFilter from dropping SVG child elements.
+    // Paged.js's UndisplayedFilter.filter() second loop marks ALL [style] elements as
+    // data-undisplayed when removable() returns true. removable() returns true when
+    // element.style.display is "" (empty) or "none". SVG child elements like <rect>,
+    // <line>, <path> often have style="fill:...;stroke:..." without display: set, so
+    // removable() returns true and they get marked. During page layout, traversal
+    // functions skip data-undisplayed elements entirely, so they are never cloned into
+    // the output pages → missing actor boxes, invisible lines, etc.
+    // Fix: append "display:inline" to the style attribute of SVG child elements that
+    // have a style attribute but don't set display. This makes removable() return false.
+    // SVG elements default to display:inline, so this doesn't change visual behavior.
+    for (const svg of doc.querySelectorAll('svg')) {
+      for (const el of svg.querySelectorAll('[style]')) {
+        const styleAttr = el.getAttribute('style');
+        if (styleAttr && !/\bdisplay\s*:/i.test(styleAttr)) {
+          el.setAttribute('style', `display:inline; ${styleAttr}`);
+        }
+      }
+    }
+
     // 2. Inject pagedjs IIFE into iframe
     this.emitProgress('injecting');
     this.injectPagedJsIife(doc);
