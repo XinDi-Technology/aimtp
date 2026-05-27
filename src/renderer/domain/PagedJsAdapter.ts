@@ -114,20 +114,26 @@ export class PagedJsAdapter implements LayoutEngine {
     this.protectStructuralElements(doc);
 
     // [PAGEDJS_WORKAROUND] 1.6. Prevent UndisplayedFilter from dropping SVG child elements.
-    // Paged.js's UndisplayedFilter.filter() second loop marks ALL [style] elements as
-    // data-undisplayed when removable() returns true. removable() returns true when
-    // element.style.display is "" (empty) or "none". SVG child elements like <rect>,
-    // <line>, <path> often have style="fill:...;stroke:..." without display: set, so
-    // removable() returns true and they get marked. During page layout, traversal
-    // functions skip data-undisplayed elements entirely, so they are never cloned into
-    // the output pages → missing actor boxes, invisible lines, etc.
-    // Fix: append "display:inline" to the style attribute of SVG child elements that
-    // have a style attribute but don't set display. This makes removable() return false.
+    // Paged.js's UndisplayedFilter.filter() marks elements as data-undisplayed when
+    // removable() returns true. removable() returns true when element.style.display is
+    // "" (empty) or "none". SVG child elements (<rect>, <line>, <path>, <text>, etc.)
+    // may or may not have a style attribute — Mermaid's <rect> uses direct SVG
+    // attributes (fill="#eaeaea" stroke="#666") with NO style attribute at all. Without
+    // an explicit style, element.style.display is "" → removable() returns true →
+    // the element gets marked data-undisplayed → traversal functions skip it entirely
+    // → it's never cloned into output pages → missing actor boxes, invisible lines, etc.
+    // Fix: ensure ALL SVG child elements have an explicit display:inline in their style.
+    // - No style → add style="display:inline"
+    // - Has style but no display: → prepend "display:inline; "
+    // - Has style with display: → leave as-is
     // SVG elements default to display:inline, so this doesn't change visual behavior.
     for (const svg of doc.querySelectorAll('svg')) {
-      for (const el of svg.querySelectorAll('[style]')) {
+      for (const el of svg.querySelectorAll('*')) {
+        if (!(el instanceof Element)) continue;
         const styleAttr = el.getAttribute('style');
-        if (styleAttr && !/\bdisplay\s*:/i.test(styleAttr)) {
+        if (!styleAttr) {
+          el.setAttribute('style', 'display:inline');
+        } else if (!/\bdisplay\s*:/i.test(styleAttr)) {
           el.setAttribute('style', `display:inline; ${styleAttr}`);
         }
       }
