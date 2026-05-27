@@ -133,6 +133,10 @@ export class PagedJsAdapter implements LayoutEngine {
       }
     }
 
+    // [DIAG] Check SVG rect count BEFORE pagedjs
+    const svgRectsBefore = doc.querySelectorAll('svg rect').length;
+    console.log(`[DIAG] SVG <rect> count BEFORE pagedjs: ${svgRectsBefore}`);
+
     // 2. Inject pagedjs IIFE into iframe
     this.emitProgress('injecting');
     this.injectPagedJsIife(doc);
@@ -233,6 +237,16 @@ export class PagedJsAdapter implements LayoutEngine {
     // 5.5. Inject header/footer DOM after Paged.js preview completes
     if (this.handlerConfig?.enabled) {
       this.injectHeaderFooterDom(doc, flow.total);
+    }
+
+    // [DIAG] Check SVG rect count AFTER pagedjs
+    const svgRectsAfter = doc.querySelectorAll('svg rect').length;
+    console.log(`[DIAG] SVG <rect> count AFTER pagedjs: ${svgRectsAfter}`);
+
+    // [DIAG] Check which rects are missing
+    const allRects = doc.querySelectorAll('rect');
+    for (const rect of allRects) {
+      console.log(`[DIAG] rect: class="${rect.getAttribute('class')}" fill="${rect.getAttribute('fill')}" parent="${rect.parentElement?.tagName}" data-undisplayed="${rect.dataset.undisplayed ?? ''}"`);
     }
 
     // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter mis-mark on elements.
