@@ -403,44 +403,61 @@ const preRenderMermaid = async (html: string): Promise<string> => {
 };
 
 /**
- * 从 Mermaid SVG 的 <style> 中提取 stroke 声明，直接写入元素 inline style。
+ * 从 Mermaid SVG 的 <style> 中提取 stroke/fill 声明，直接写入元素 inline style。
  * 这样即使 Paged.js 删除了 SVG 的 id 属性导致 CSS 选择器失效，
- * stroke 值仍能通过 inline style 生效（inline style 特异性最高）。
+ * 值仍能通过 inline style 生效（inline style 特异性最高）。
  */
 function applyMermaidStrokeInline(svg: string): string {
   const cssMatch = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/);
   if (!cssMatch) return svg;
 
   const cssText = cssMatch[1];
-  const strokeByClass = new Map<string, string>();
+  // className → { prop: value }  (e.g. { stroke: '#999', fill: '#e8e8e8' })
+  const propsByClass = new Map<string, Map<string, string>>();
 
-  // 解析 CSS 规则，提取每个 class 的 stroke 值
-  // 规则格式：#mermaid-xxx .className { stroke: color; ... }
+  // 解析 CSS 规则，提取每个 class 的 stroke/fill 值
+  // 规则格式：#mermaid-xxx .className { stroke: color; fill: color; ... }
   const ruleRegex = /\.([a-zA-Z0-9_-]+)\s*\{([^}]*)\}/g;
   let m: RegExpExecArray | null;
   while ((m = ruleRegex.exec(cssText)) !== null) {
     const className = m[1];
     const declarations = m[2];
-    const strokeMatch = declarations.match(/(?:^|[;{])\s*stroke\s*:\s*([^;}\s]+)/);
-    if (strokeMatch && strokeMatch[1] !== 'none' && !strokeByClass.has(className)) {
-      strokeByClass.set(className, strokeMatch[1]);
+    const props = new Map<string, string>();
+
+    for (const prop of ['stroke', 'fill'] as const) {
+      const propMatch = declarations.match(
+        new RegExp(`(?:^|[;{])\\s*${prop}\\s*:\\s*([^;}\\s]+)`)
+      );
+      if (propMatch && propMatch[1] !== 'none') {
+        props.set(prop, propMatch[1]);
+      }
+    }
+
+    if (props.size > 0 && !propsByClass.has(className)) {
+      propsByClass.set(className, props);
     }
   }
 
-  if (strokeByClass.size === 0) return svg;
+  if (propsByClass.size === 0) return svg;
 
-  // 使用 DOMParser 解析 SVG，将 stroke 值写入元素 inline style
+  // 使用 DOMParser 解析 SVG，将 stroke/fill 值写入元素 inline style
   try {
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
     if (svgDoc.querySelector('parsererror')) return svg;
 
-    for (const [className, strokeColor] of strokeByClass) {
+    for (const [className, props] of propsByClass) {
       const elements = svgDoc.querySelectorAll(`.${className}`);
       for (const el of elements) {
-        if (el.getAttribute('stroke') === 'none') {
+        const overrides: string[] = [];
+        for (const [prop, value] of props) {
+          if (el.getAttribute(prop) === 'none') {
+            overrides.push(`${prop}: ${value}`);
+          }
+        }
+        if (overrides.length > 0) {
           const currentStyle = el.getAttribute('style') || '';
-          el.setAttribute('style', `stroke: ${strokeColor}; ${currentStyle}`);
+          el.setAttribute('style', `${overrides.join('; ')}; ${currentStyle}`);
         }
       }
     }
