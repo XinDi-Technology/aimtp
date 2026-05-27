@@ -113,47 +113,54 @@ export class PagedJsAdapter implements LayoutEngine {
     // Remove this if pagedjs upstream fully fixes lastChildCheck exclusion.
     this.protectStructuralElements(doc);
 
-    // [PAGEDJS_WORKAROUND] 1.6. Prevent UndisplayedFilter from dropping SVG child elements.
-    // Paged.js's UndisplayedFilter.filter() marks elements as data-undisplayed when
-    // removable() returns true. removable() returns true when element.style.display is
-    // "" (empty) or "none". SVG child elements (<rect>, <line>, <path>, <text>, etc.)
-    // may or may not have a style attribute — Mermaid's <rect> uses direct SVG
-    // attributes (fill="#eaeaea" stroke="#666") with NO style attribute at all. Without
-    // an explicit style, element.style.display is "" → removable() returns true →
-    // the element gets marked data-undisplayed → traversal functions skip it entirely
-    // → it's never cloned into output pages → missing actor boxes, invisible lines, etc.
-    // Fix: ensure ALL SVG child elements have an explicit display:inline in their style.
-    // - No style → add style="display:inline"
-    // - Has style but no display: → prepend "display:inline; "
-    // - Has style with display: → leave as-is
-    // SVG elements default to display:inline, so this doesn't change visual behavior.
-    let diagSvgCount = 0;
-    let diagElCount = 0;
-    let diagStyleAdded = 0;
-    let diagStylePrepended = 0;
+    // [PAGEDJS_WORKAROUND] 1.6. Prevent SVG child elements from being lost.
+    // Three problems cause SVG elements to disappear during Paged.js layout:
+    //
+    // A) UndisplayedFilter drops elements with empty style.display.
+    //    removable() returns true when element.style.display is "" or "none".
+    //    SVG children (<rect>, <line>, <path>) often lack a style attribute, so
+    //    element.style.display is "" → marked data-undisplayed → skipped in cloning.
+    //    Fix: ensure ALL SVG child elements have explicit display:inline in their style.
+    //
+    // B) lastChildCheck() removes overflow-tagged elements with empty textContent.
+    //    When Paged.js splits content across pages, tagAndCreateOverflowRange() marks
+    //    elements with data-overflow-tagged. Then lastChildCheck() removes any element
+    //    that has overflow-tagged AND textContent.trim()=="". SVG <rect> elements have
+    //    no text content, so they get deleted.
+    //    Fix: prevent SVG from being split by setting break-inside:avoid. Paged.js's
+    //    avoidBreakInside() checks data-original-break-inside==="avoid" — when found,
+    //    the element is treated as atomic and tagAndCreateOverflowRange() is never
+    //    called on its children, so overflow-tagged is never set on them.
+    //
+    // C) (belt-and-suspenders) Also set data-original-break-inside directly on <svg>
+    //    in case Paged.js's CSS processing doesn't convert break-inside:avoid from
+    //    inline style for SVG-namespace elements.
+
     for (const svg of doc.querySelectorAll('svg')) {
-      diagSvgCount++;
+      // Fix B: prevent SVG from being split across pages
+      svg.setAttribute('data-original-break-inside', 'avoid');
+      const svgStyle = svg.getAttribute('style');
+      const breakInsideProp = 'break-inside:avoid';
+      if (!svgStyle) {
+        svg.setAttribute('style', breakInsideProp);
+      } else if (!/break-inside\s*:/i.test(svgStyle)) {
+        svg.setAttribute('style', `${svgStyle}; ${breakInsideProp}`);
+      }
+
+      // Fix A: ensure all SVG child elements have display:inline
       for (const el of svg.querySelectorAll('*')) {
-        diagElCount++;
         const styleAttr = el.getAttribute('style');
         if (!styleAttr) {
           el.setAttribute('style', 'display:inline');
-          diagStyleAdded++;
         } else if (!/\bdisplay\s*:/i.test(styleAttr)) {
           el.setAttribute('style', `display:inline; ${styleAttr}`);
-          diagStylePrepended++;
         }
       }
     }
-    console.log(`[DIAG] Workaround 1.6: found ${diagSvgCount} SVGs, ${diagElCount} children, ${diagStyleAdded} style added, ${diagStylePrepended} style prepended`);
 
-    // [DIAG] Check SVG rect count and style BEFORE pagedjs
+    // [DIAG] Check SVG rect count BEFORE pagedjs
     const svgRectsBefore = doc.querySelectorAll('svg rect').length;
     console.log(`[DIAG] SVG <rect> count BEFORE pagedjs: ${svgRectsBefore}`);
-    const rectsBefore = doc.querySelectorAll('svg rect');
-    for (const r of rectsBefore) {
-      console.log(`[DIAG] BEFORE: rect class="${r.getAttribute('class')}" style="${r.getAttribute('style')}" fill="${r.getAttribute('fill')}"`);
-    }
 
     // 2. Inject pagedjs IIFE into iframe
     this.emitProgress('injecting');
@@ -260,12 +267,6 @@ export class PagedJsAdapter implements LayoutEngine {
     // [DIAG] Check SVG rect count AFTER pagedjs
     const svgRectsAfter = doc.querySelectorAll('svg rect').length;
     console.log(`[DIAG] SVG <rect> count AFTER pagedjs: ${svgRectsAfter}`);
-
-    // [DIAG] Check which rects are missing
-    const allRects = doc.querySelectorAll('rect');
-    for (const rect of allRects) {
-      console.log(`[DIAG] rect: class="${rect.getAttribute('class')}" fill="${rect.getAttribute('fill')}" parent="${rect.parentElement?.tagName}" data-undisplayed="${rect.dataset.undisplayed ?? ''}"`);
-    }
 
     // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter mis-mark on elements.
     // Paged.js's UndisplayedFilter.removable() incorrectly marks elements as
