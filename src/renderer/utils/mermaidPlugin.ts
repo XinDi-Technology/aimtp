@@ -92,6 +92,7 @@ const defaultMermaidConfig: MermaidConfig = {
     boxTextMargin: 5,
     noteMargin: 10,
     messageMargin: 35,
+    mirrorActors: false,
   },
 };
 
