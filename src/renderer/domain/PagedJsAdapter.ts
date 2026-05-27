@@ -215,16 +215,20 @@ export class PagedJsAdapter implements LayoutEngine {
       this.injectHeaderFooterDom(doc, flow.total);
     }
 
-    // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter <td style="..."> mis-mark.
-    // pagedjs marks ALL [style] elements as data-undisplaced when their
-    // element.style.display is "" (any non-display inline style). This causes
-    // pagedjs to skip these elements during layout → content loss on breaks.
+    // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter mis-mark on [style] elements.
+    // Paged.js's UndisplayedFilter.removable() returns true for ANY element with
+    // an inline style attribute that does NOT explicitly set display: none. This
+    // causes pagedjs to mark those elements as data-undisplaced / data-undisplayed,
+    // and the layout engine then skips them entirely → invisible content.
+    // Affected: Mermaid <line style="stroke-dasharray:…; fill: none;">, <td style="…">, etc.
     // Remove this if pagedjs upstream fixes UndisplayedFilter.removable() to
-    // check whether the inline style actually sets display: none.
-    for (const el of doc.querySelectorAll('[data-undisplaced]')) {
-      const styleAttr = el.getAttribute('style');
-      if (styleAttr && !/display\s*:/i.test(styleAttr)) {
-        el.removeAttribute('data-undisplaced');
+    // only return true when the inline style actually sets display: none.
+    for (const attr of ['data-undisplaced', 'data-undisplayed'] as const) {
+      for (const el of doc.querySelectorAll(`[${attr}]`)) {
+        const styleAttr = el.getAttribute('style');
+        if (styleAttr && !/display\s*:/i.test(styleAttr)) {
+          el.removeAttribute(attr);
+        }
       }
     }
 
