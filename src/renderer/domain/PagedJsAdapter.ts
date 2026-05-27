@@ -232,6 +232,23 @@ export class PagedJsAdapter implements LayoutEngine {
       }
     }
 
+    // [PAGEDJS_WORKAROUND] 5.8. Restore id on SVG elements after Paged.js processing.
+    // Paged.js's clone function (S) removes id attributes and stores them as data-id
+    // to avoid duplicate IDs when splitting content across pages. However, Mermaid
+    // CSS uses #id selectors (e.g. #mermaid-xxx .messageLine1 { stroke: #999 }) to
+    // override stroke="none" on line elements. Without id, these selectors fail and
+    // lines remain invisible. SVG diagrams are atomic (not split across pages), so
+    // restoring id is safe. For split elements, only restore on the first occurrence
+    // to avoid duplicate IDs.
+    const seenDataIds = new Set<string>();
+    for (const el of doc.querySelectorAll('svg[data-id]')) {
+      const dataId = el.getAttribute('data-id');
+      if (dataId && !seenDataIds.has(dataId)) {
+        el.setAttribute('id', dataId);
+        seenDataIds.add(dataId);
+      }
+    }
+
     // 6. Build LayoutDOM
     const metadata = this.extractMetadata(iframe, flow);
     const provenance = this.buildProvenance(sourceHash);

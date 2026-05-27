@@ -371,6 +371,14 @@ const preRenderMermaid = async (html: string): Promise<string> => {
         svg = svg.replace('<svg', `<svg id="${dataIdMatch[1]}"`);
       }
 
+      // 修复：将 CSS 中的 stroke 值直接写入元素 inline style。
+      // Mermaid 在 <line> 等元素上设置 stroke="none"，依赖 CSS
+      // #mermaid-xxx .className { stroke: color } 来覆盖。但 Paged.js
+      // 可能删除 SVG 的 id 属性（存储为 data-id），导致 CSS 选择器
+      // 失效，线条不可见。将 stroke 值直接写入 inline style 可绕过
+      // 此问题，因为 inline style 特异性最高，不依赖 CSS 选择器。
+      svg = applyMermaidStrokeInline(svg);
+
       // Extract CSS from SVG's <style> and inject it outside the SVG as a
       // fallback, in case the rendering environment (e.g. Paged.js) strips
       // <style> elements nested inside SVG. This ensures Mermaid's
@@ -393,6 +401,55 @@ const preRenderMermaid = async (html: string): Promise<string> => {
 
   return html;
 };
+
+/**
+ * 从 Mermaid SVG 的 <style> 中提取 stroke 声明，直接写入元素 inline style。
+ * 这样即使 Paged.js 删除了 SVG 的 id 属性导致 CSS 选择器失效，
+ * stroke 值仍能通过 inline style 生效（inline style 特异性最高）。
+ */
+function applyMermaidStrokeInline(svg: string): string {
+  const cssMatch = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/);
+  if (!cssMatch) return svg;
+
+  const cssText = cssMatch[1];
+  const strokeByClass = new Map<string, string>();
+
+  // 解析 CSS 规则，提取每个 class 的 stroke 值
+  // 规则格式：#mermaid-xxx .className { stroke: color; ... }
+  const ruleRegex = /\.([a-zA-Z0-9_-]+)\s*\{([^}]*)\}/g;
+  let m: RegExpExecArray | null;
+  while ((m = ruleRegex.exec(cssText)) !== null) {
+    const className = m[1];
+    const declarations = m[2];
+    const strokeMatch = declarations.match(/(?:^|[;{])\s*stroke\s*:\s*([^;}\s]+)/);
+    if (strokeMatch && strokeMatch[1] !== 'none' && !strokeByClass.has(className)) {
+      strokeByClass.set(className, strokeMatch[1]);
+    }
+  }
+
+  if (strokeByClass.size === 0) return svg;
+
+  // 使用 DOMParser 解析 SVG，将 stroke 值写入元素 inline style
+  try {
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+    if (svgDoc.querySelector('parsererror')) return svg;
+
+    for (const [className, strokeColor] of strokeByClass) {
+      const elements = svgDoc.querySelectorAll(`.${className}`);
+      for (const el of elements) {
+        if (el.getAttribute('stroke') === 'none') {
+          const currentStyle = el.getAttribute('style') || '';
+          el.setAttribute('style', `stroke: ${strokeColor}; ${currentStyle}`);
+        }
+      }
+    }
+
+    return new XMLSerializer().serializeToString(svgDoc.documentElement);
+  } catch {
+    return svg;
+  }
+}
 
 const preRenderMathJax = async (markdown: string): Promise<string> => {
   const isLikelyMath = (s: string): boolean => {
