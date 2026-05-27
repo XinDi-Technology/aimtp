@@ -362,7 +362,17 @@ const preRenderMermaid = async (html: string): Promise<string> => {
 
     try {
       const svg = await renderMermaidSync(code);
-      html = html.replace(fullMatch, svg);
+      // Extract CSS from SVG's <style> and inject it outside the SVG as a
+      // fallback, in case the rendering environment (e.g. Paged.js) strips
+      // <style> elements nested inside SVG. This ensures Mermaid's
+      // class-based styles (e.g. .messageLine0 { stroke: signalColor })
+      // still apply — otherwise <line> elements with stroke="none" would
+      // remain invisible.
+      const cssMatch = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/);
+      const svgWithFallback = cssMatch
+        ? svg + `<style class="mermaid-fallback-css">${cssMatch[1]}</style>`
+        : svg;
+      html = html.replace(fullMatch, svgWithFallback);
     } catch (error) {
       logger.error(`Failed to render Mermaid diagram:`, error);
       html = html.replace(
