@@ -148,7 +148,21 @@ export class PagedJsAdapter implements LayoutEngine {
       }
 
       // Fix A: ensure all SVG child elements have display:inline
+      // IMPORTANT: skip elements inside <defs>. <defs> is display:none by default
+      // and contains <marker>, <linearGradient>, <pattern> etc. that are only
+      // rendered when referenced. Setting display:inline on <defs> children would
+      // make Paged.js treat them as visible content, potentially corrupting the
+      // marker definitions and breaking line-end direction indicators (dots/arrows).
+      const defsEls = svg.querySelectorAll('defs');
+      const defsSet = new Set<Element>();
+      for (const defs of defsEls) {
+        defsSet.add(defs);
+        for (const desc of defs.querySelectorAll('*')) {
+          defsSet.add(desc);
+        }
+      }
       for (const el of svg.querySelectorAll('*')) {
+        if (defsSet.has(el)) continue; // skip <defs> and its descendants
         const styleAttr = el.getAttribute('style');
         if (!styleAttr) {
           el.setAttribute('style', 'display:inline');
@@ -158,9 +172,21 @@ export class PagedJsAdapter implements LayoutEngine {
       }
     }
 
-    // [DIAG] Check SVG rect count BEFORE pagedjs
+    // [DIAG] Check SVG element counts BEFORE pagedjs
     const svgRectsBefore = doc.querySelectorAll('svg rect').length;
-    console.log(`[DIAG] SVG <rect> count BEFORE pagedjs: ${svgRectsBefore}`);
+    const svgCirclesBefore = doc.querySelectorAll('svg circle').length;
+    const svgMarkersBefore = doc.querySelectorAll('svg marker').length;
+    const svgDefsBefore = doc.querySelectorAll('svg defs').length;
+    const svgMarkerEndsBefore = doc.querySelectorAll('svg [marker-end]').length;
+    console.log(`[DIAG] SVG BEFORE pagedjs: rect=${svgRectsBefore} circle=${svgCirclesBefore} marker=${svgMarkersBefore} defs=${svgDefsBefore} marker-end=${svgMarkerEndsBefore}`);
+    // Log marker definitions
+    for (const m of doc.querySelectorAll('svg marker')) {
+      console.log(`[DIAG] BEFORE marker: id="${m.getAttribute('id')}" viewBox="${m.getAttribute('viewBox')}" children=${m.children.length}`);
+    }
+    // Log elements with marker-end (direction indicators)
+    for (const el of doc.querySelectorAll('svg [marker-end]')) {
+      console.log(`[DIAG] BEFORE marker-end: tag="${el.tagName}" class="${el.getAttribute('class')}" marker-end="${el.getAttribute('marker-end')}"`);
+    }
 
     // 2. Inject pagedjs IIFE into iframe
     this.emitProgress('injecting');
@@ -264,9 +290,25 @@ export class PagedJsAdapter implements LayoutEngine {
       this.injectHeaderFooterDom(doc, flow.total);
     }
 
-    // [DIAG] Check SVG rect count AFTER pagedjs
+    // [DIAG] Check SVG element counts AFTER pagedjs
     const svgRectsAfter = doc.querySelectorAll('svg rect').length;
-    console.log(`[DIAG] SVG <rect> count AFTER pagedjs: ${svgRectsAfter}`);
+    const svgCirclesAfter = doc.querySelectorAll('svg circle').length;
+    const svgMarkersAfter = doc.querySelectorAll('svg marker').length;
+    const svgDefsAfter = doc.querySelectorAll('svg defs').length;
+    const svgMarkerEndsAfter = doc.querySelectorAll('svg [marker-end]').length;
+    console.log(`[DIAG] SVG AFTER pagedjs: rect=${svgRectsAfter} circle=${svgCirclesAfter} marker=${svgMarkersAfter} defs=${svgDefsAfter} marker-end=${svgMarkerEndsAfter}`);
+    // Log surviving markers
+    for (const m of doc.querySelectorAll('svg marker')) {
+      console.log(`[DIAG] AFTER marker: id="${m.getAttribute('id')}" viewBox="${m.getAttribute('viewBox')}" children=${m.children.length}`);
+    }
+    // Log surviving elements with marker-end
+    for (const el of doc.querySelectorAll('svg [marker-end]')) {
+      console.log(`[DIAG] AFTER marker-end: tag="${el.tagName}" class="${el.getAttribute('class')}" marker-end="${el.getAttribute('marker-end')}"`);
+    }
+    // Check defs status
+    for (const defs of doc.querySelectorAll('svg defs')) {
+      console.log(`[DIAG] AFTER defs: style="${defs.getAttribute('style')}" data-undisplayed="${defs.dataset.undisplayed ?? ''}" children=${defs.children.length}`);
+    }
 
     // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter mis-mark on elements.
     // Paged.js's UndisplayedFilter.removable() incorrectly marks elements as
@@ -289,14 +331,18 @@ export class PagedJsAdapter implements LayoutEngine {
 
     // [PAGEDJS_WORKAROUND] 5.8. Restore id on SVG elements after Paged.js processing.
     // Paged.js's clone function (S) removes id attributes and stores them as data-id
-    // to avoid duplicate IDs when splitting content across pages. However, Mermaid
-    // CSS uses #id selectors (e.g. #mermaid-xxx .messageLine1 { stroke: #999 }) to
-    // override stroke="none" on line elements. Without id, these selectors fail and
-    // lines remain invisible. SVG diagrams are atomic (not split across pages), so
-    // restoring id is safe. For split elements, only restore on the first occurrence
-    // to avoid duplicate IDs.
+    // to avoid duplicate IDs when splitting content across pages. This breaks:
+    // 1) Mermaid CSS #id selectors (e.g. #mermaid-xxx .messageLine1 { stroke: #999 })
+    //    used to override stroke="none" on line elements.
+    // 2) SVG URL references: marker-start="url(#xxx)", fill="url(#gradient)", etc.
+    //    When <marker id="xxx"> becomes <marker data-id="xxx">, the url(#xxx)
+    //    reference can't resolve → direction indicators (dots/arrows) disappear.
+    // SVG diagrams are atomic (break-inside:avoid), so restoring all ids within
+    // each SVG is safe. For split elements, only restore on the first occurrence.
     const seenDataIds = new Set<string>();
-    for (const el of doc.querySelectorAll('svg[data-id]')) {
+    // Select ALL elements with data-id inside any <svg>, not just <svg> itself.
+    // This covers <marker>, <linearGradient>, <clipPath>, <pattern>, etc. in <defs>.
+    for (const el of doc.querySelectorAll('svg [data-id], svg[data-id]')) {
       const dataId = el.getAttribute('data-id');
       if (dataId && !seenDataIds.has(dataId)) {
         el.setAttribute('id', dataId);
