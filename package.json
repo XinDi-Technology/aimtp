@@ -35,9 +35,9 @@
   },
   "homepage": "https://github.com/XinDi-Technology/aimtp#readme",
   "dependencies": {
-    "dompurify": "^3.4.5",
+    "dompurify": "^3.4.7",
     "highlight.js": "^11.11.1",
-    "markdown-it": "^14.1.1",
+    "markdown-it": "^14.2.0",
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-github-alerts": "^1.0.1",
     "markdown-it-ins": "^4.0.0",
