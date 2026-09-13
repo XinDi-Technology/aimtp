@@ -79,6 +79,16 @@ p {
   margin: 1em 0;
 }
 
+/* 约束 Markdown 图片不超过页面内容区：
+   - max-width 防止超宽图片横向溢出；
+   - max-height 防止超高图片纵向溢出导致 Paged.js 无法拆分、
+     在 addOverflowNodes 处抛 "reading 'childNodes'" 而中断分页。
+   替换元素同时受两者约束会按原始比例等比缩放，不会变形。 */
+img {
+  max-width: 100%;
+  max-height: calc($$pageHeightMm - $$marginTop - $$marginBottom);
+}
+
 li {
   line-height: $$fontLineHeight;
 }
