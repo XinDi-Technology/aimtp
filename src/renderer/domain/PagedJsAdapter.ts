@@ -172,22 +172,6 @@ export class PagedJsAdapter implements LayoutEngine {
       }
     }
 
-    // [DIAG] Check SVG element counts BEFORE pagedjs
-    const svgRectsBefore = doc.querySelectorAll('svg rect').length;
-    const svgCirclesBefore = doc.querySelectorAll('svg circle').length;
-    const svgMarkersBefore = doc.querySelectorAll('svg marker').length;
-    const svgDefsBefore = doc.querySelectorAll('svg defs').length;
-    const svgMarkerEndsBefore = doc.querySelectorAll('svg [marker-end]').length;
-    console.log(`[DIAG] SVG BEFORE pagedjs: rect=${svgRectsBefore} circle=${svgCirclesBefore} marker=${svgMarkersBefore} defs=${svgDefsBefore} marker-end=${svgMarkerEndsBefore}`);
-    // Log marker definitions
-    for (const m of doc.querySelectorAll('svg marker')) {
-      console.log(`[DIAG] BEFORE marker: id="${m.getAttribute('id')}" viewBox="${m.getAttribute('viewBox')}" children=${m.children.length}`);
-    }
-    // Log elements with marker-end (direction indicators)
-    for (const el of doc.querySelectorAll('svg [marker-end]')) {
-      console.log(`[DIAG] BEFORE marker-end: tag="${el.tagName}" class="${el.getAttribute('class')}" marker-end="${el.getAttribute('marker-end')}"`);
-    }
-
     // 2. Inject pagedjs IIFE into iframe
     this.emitProgress('injecting');
     this.injectPagedJsIife(doc);
@@ -288,26 +272,6 @@ export class PagedJsAdapter implements LayoutEngine {
     // 5.5. Inject header/footer DOM after Paged.js preview completes
     if (this.handlerConfig?.enabled) {
       this.injectHeaderFooterDom(doc, flow.total);
-    }
-
-    // [DIAG] Check SVG element counts AFTER pagedjs
-    const svgRectsAfter = doc.querySelectorAll('svg rect').length;
-    const svgCirclesAfter = doc.querySelectorAll('svg circle').length;
-    const svgMarkersAfter = doc.querySelectorAll('svg marker').length;
-    const svgDefsAfter = doc.querySelectorAll('svg defs').length;
-    const svgMarkerEndsAfter = doc.querySelectorAll('svg [marker-end]').length;
-    console.log(`[DIAG] SVG AFTER pagedjs: rect=${svgRectsAfter} circle=${svgCirclesAfter} marker=${svgMarkersAfter} defs=${svgDefsAfter} marker-end=${svgMarkerEndsAfter}`);
-    // Log surviving markers
-    for (const m of doc.querySelectorAll('svg marker')) {
-      console.log(`[DIAG] AFTER marker: id="${m.getAttribute('id')}" viewBox="${m.getAttribute('viewBox')}" children=${m.children.length}`);
-    }
-    // Log surviving elements with marker-end
-    for (const el of doc.querySelectorAll('svg [marker-end]')) {
-      console.log(`[DIAG] AFTER marker-end: tag="${el.tagName}" class="${el.getAttribute('class')}" marker-end="${el.getAttribute('marker-end')}"`);
-    }
-    // Check defs status
-    for (const defs of doc.querySelectorAll('svg defs')) {
-      console.log(`[DIAG] AFTER defs: style="${defs.getAttribute('style')}" data-undisplayed="${defs.dataset.undisplayed ?? ''}" children=${defs.children.length}`);
     }
 
     // [PAGEDJS_WORKAROUND] 5.7. Fix UndisplayedFilter mis-mark on elements.

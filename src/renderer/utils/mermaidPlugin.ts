@@ -8,9 +8,10 @@
  * 官方文档：https://mermaid.js.org/
  */
 
-import MarkdownIt from 'markdown-it';
 import mermaid from 'mermaid';
 import { logger } from './logger';
+// 仅类型导入，编译后会被擦除，不会与 markdown.ts 形成运行时循环依赖
+import type { MarkdownItInstance } from './markdown';
 
 // ============================================================================
 // 初始化状态管理
@@ -297,7 +298,7 @@ const normalizeMermaidCode = (info: string, content: string): string => {
   return content;
 };
 
-export const mermaidPlugin = (md: MarkdownIt): void => {
+export const mermaidPlugin = (md: MarkdownItInstance): void => {
   try {
     initializeMermaid();
   } catch {

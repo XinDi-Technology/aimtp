@@ -23,10 +23,18 @@ export interface MarkdownItOptions {
   githubAlerts: boolean;
 }
 
+/**
+ * MarkdownIt 实例类型。
+ * markdown-it v15 起自带类型声明，其默认导出的 MarkdownIt 只是一个构造函数值，
+ * 不能直接当作类型使用（否则报 "refers to a value, but is being used as a type"），
+ * 因此这里用 InstanceType 从该构造函数值推导出实例类型，供本文件与插件复用。
+ */
+export type MarkdownItInstance = InstanceType<typeof MarkdownIt>;
+
 // TODO: [P2-问题5] 缓存无清理机制，可能导致内存泄漏
 // 如果用户频繁切换扩展设置，会产生大量缓存实例
 // 建议：限制缓存大小或使用 LRU 策略
-const mdCache = new Map<string, MarkdownIt>();
+const mdCache = new Map<string, MarkdownItInstance>();
 
 /**
  * 根据选项生成唯一的缓存键
@@ -35,7 +43,7 @@ const getCacheKey = (options: MarkdownItOptions): string => {
   return JSON.stringify(options);
 };
 
-export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
+export const createMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance => {
   const cacheKey = getCacheKey(options);
   if (mdCache.has(cacheKey)) {
     return mdCache.get(cacheKey)!;
@@ -143,6 +151,6 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
   return md;
 };
 
-export const resetMarkdownIt = (options: MarkdownItOptions): MarkdownIt => {
+export const resetMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance => {
   return createMarkdownIt(options);
 };
