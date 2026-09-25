@@ -513,9 +513,9 @@ export class PagedJsAdapter implements LayoutEngine {
   }
 
   /**
-   * [PAGEDJS_WORKAROUND] Protect TD/TH/LI from lastChildCheck removal.
-   * Inserts a zero-width space ensuring textContent.trim() is non-empty
-   * even after content extraction.
+   * [PAGEDJS_WORKAROUND] Protect TD/TH/LI and image-only paragraphs from
+   * lastChildCheck removal. Inserts a zero-width space ensuring
+   * textContent.trim() is non-empty even after content extraction.
    *
    * Smart insertion for LI:
    * - If LI's first child is a block-level element (e.g. <p>), insert ZWS
@@ -524,6 +524,9 @@ export class PagedJsAdapter implements LayoutEngine {
    * - Otherwise (text node, inline element), insert ZWS before firstChild
    *   as before.
    * - TD/TH: always insert ZWS before firstChild (no list marker issue).
+   * - Image-only paragraphs: insert ZWS before the image. Text nodes do not
+   *   affect the :only-child selector, so the existing break-inside rule
+   *   remains active.
    */
   private protectStructuralElements(doc: Document): void {
     const blockTags = new Set(['P', 'DIV', 'UL', 'OL', 'PRE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TABLE', 'DL']);
@@ -544,6 +547,14 @@ export class PagedJsAdapter implements LayoutEngine {
       } else {
         // No block child: insert ZWS before firstChild
         li.insertBefore(zws, li.firstChild);
+      }
+    }
+
+    const imageParagraphs = doc.querySelectorAll('p > img:only-child');
+    for (const img of imageParagraphs) {
+      const paragraph = img.parentElement;
+      if (paragraph && !paragraph.textContent?.trim()) {
+        paragraph.insertBefore(doc.createTextNode('\u200B'), img);
       }
     }
   }
