@@ -107,11 +107,12 @@ export class PagedJsAdapter implements LayoutEngine {
     doc.write(html);
     doc.close();
 
-    // 1.4. 等待所有图片加载完成后再分页。
+    // 1.4. 等待所有图片加载完成后再分页，并顺手给图片补上内联样式与固有尺寸。
     // doc.write() 写入的 <img>（尤其是远程图片）在 previewer.preview() 执行时通常尚未加载，
     // 此时浏览器按 0 高度参与排版，图片会被误判为"放得下"而留在当前页；
     // 待加载完成撑开真实高度后溢出页面底部，表现为图片没有换到下一页。
     // 等待上限为 IMAGE_READY_TIMEOUT，超时后仍会继续分页，不会阻塞预览。
+    // 该方法内部还会调用 applyImageSizing()，原因见其注释（避免图片跨页时被 Paged.js 丢弃）。
     await this.waitForImages(doc);
 
     // [PAGEDJS_WORKAROUND] 1.5. Protect TD/TH/LI from lastChildCheck removal.
@@ -625,7 +626,52 @@ export class PagedJsAdapter implements LayoutEngine {
     return Promise.race([
       Promise.allSettled(images.map(waitOne)).then(() => undefined),
       new Promise<void>((resolve) => setTimeout(resolve, IMAGE_READY_TIMEOUT)),
-    ]);
+    ]).then(() => {
+      // 图片已就绪（或等待超时）后统一补写内联尺寸。
+      // 必须放在"等图片"之后：天然宽高要等解码完成才拿得到；
+      // 统一在这里遍历，是为了让成功、失败、超时三条路径的收尾逻辑保持一致。
+      for (const img of images) {
+        this.applyImageSizing(img);
+      }
+    });
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] 给 <img> 补上内联样式与确定尺寸，避免跨页时被 Paged.js 丢弃。
+   *
+   * 背景：Paged.js 的 UndisplayedFilter.removable() 会依据元素自身的 style.display 判断
+   * 是否"不可见"，没有 style 属性的元素容易被误判并打上 data-undisplayed，
+   * 克隆页面时被跳过，最终表现为"图片代码在 DOM 里、但两页都不显示"。
+   * 上面 1.6 的补丁只给 SVG 子元素补了 display:inline，漏掉了 <img>：
+   * Markdown 渲染出的图片是裸的 <img src="…" alt="">，不带 style 属性。
+   *
+   * 因此这里在分页前：
+   *   1) 写入内联 display:block（已有 display 声明则不覆盖）；
+   *   2) 把图片固有宽高回填为 width/height 属性，让 Paged.js 测量时有确定尺寸。
+   * 注意：属性尺寸只提供固有宽高，实际显示仍受 preview.css 的 max-width:100% / max-height
+   * 约束按比例缩放，不会放大图片；加载失败（naturalWidth 为 0）时不写尺寸，避免生成 0×0。
+   */
+  private applyImageSizing(img: HTMLImageElement): void {
+    // 读取现有 style 属性；没有则用空串占位，便于下面统一拼装
+    const styleAttr = img.getAttribute('style') ?? '';
+    // 仅在作者未声明 display 时补写，避免覆盖模板或 Markdown 里已有的显示方式
+    if (!/\bdisplay\s*:/i.test(styleAttr)) {
+      // 已有其它内联样式时追加在末尾（分号分隔），保持原有声明不丢失
+      img.setAttribute('style', styleAttr ? `${styleAttr}; display:block` : 'display:block');
+    }
+
+    // naturalWidth/naturalHeight 为 0 表示图片尚未解码成功（加载中或加载失败），
+    // 此时写尺寸属性只会得到 0×0，反而让图片彻底不可见，因此直接跳过
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      // 尊重 Markdown/HTML 中显式写出的尺寸，只用固有尺寸填补缺失的一侧；
+      // 同时提供 width 与 height 可让浏览器得到宽高比，配合 CSS 约束等比缩放
+      if (!img.hasAttribute('width')) {
+        img.setAttribute('width', String(img.naturalWidth));
+      }
+      if (!img.hasAttribute('height')) {
+        img.setAttribute('height', String(img.naturalHeight));
+      }
+    }
   }
 
   private waitForFonts(doc: Document): Promise<void> {
