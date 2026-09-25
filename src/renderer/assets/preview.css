@@ -94,6 +94,15 @@ img {
   object-fit: contain;
 }
 
+/* 仅包含一张图片的段落视为原子块（图片由 Markdown 渲染为 <p><img></p>）。
+   剩余空间放不下整张图时，Paged.js 会把整个段落推到下一页，
+   而不是把图片压缩后塞进页面底部——这是让图片正确换页的关键。
+   注意：需配合 js 侧 PagedJsAdapter.waitForImages() 使用，
+   否则图片在分页时尺寸为 0，本规则无法判断"是否放得下"。 */
+p:has(> img:only-child) {
+  break-inside: avoid;
+}
+
 li {
   line-height: $$fontLineHeight;
 }

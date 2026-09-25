@@ -21,6 +21,7 @@ import pagedJsIifeCode from '../assets/vendor/pagedjs.iife.js?raw';
 const FONT_READY_TIMEOUT = 5000;
 const DOCUMENT_READY_TIMEOUT = 2000;
 const PAGEDJS_READY_TIMEOUT = 10000;
+const IMAGE_READY_TIMEOUT = 5000; // 等待图片加载的超时上限，避免个别图片卡住整个预览
 const PREVIEW_TIMEOUT = 30000; // previewer.preview() 超时 30s，防止 Paged.js 卡死
 
 /** 分页进度回调 */
@@ -105,6 +106,13 @@ export class PagedJsAdapter implements LayoutEngine {
     doc.open();
     doc.write(html);
     doc.close();
+
+    // 1.4. 等待所有图片加载完成后再分页。
+    // doc.write() 写入的 <img>（尤其是远程图片）在 previewer.preview() 执行时通常尚未加载，
+    // 此时浏览器按 0 高度参与排版，图片会被误判为"放得下"而留在当前页；
+    // 待加载完成撑开真实高度后溢出页面底部，表现为图片没有换到下一页。
+    // 等待上限为 IMAGE_READY_TIMEOUT，超时后仍会继续分页，不会阻塞预览。
+    await this.waitForImages(doc);
 
     // [PAGEDJS_WORKAROUND] 1.5. Protect TD/TH/LI from lastChildCheck removal.
     // pagedjs removes empty overflowTagged elements. For TD/TH/LI, this breaks
@@ -581,6 +589,43 @@ export class PagedJsAdapter implements LayoutEngine {
       };
       check();
     });
+  }
+
+  /**
+   * 等待 iframe 内所有 <img> 加载完成（或失败），使 Paged.js 分页时能拿到图片真实固有尺寸。
+   *
+   * 已加载完成（含加载失败）的图片直接跳过；未完成的等待 load / error 事件。
+   * 单张图片不会阻塞整体流程：用 allSettled 收集结果，并叠加 IMAGE_READY_TIMEOUT 超时兜底，
+   * 避免个别慢速或损坏的远程图片把预览卡死。
+   */
+  private waitForImages(doc: Document): Promise<void> {
+    const images = Array.from(doc.querySelectorAll('img'));
+    // 没有图片时直接返回，避免无谓地创建定时器
+    if (images.length === 0) return Promise.resolve();
+
+    // 单个图片的等待：无论成功加载还是加载失败都 resolve，绝不让调用方 reject
+    const waitOne = (img: HTMLImageElement): Promise<void> => {
+      // img.complete 为 true 表示已加载完成或已失败（如地址无效），两种情况都无需再等
+      if (img.complete) return Promise.resolve();
+
+      return new Promise<void>((resolve) => {
+        // load / error 共用一个回调：先解绑两个监听防止重复触发，再放行
+        const onSettled = () => {
+          img.removeEventListener('load', onSettled);
+          img.removeEventListener('error', onSettled);
+          resolve();
+        };
+        img.addEventListener('load', onSettled);
+        img.addEventListener('error', onSettled);
+      });
+    };
+
+    // allSettled：等所有图片有结果（不因个别失败而中断）；
+    // race + 定时器：整体等待不超过 IMAGE_READY_TIMEOUT，超时后照常进入分页
+    return Promise.race([
+      Promise.allSettled(images.map(waitOne)).then(() => undefined),
+      new Promise<void>((resolve) => setTimeout(resolve, IMAGE_READY_TIMEOUT)),
+    ]);
   }
 
   private waitForFonts(doc: Document): Promise<void> {
