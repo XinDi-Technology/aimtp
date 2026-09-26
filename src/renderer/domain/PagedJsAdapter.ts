@@ -453,13 +453,22 @@ export class PagedJsAdapter implements LayoutEngine {
       .replace(/--pagedjs-margin-right:\s*1in;/g, '')
       .replace(/--pagedjs-margin-bottom:\s*1in;/g, '')
       .replace(/--pagedjs-margin-left:\s*1in;/g, '')
-      // [PAGEDJS_WORKAROUND] Guard SVG elements in findOverflow width assignment.
+      // [PAGEDJS_WORKAROUND] Guard replaced elements in findOverflow width assignment.
       // Paged.js sets childNode.width = getComputedStyle(childNode).width on every
-      // child of check.parentElement. SVG elements (rect, text, etc.) have a readonly
-      // .width getter, throwing "Cannot set property width of #<SVGRectElement>".
+      // child of check.parentElement. Two problems:
+      // 1) SVG elements (rect, text, etc.) have a readonly .width getter, throwing
+      //    "Cannot set property width of #<SVGRectElement>".
+      // 2) IMG/CANVAS/VIDEO/AUDIO/IFRAME/EMBED/OBJECT have an unsigned-long width IDL
+      //    attribute: assigning a CSS px string ("612px") converts via ToNumber → NaN
+      //    → 0, and a detached node yields "" → 0 as well. The width attribute gets
+      //    clobbered to 0 → the image renders as a 0-width box and disappears
+      //    (observed as 63917.60001_014.png width="0" height="383").
+      // Replaced elements must keep their intrinsic sizing: applyImageSizing() writes
+      // width/height attributes pre-pagination and preview.css max-width/max-height
+      // rescale them correctly in the new page context.
       .replace(
         /(Array\.from\((\w+)\.parentElement\.children\)\.forEach\((\w+)=>\{)\3\.width=getComputedStyle\(\3\)\.width\}/,
-        '$1if(!($3 instanceof SVGElement)){$3.width=getComputedStyle($3).width}}'
+        '$1if(!($3 instanceof SVGElement)&&!/^(img|canvas|video|audio|iframe|embed|object|picture)$/i.test($3.tagName)){$3.width=getComputedStyle($3).width}}'
       )
       // [PAGEDJS_WORKAROUND] 1.7. Replaced elements (IMG/SVG/VIDEO/CANVAS etc.) can
       // never become the overflow start. startOfNewOverflow descends into childless
