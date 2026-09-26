@@ -276,6 +276,9 @@ td:empty::after, th:empty::after {
   margin: 16px 0;
   background: #f6f8fa;
   border: 1px solid #d0d7de;
+  break-inside: avoid;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
 }
 
 .markdown-alert.markdown-alert-note {
