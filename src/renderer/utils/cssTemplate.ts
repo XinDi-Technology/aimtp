@@ -18,6 +18,12 @@ export interface CssVariables {
   fontBody: string;
   fontCode: string;
   fontBaseSize: string;
+  h1FontSize: string;
+  h2FontSize: string;
+  h3FontSize: string;
+  h4FontSize: string;
+  h5FontSize: string;
+  h6FontSize: string;
   codeFontSize: string;
   tableFontSize: string;
   fontLineHeight: string;
@@ -62,6 +68,12 @@ export function buildCssVariables(state: {
     fontBody: `"${font.body}"`,
     fontCode: `"${font.code}"`,
     fontBaseSize: `${font.baseSize}px`,
+    h1FontSize: `${Math.round(font.baseSize * 2.25)}px`,
+    h2FontSize: `${Math.round(font.baseSize * 1.75)}px`,
+    h3FontSize: `${Math.round(font.baseSize * 1.5)}px`,
+    h4FontSize: `${Math.round(font.baseSize * 1.25)}px`,
+    h5FontSize: `${Math.round(font.baseSize * 1.0)}px`,
+    h6FontSize: `${Math.round(font.baseSize * 1.0)}px`,
     codeFontSize: `${Math.round(font.baseSize * 0.8)}px`,
     tableFontSize: `${Math.round(font.baseSize * 0.8)}px`,
     fontLineHeight: String(font.lineHeight),

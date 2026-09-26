@@ -149,6 +149,12 @@ export class SettingChangeClassifier {
       if (!changed.includes('coverTitleSize')) changed.push('coverTitleSize');
       if (!changed.includes('coverAuthorSize')) changed.push('coverAuthorSize');
       if (!changed.includes('coverDateSize')) changed.push('coverDateSize');
+      if (!changed.includes('h1FontSize')) changed.push('h1FontSize');
+      if (!changed.includes('h2FontSize')) changed.push('h2FontSize');
+      if (!changed.includes('h3FontSize')) changed.push('h3FontSize');
+      if (!changed.includes('h4FontSize')) changed.push('h4FontSize');
+      if (!changed.includes('h5FontSize')) changed.push('h5FontSize');
+      if (!changed.includes('h6FontSize')) changed.push('h6FontSize');
     }
 
     return changed;
