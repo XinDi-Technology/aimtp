@@ -84,6 +84,8 @@ p {
    - max-width:100% 防止超宽图片横向溢出；
    - max-height 防止超高图片纵向溢出导致 Paged.js 无法拆分、
      在 addOverflowNodes 处抛 "reading 'childNodes'" 而中断分页；
+     末尾 - 2em 为图片段落自身的上下外边距预留空间（p { margin: 1em 0 }），
+     否则"满页高"的图片会比内容区高出约两个行高，在任何一张空白页上都放不下；
    - height:auto 必需：applyImageSizing 会写入 width/height 属性表示固有尺寸，
      若不禁用 height，max-width 只压缩宽度而布局高度仍按 height 属性计算，
      图片盒子会远超页面高度，break-inside:avoid 的段落无法放入任何一页；
@@ -94,7 +96,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: calc($$pageHeightMm - $$marginTop - $$marginBottom);
+  max-height: calc($$pageHeightMm - $$marginTop - $$marginBottom - 2em);
   object-fit: contain;
 }
 
