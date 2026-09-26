@@ -192,27 +192,44 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       }
     }
 
-    if (extensions.h1PageBreak || extensions.h2PageBreak) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(result, 'text/html');
-      if (extensions.h1PageBreak) {
-        const h1Elements = doc.querySelectorAll('h1');
-        h1Elements.forEach((el, index) => {
-          if (index === 0) return;
-          el.classList.add('aimtp-page-break-before');
-          el.setAttribute('data-break-before', 'page');
-        });
+    // 处理 HTML 节点（图片缓存刷新、分页标记等）
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(result, 'text/html');
+
+    // 1. 处理图片缓存刷新 (Cache Busting)
+    const images = doc.querySelectorAll('img');
+    const timestamp = Date.now();
+    images.forEach((img) => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('data:')) {
+        try {
+          const url = new URL(src, window.location.origin);
+          url.searchParams.set('t', timestamp.toString());
+          img.setAttribute('src', url.toString());
+        } catch (e) {
+          // 无效 URL 保持原样
+        }
       }
-      if (extensions.h2PageBreak) {
-        const h2Elements = doc.querySelectorAll('h2');
-        h2Elements.forEach((el, index) => {
-          if (index === 0) return;
-          el.classList.add('aimtp-page-break-before');
-          el.setAttribute('data-break-before', 'page');
-        });
-      }
-      result = doc.body.innerHTML;
+    });
+
+    // 2. 处理分页标记
+    if (extensions.h1PageBreak) {
+      const h1Elements = doc.querySelectorAll('h1');
+      h1Elements.forEach((el, index) => {
+        if (index === 0) return;
+        el.classList.add('aimtp-page-break-before');
+        el.setAttribute('data-break-before', 'page');
+      });
     }
+    if (extensions.h2PageBreak) {
+      const h2Elements = doc.querySelectorAll('h2');
+      h2Elements.forEach((el, index) => {
+        if (index === 0) return;
+        el.classList.add('aimtp-page-break-before');
+        el.setAttribute('data-break-before', 'page');
+      });
+    }
+    result = doc.body.innerHTML;
 
     const hljsTheme = extensions.codeTheme || 'github';
 
