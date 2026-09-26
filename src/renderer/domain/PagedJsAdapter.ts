@@ -460,6 +460,21 @@ export class PagedJsAdapter implements LayoutEngine {
       .replace(
         /(Array\.from\((\w+)\.parentElement\.children\)\.forEach\((\w+)=>\{)\3\.width=getComputedStyle\(\3\)\.width\}/,
         '$1if(!($3 instanceof SVGElement)){$3.width=getComputedStyle($3).width}}'
+      )
+      // [PAGEDJS_WORKAROUND] 1.7. Replaced elements (IMG/SVG/VIDEO/CANVAS etc.) can
+      // never become the overflow start. startOfNewOverflow descends into childless
+      // leaves, but only HTMLBRElement picks up its own rect there (layout.js
+      // L993-999), so an <img> keeps intrinsicBottom/Right = 0 → the L1011
+      // "not overflowing" check is always true → the walk skips past the img.
+      // A break-inside:avoid image paragraph is therefore never moved to the next
+      // page as a whole: it stays stranded on the current page (clipped), the next
+      // page misses it, and the page wrapper div is left with residual
+      // data-split-to="undefined" / data-overflow-tagged="true" attributes.
+      // Let intrinsic-sized replaced elements pick up their own rect like <br>,
+      // so overflow detection and the avoid-break-inside relocation work.
+      .replace(
+        /else (\w+) instanceof HTMLBRElement&&\((\w+)=(\w+)\.right,(\w+)=(\w+)\.bottom\)/,
+        'else ($1 instanceof HTMLBRElement||/^(img|picture|video|audio|canvas|iframe|embed|object|svg)$/i.test($1.tagName))&&($2=$3.right,$4=$3.bottom)'
       );
 
     const scriptEl = doc.createElement('script');
