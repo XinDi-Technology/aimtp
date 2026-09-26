@@ -77,12 +77,12 @@ h1, h2, h3, h4, h5, h6 {
   margin: 1em 0 0.5em 0;
 }
 
-h1 { font-size: $h1FontSize; }
-h2 { font-size: $h2FontSize; }
-h3 { font-size: $h3FontSize; }
-h4 { font-size: $h4FontSize; }
-h5 { font-size: $h5FontSize; }
-h6 { font-size: $h6FontSize; }
+h1 { font-size: $$h1FontSize; }
+h2 { font-size: $$h2FontSize; }
+h3 { font-size: $$h3FontSize; }
+h4 { font-size: $$h4FontSize; }
+h5 { font-size: $$h5FontSize; }
+h6 { font-size: $$h6FontSize; }
 
 p {
   line-height: $$fontLineHeight;
