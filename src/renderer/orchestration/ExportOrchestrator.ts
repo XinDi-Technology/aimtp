@@ -1,5 +1,6 @@
 import { layoutDOMManager } from '../domain/LayoutDOMManager';
 import type { LayoutDOM } from '../domain/LayoutDOM';
+import { parseFrontMatter } from '../utils/frontMatter';
 import type { ExportOptions, ExportProgress, ExportResult, ExportStage } from './ExportTypes';
 
 const STAGE_PROGRESS: Record<ExportStage, [number, number]> = {
@@ -9,6 +10,14 @@ const STAGE_PROGRESS: Record<ExportStage, [number, number]> = {
   postProcess: [60, 90],
   save: [90, 100],
 };
+
+/** PDF 文档属性元数据（来自 YAML Front Matter，写入 PDF Info dictionary） */
+export interface PdfMetadata {
+  title?: string;
+  author?: string;
+  subject?: string;
+  keywords?: string[];
+}
 
 export class ExportOrchestrator {
   private abortController: AbortController | null = null;
@@ -40,7 +49,8 @@ export class ExportOrchestrator {
       this.checkAborted();
 
       this.emitProgress('pdfGenerate', 0, 'Generating PDF...');
-      const pdfData = await this.invokePdfGeneration(layoutHtml, options);
+      const metadata = this.extractPdfMetadata(currentMarkdown);
+      const pdfData = await this.invokePdfGeneration(layoutHtml, options, metadata);
       this.emitProgress('pdfGenerate', 100, 'PDF generated');
 
       this.checkAborted();
@@ -77,17 +87,32 @@ export class ExportOrchestrator {
     this.progressCallback = callback;
   }
 
+  /** 从 Markdown 的 YAML Front Matter 提取 PDF 文档属性元数据 */
+  private extractPdfMetadata(markdown: string): PdfMetadata {
+    const { data } = parseFrontMatter(markdown);
+    return {
+      title: typeof data.title === 'string' ? data.title : undefined,
+      author: typeof data.author === 'string' ? data.author : undefined,
+      subject: typeof data.subject === 'string' ? data.subject : undefined,
+      keywords: Array.isArray(data.keywords)
+        ? data.keywords.filter((k): k is string => typeof k === 'string')
+        : undefined,
+    };
+  }
+
   private async invokePdfGeneration(
     layoutHtml: string,
     options: ExportOptions,
+    metadata: PdfMetadata,
   ): Promise<Uint8Array> {
     if (!window.electronAPI?.printFromLayoutHtml) {
       throw new Error('printFromLayoutHtml API not available');
     }
-    return window.electronAPI.printFromLayoutHtml(layoutHtml, {
-      size: options.pageSize,
-      orientation: options.orientation,
-    });
+    return window.electronAPI.printFromLayoutHtml(
+      layoutHtml,
+      { size: options.pageSize, orientation: options.orientation },
+      metadata,
+    );
   }
 
   private async selectSavePath(): Promise<string | null> {

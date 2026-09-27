@@ -7,8 +7,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('save-pdf-to-path', data, filePath),
   exportPdf: (html: string, page: any, locale: string) =>
     ipcRenderer.invoke('generate-pdf', { html, page, locale }),
-  printFromLayoutHtml: (layoutHtml: string, pageConfig: { size: string; orientation: string }) =>
-    ipcRenderer.invoke('pdf:print-from-layout-html', { layoutHtml, pageConfig }),
+  printFromLayoutHtml: (
+    layoutHtml: string,
+    pageConfig: { size: string; orientation: string },
+    metadata?: { title?: string; author?: string; subject?: string; keywords?: string[] },
+  ) => ipcRenderer.invoke('pdf:print-from-layout-html', { layoutHtml, pageConfig, metadata }),
   onWindowStateChanged: (callback: (data: { isMaximized: boolean }) => void) => {
     ipcRenderer.on('window-state-changed', (_event, data) => callback(data));
   },

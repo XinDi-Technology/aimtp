@@ -167,7 +167,11 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any
 
 ipcMain.handle('pdf:print-from-layout-html', async (
   _event,
-  options: { layoutHtml: string; pageConfig: { size: string; orientation: string } },
+  options: {
+    layoutHtml: string;
+    pageConfig: { size: string; orientation: string };
+    metadata?: { title?: string; author?: string; subject?: string; keywords?: string[] };
+  },
 ) => {
   let pdfWindow: BrowserWindow | null = null;
   let tmpFile = '';
@@ -238,7 +242,27 @@ ipcMain.handle('pdf:print-from-layout-html', async (
       preferCSSPageSize: false,
     });
 
-    return pdfData;
+    // [PDF-METADATA] Chromium printToPDF only writes Title (taken from
+    // document.title, which stays the app name) and does not support
+    // Author/Subject/Keywords at all. Write the YAML Front Matter derived
+    // document properties into the PDF Info dictionary via pdf-lib.
+    let output = pdfData;
+    if (options.metadata) {
+      try {
+        const { PDFDocument } = await import('pdf-lib');
+        const pdfDoc = await PDFDocument.load(pdfData);
+        const { title, author, subject, keywords } = options.metadata;
+        if (title) pdfDoc.setTitle(title);
+        if (author) pdfDoc.setAuthor(author);
+        if (subject) pdfDoc.setSubject(subject);
+        if (keywords?.length) pdfDoc.setKeywords(keywords);
+        output = await pdfDoc.save();
+      } catch (metadataError) {
+        logger.error('Failed to write PDF metadata:', metadataError);
+      }
+    }
+
+    return output;
   } catch (error) {
     logger.error('Error in pdf:print-from-layout-html:', error);
     throw new Error(t('pdf-generation-error'));

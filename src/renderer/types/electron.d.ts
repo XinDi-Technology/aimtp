@@ -10,6 +10,7 @@ declare global {
       printFromLayoutHtml: (
         layoutHtml: string,
         pageConfig: { size: string; orientation: string },
+        metadata?: { title?: string; author?: string; subject?: string; keywords?: string[] },
       ) => Promise<Uint8Array>;
       onWindowStateChanged: (callback: (data: { isMaximized: boolean }) => void) => void;
     };
