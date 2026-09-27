@@ -246,7 +246,7 @@ ipcMain.handle('pdf:print-from-layout-html', async (
     // document.title, which stays the app name) and does not support
     // Author/Subject/Keywords at all. Write the YAML Front Matter derived
     // document properties into the PDF Info dictionary via pdf-lib.
-    let output = pdfData;
+    let output: Uint8Array = pdfData;
     if (options.metadata) {
       try {
         const { PDFDocument } = await import('pdf-lib');
