@@ -249,14 +249,18 @@ ipcMain.handle('pdf:print-from-layout-html', async (
     let output: Uint8Array = pdfData;
     if (options.metadata) {
       try {
-        const { PDFDocument } = await import('pdf-lib');
+        const { PDFDocument } = await import('@cantoo/pdf-lib');
         const pdfDoc = await PDFDocument.load(pdfData);
+        // Keep PDF 1.4: this fork preserves the original document header on save
+        // (upstream pdf-lib forces %PDF-1.7), and Chromium printToPDF emits 1.4.
+        // useObjectStreams must stay disabled: the default true would emit 1.5+
+        // xref-stream structure that 1.4 readers cannot parse.
         const { title, author, subject, keywords } = options.metadata;
         if (title) pdfDoc.setTitle(title);
         if (author) pdfDoc.setAuthor(author);
         if (subject) pdfDoc.setSubject(subject);
         if (keywords?.length) pdfDoc.setKeywords(keywords);
-        output = await pdfDoc.save();
+        output = await pdfDoc.save({ useObjectStreams: false });
       } catch (metadataError) {
         logger.error('Failed to write PDF metadata:', metadataError);
       }
