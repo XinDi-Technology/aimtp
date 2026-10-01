@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.7 - 2026-10-01
+
+### 优化
+- 安装包深度瘦身：仅渲染进程使用的 16 个依赖（react/mermaid/mathjax/highlight.js 等）移至 devDependencies，不再重复打进安装包
+
 ## v0.2.6 - 2026-10-01
 
 ### 优化
