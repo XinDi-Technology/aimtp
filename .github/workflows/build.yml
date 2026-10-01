@@ -168,11 +168,22 @@ jobs:
           name: windows-installer
           path: release
 
+      # 从 CHANGELOG.md 抽取当前 tag 对应段落作为 Release 正文
+      - name: Extract changelog
+        run: |
+          awk -v tag="## ${GITHUB_REF_NAME}" 'index($0, tag)==1 {flag=1; next} /^## / && flag {exit} flag' CHANGELOG.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "本版本无变更记录，详见提交历史。" > release_notes.md
+          fi
+
       # 创建GitHub Release并上传安装包
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           files: release/*.exe
+          body_path: release_notes.md
+          # 在手写正文下方追加 GitHub 自动生成的提交列表与 Full Changelog 对比链接
+          generate_release_notes: true
           draft: false
           prerelease: false
           tag_name: ${{ github.ref_name }}

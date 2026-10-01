@@ -6,7 +6,6 @@
   },
   "files": [
     "dist/**/*",
-    "src/fonts/**/*",
     "package.json",
     "!**/*.map",
     "!**/*.d.ts",
