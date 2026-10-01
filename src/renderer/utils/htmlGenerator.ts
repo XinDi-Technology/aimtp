@@ -172,7 +172,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
           attributeNameCheck: /^(mjx-|data-)/,
           allowCustomizedBuiltInElements: true,
         },
-      } as any);
+      });
       result = (sanitized as unknown) as string;
 
       if (!result || result.trim().length === 0) {

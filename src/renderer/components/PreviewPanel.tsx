@@ -292,9 +292,9 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
 
   // __aimtpGetLastRenderResult 全局钩子
   useEffect(() => {
-    (window as any).__aimtpGetLastRenderResult = () => lastRenderResultRef.current;
+    window.__aimtpGetLastRenderResult = () => lastRenderResultRef.current;
     return () => {
-      delete (window as any).__aimtpGetLastRenderResult;
+      delete window.__aimtpGetLastRenderResult;
     };
   }, []);
 

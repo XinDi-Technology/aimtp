@@ -45,6 +45,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 运行 ESLint 检查
+      - name: Run ESLint
+        run: npm run lint
+
       # 运行TypeScript类型检查（可选）
       - name: TypeScript type check
         run: npm run typecheck || echo "::warning::Type check has warnings, but continuing..."

@@ -9,6 +9,8 @@
  * 在开发模式下，预览渲染后自动调用 validate() 并在控制台输出违规警告。
  */
 
+import { logger } from '../utils/logger';
+
 /** CSS 媒体类型 */
 export type CssMediaType = 'screen' | 'print' | 'all';
 
@@ -223,7 +225,7 @@ export function validateInDevMode(cssText: string, cssName: string = 'preview.cs
 
   const result = validate(cssText);
   if (result.valid) {
-    console.log(`[CssArchitecture] ✅ ${cssName} passed validation`);
+    logger.log(`[CssArchitecture] ✅ ${cssName} passed validation`);
   } else {
     console.warn(`[CssArchitecture] ❌ ${cssName} has ${result.violations.length} violation(s):`);
     for (const violation of result.violations) {
@@ -236,9 +238,9 @@ export function validateInDevMode(cssText: string, cssName: string = 'preview.cs
 
   // 输出 @media 摘要
   if (result.mediaRuleSummary.length > 0) {
-    console.log(`[CssArchitecture] @media summary for ${cssName}:`);
+    logger.log(`[CssArchitecture] @media summary for ${cssName}:`);
     for (const summary of result.mediaRuleSummary) {
-      console.log(`  @media ${summary.mediaType}: ${summary.ruleCount} rules`);
+      logger.log(`  @media ${summary.mediaType}: ${summary.ruleCount} rules`);
     }
   }
 }

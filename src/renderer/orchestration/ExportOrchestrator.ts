@@ -71,11 +71,11 @@ export class ExportOrchestrator {
       this.emitProgress('save', 100, 'PDF saved');
 
       return { success: true, filePath };
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
         return { success: false, error: 'Export cancelled' };
       }
-      return { success: false, error: error.message || 'Unknown error' };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -205,7 +205,7 @@ export class ExportOrchestrator {
           const styleEl = styleElements[i];
 
           // 检查 owningNode 是否匹配
-          if ((sheet as any).owningNode === styleEl) {
+          if ((sheet as CSSStyleSheet & { owningNode?: Node }).owningNode === styleEl) {
             const cssText = Array.from(sheet.cssRules)
               .map(rule => rule.cssText)
               .join('\n');

@@ -1,25 +1,25 @@
 const isProduction = import.meta.env.PROD;
 
 export const logger = {
-  log: (...args: any[]) => {
+  log: (...args: unknown[]) => {
     if (!isProduction) {
       console.log(...args);
     }
   },
-  warn: (...args: any[]) => {
+  warn: (...args: unknown[]) => {
     if (!isProduction) {
       console.warn(...args);
     }
   },
-  error: (...args: any[]) => {
+  error: (...args: unknown[]) => {
     console.error(...args);
   },
-  debug: (...args: any[]) => {
+  debug: (...args: unknown[]) => {
     if (!isProduction) {
       console.debug(...args);
     }
   },
-  info: (...args: any[]) => {
+  info: (...args: unknown[]) => {
     if (!isProduction) {
       console.info(...args);
     }

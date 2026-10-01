@@ -8,7 +8,7 @@ export interface FrontMatterData {
   author?: string;
   date?: string | Date;
   tags?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

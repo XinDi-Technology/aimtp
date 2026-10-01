@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectSavePath: () => ipcRenderer.invoke('select-save-path'),
   savePdfToPath: (data: Uint8Array, filePath: string) =>
     ipcRenderer.invoke('save-pdf-to-path', data, filePath),
-  exportPdf: (html: string, page: any, locale: string) =>
+  exportPdf: (html: string, page: { size?: string; orientation?: string }, locale: string) =>
     ipcRenderer.invoke('generate-pdf', { html, page, locale }),
   printFromLayoutHtml: (
     layoutHtml: string,

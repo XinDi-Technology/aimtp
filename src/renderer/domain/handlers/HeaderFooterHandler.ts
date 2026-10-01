@@ -13,6 +13,9 @@ import { AimtpHandler } from './AimtpHandler';
 import type { HeaderFooterConfig, FrontMatter } from './AimtpHandler';
 import type { Page } from 'pagedjs';
 
+/** Paged.js Page 运行时扩展字段（官方类型缺失 id/position，运行时实际存在） */
+type PagedPage = Page & { id?: number; position?: number };
+
 /** 页眉内容类型 */
 type HeaderContentType = 'title' | 'author' | 'date' | 'custom' | 'none';
 
@@ -49,7 +52,7 @@ export class HeaderFooterHandler extends AimtpHandler {
     // 封面页豁免：page.id 为 0 或 pageElement 含 cover-page 类
     const isCoverPage = this.isCoverPage(pageElement, page);
     if (isCoverPage && this.config.coverPageExempt) {
-      console.debug('[HeaderFooterHandler] Skipping cover page:', (page as any).position);
+      console.debug('[HeaderFooterHandler] Skipping cover page:', (page as PagedPage).position);
       return;
     }
 
@@ -60,9 +63,9 @@ export class HeaderFooterHandler extends AimtpHandler {
       const headerEl = this.createHeaderElement(pageElement, page);
       if (headerEl) {
         result.headerCount = 1;
-        console.debug('[HeaderFooterHandler] Header injected on page:', (page as any).position);
+        console.debug('[HeaderFooterHandler] Header injected on page:', (page as PagedPage).position);
       } else {
-        console.warn('[HeaderFooterHandler] Header injection failed on page:', (page as any).position);
+        console.warn('[HeaderFooterHandler] Header injection failed on page:', (page as PagedPage).position);
       }
     }
 
@@ -71,9 +74,9 @@ export class HeaderFooterHandler extends AimtpHandler {
       const footerEl = this.createFooterElement(pageElement, page);
       if (footerEl) {
         result.footerCount = 1;
-        console.debug('[HeaderFooterHandler] Footer injected on page:', (page as any).position);
+        console.debug('[HeaderFooterHandler] Footer injected on page:', (page as PagedPage).position);
       } else {
-        console.warn('[HeaderFooterHandler] Footer injection failed on page:', (page as any).position);
+        console.warn('[HeaderFooterHandler] Footer injection failed on page:', (page as PagedPage).position);
       }
     }
 
@@ -108,11 +111,11 @@ export class HeaderFooterHandler extends AimtpHandler {
 
   private isCoverPage(pageElement: HTMLElement, page: Page): boolean {
     // 检查 page.id === 0（Paged.js 首页）
-    if ((page as any).id === 0) return true;
+    if ((page as PagedPage).id === 0) return true;
     // 检查 DOM 中是否有 cover-page 类
     if (pageElement.querySelector('.cover-page')) return true;
     // 检查 pageElement 自身是否是首页（position === 0）
-    if ((page as any).position === 0) return true;
+    if ((page as PagedPage).position === 0) return true;
     return false;
   }
 
@@ -238,7 +241,7 @@ export class HeaderFooterHandler extends AimtpHandler {
     customText?: string,
     page?: Page,
   ): string {
-    const currentPage = page ? ((page as any).position ?? (page as any).id ?? 0) + 1 : 1;
+    const currentPage = page ? ((page as PagedPage).position ?? (page as PagedPage).id ?? 0) + 1 : 1;
 
     switch (content) {
       case 'pageNumber':

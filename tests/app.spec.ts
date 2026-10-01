@@ -57,7 +57,7 @@ test.describe('Aimtp Application', () => {
           localStorage.clear();
         }
       });
-    } catch (e) {
+    } catch {
       // Ignore localStorage errors
     }
   });
@@ -239,7 +239,7 @@ test.describe('Aimtp Application', () => {
       await page.waitForSelector('[data-testid="toolbar"]', { timeout: BASE_TIMEOUT });
       try {
         await page.evaluate(() => localStorage.clear());
-      } catch (e) {
+      } catch {
         console.log('localStorage not available in this context');
       }
     });

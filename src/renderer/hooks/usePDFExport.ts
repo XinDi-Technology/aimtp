@@ -35,7 +35,7 @@ const usePDFExport = () => {
           window.alert(result.error || 'PDF 导出失败');
         }
       } else {
-        const lastResult = (window as any).__aimtpGetLastRenderResult?.();
+        const lastResult = window.__aimtpGetLastRenderResult?.();
         if (!lastResult) {
           window.alert('请等待预览渲染完成后再导出');
           return;
@@ -45,7 +45,7 @@ const usePDFExport = () => {
         const { html: renderedHtml, totalPages } = lastResult;
         const exportHtml = prepareExportHtml(renderedHtml, totalPages);
 
-        const pdfData = await (window as any).electronAPI?.exportPdf?.(
+        const pdfData = await window.electronAPI?.exportPdf?.(
           exportHtml, state.page, state.locale,
         );
         if (!pdfData) {
@@ -53,12 +53,12 @@ const usePDFExport = () => {
           return;
         }
 
-        const savePath = await (window as any).electronAPI?.selectSavePath?.();
+        const savePath = await window.electronAPI?.selectSavePath?.();
         if (!savePath) {
           return;
         }
 
-        await (window as any).electronAPI?.savePdfToPath?.(pdfData, savePath);
+        await window.electronAPI?.savePdfToPath?.(pdfData, savePath);
       }
     } catch (error) {
       logger.error('PDF export error:', error);

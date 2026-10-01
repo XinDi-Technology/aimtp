@@ -86,7 +86,7 @@ const loadMathJaxScript = (): Promise<void> => {
  * resolve 后强制覆盖回本地路径。
  */
 const waitForMathJaxReady = async (): Promise<void> => {
-  const mj = (window as any).MathJax;
+  const mj = window.MathJax;
 
   if (!mj) {
     throw new Error('MathJax global object not found after script load');
@@ -112,9 +112,10 @@ const waitForMathJaxReady = async (): Promise<void> => {
   // 导致 Electron/ASAR 环境下无法加载动态字体文件。
   try {
     const outputJax = mj.startup?.outputJax || mj.startup?.document?.outputJax;
-    if (outputJax?.font?.options) {
-      const oldPrefix = outputJax.font.options.dynamicPrefix;
-      outputJax.font.options.dynamicPrefix = LOCAL_DYNAMIC_PREFIX;
+    const fontOptions = outputJax?.font?.options;
+    if (fontOptions) {
+      const oldPrefix = fontOptions.dynamicPrefix;
+      fontOptions.dynamicPrefix = LOCAL_DYNAMIC_PREFIX;
       logger.log('[MathJax] Forced dynamicPrefix:', oldPrefix, '->', LOCAL_DYNAMIC_PREFIX);
     } else {
       logger.warn('[MathJax] Could not find outputJax.font.options to override dynamicPrefix');
@@ -144,12 +145,12 @@ const waitForMathJaxReady = async (): Promise<void> => {
  * 参考：https://docs.mathjax.org/en/latest/output/fonts.html
  */
 const preloadDynamicFonts = async (): Promise<void> => {
-  const mj = (window as any).MathJax;
+  const mj = window.MathJax;
 
   // 尝试多种路径查找 font 对象
   const font =
-    mj.startup?.outputJax?.font ||
-    mj.startup?.document?.outputJax?.font ||
+    mj?.startup?.outputJax?.font ||
+    mj?.startup?.document?.outputJax?.font ||
     null;
 
   if (!font) {
@@ -223,15 +224,16 @@ const ensureMathJaxReady = async (): Promise<void> => {
  * 将 MathJax 输出节点序列化为 HTML 字符串（重复警告 5s 内只打印一次）
  */
 let _lastSerializeWarn = 0;
-const serializeNode = (node: any, mj: any): string => {
+const serializeNode = (node: unknown, mj: MathJaxGlobal): string => {
   if (!node) {
     logger.error('[MathJax] serializeNode: node is null/undefined');
     return '';
   }
 
-  if (mj.startup?.adaptor?.outerHTML) {
+  const outerHTML = mj.startup?.adaptor?.outerHTML;
+  if (outerHTML) {
     try {
-      const html = mj.startup.adaptor.outerHTML(node);
+      const html = outerHTML(node);
       if (html && html.length > 0) {
         return html;
       }
@@ -245,8 +247,9 @@ const serializeNode = (node: any, mj: any): string => {
   }
 
   try {
-    if (typeof node.outerHTML === 'string') {
-      return node.outerHTML;
+    const candidate = node as { outerHTML?: unknown };
+    if (typeof candidate.outerHTML === 'string') {
+      return candidate.outerHTML;
     }
   } catch (e) {
     // ignore
@@ -284,14 +287,18 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise
 const renderMath = async (math: string, display: boolean): Promise<string> => {
   await ensureMathJaxReady();
 
-  const mj = (window as any).MathJax;
+  const mj = window.MathJax;
+  if (!mj) {
+    // ensureMathJaxReady() 已保证初始化成功，此守卫仅为类型收窄与防御
+    throw new Error('MathJax global object not found');
+  }
   logger.log('[MathJax] renderMath called, display:', display, 'math length:', math.length);
 
   // 方法 1: tex2svg 同步 + handleRetriesFor（字体预加载后最可靠）
   if (typeof mj.tex2svg === 'function') {
     try {
       logger.log('[MathJax] Trying tex2svg (sync) with handleRetriesFor...');
-      let node: any;
+      let node: unknown;
       if (typeof mj.handleRetriesFor === 'function') {
         node = await withTimeout(
           mj.handleRetriesFor(() => mj.tex2svg(math, { display })),

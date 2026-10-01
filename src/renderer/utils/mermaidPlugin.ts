@@ -9,6 +9,7 @@
  */
 
 import mermaid from 'mermaid';
+import type { MermaidConfig as MermaidOfficialConfig } from 'mermaid';
 import { logger } from './logger';
 // 仅类型导入，编译后会被擦除，不会与 markdown.ts 形成运行时循环依赖
 import type { MarkdownItInstance } from './markdown';
@@ -134,7 +135,8 @@ export const initializeMermaid = (config?: Partial<MermaidConfig>): void => {
     const finalConfig = { ...defaultMermaidConfig, ...config };
 
     // 初始化 Mermaid
-    mermaid.initialize(finalConfig as any);
+    // 自定义 MermaidConfig 接口与官方类型兼容但为字段子集，经 unknown 断言到官方类型
+    mermaid.initialize(finalConfig as unknown as MermaidOfficialConfig);
     
     mermaidInitialized = true;
     logger.log('Mermaid initialized successfully with config:', finalConfig);

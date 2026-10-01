@@ -98,7 +98,7 @@ function getPageDimensionsMm(size: string, landscape: boolean): { width: number;
   return landscape ? { width: h, height: w } : { width: w, height: h };
 }
 
-ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: any; locale?: 'zh' | 'en' }) => {
+ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: { size?: string; orientation?: string }; locale?: 'zh' | 'en' }) => {
   const locale: 'zh' | 'en' = options.locale || 'zh';
   let pdfWindow: BrowserWindow | null = null;
 
@@ -288,12 +288,13 @@ app.on('web-contents-created', (event, contents) => {
   });
 
   // will-frame-navigate 捕获 iframe 等子框架内的导航（will-navigate 仅对主框架生效）
-  (contents as any).on('will-frame-navigate', (details: { url: string; preventDefault: () => void }) => {
+  // 注意：Electron 回调签名为 (event, details)，preventDefault 在 event 上
+  contents.on('will-frame-navigate', (event, details) => {
     const { url } = details;
     if (url.startsWith('http://localhost:5173') || url.startsWith('file://')) {
       return;
     }
-    details.preventDefault();
+    event.preventDefault();
     shell.openExternal(url);
   });
 

@@ -610,7 +610,7 @@ export class PagedJsAdapter implements LayoutEngine {
     return new Promise((resolve, reject) => {
       const start = Date.now();
       const check = () => {
-        const bridge = (iframe.contentWindow as any)?.__pagedjs;
+        const bridge = iframe.contentWindow?.__pagedjs;
         if (bridge && typeof bridge.createPreviewer === 'function') {
           resolve(bridge as PagedJsBridge);
           return;
@@ -710,7 +710,7 @@ export class PagedJsAdapter implements LayoutEngine {
   private waitForFonts(doc: Document): Promise<void> {
     return new Promise((resolve) => {
       try {
-        (doc as any).fonts?.ready?.then(resolve);
+        doc.fonts?.ready.then(resolve);
       } catch {
         // ignore
       }
@@ -725,7 +725,7 @@ export class PagedJsAdapter implements LayoutEngine {
         resolve();
         return;
       }
-      (iframe.contentWindow as any)?.addEventListener?.(
+      iframe.contentWindow?.addEventListener(
         'load',
         () => resolve(),
         { once: true },

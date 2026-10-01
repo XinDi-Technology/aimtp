@@ -381,160 +381,159 @@ const STORAGE_KEY = 'aimtp-custom-templates';
 const AUTOSAVE_KEY = 'aimtp-autosave';
 const AUTOSAVE_ENABLED_KEY = 'aimtp-autosave-enabled';
 
-const isValidPageSize = (size: any): size is PageSettings['size'] => {
-  return ['A4', 'A3'].includes(size);
+const isValidPageSize = (size: unknown): size is PageSettings['size'] => {
+  return size === 'A4' || size === 'A3';
 };
 
-const isValidOrientation = (orientation: any): orientation is PageSettings['orientation'] => {
-  return ['portrait', 'landscape'].includes(orientation);
+const isValidOrientation = (orientation: unknown): orientation is PageSettings['orientation'] => {
+  return orientation === 'portrait' || orientation === 'landscape';
 };
 
-const isValidAlignment = (alignment: any): alignment is 'left' | 'center' | 'right' => {
-  return ['left', 'center', 'right'].includes(alignment);
+const isValidAlignment = (alignment: unknown): alignment is 'left' | 'center' | 'right' => {
+  return alignment === 'left' || alignment === 'center' || alignment === 'right';
 };
 
-const isValidNumber = (value: any): value is number => {
+const isValidNumber = (value: unknown): value is number => {
   return typeof value === 'number' && !isNaN(value) && isFinite(value);
 };
 
-const isValidString = (value: any): value is string => {
+const isValidString = (value: unknown): value is string => {
   return typeof value === 'string';
 };
 
-const isValidBoolean = (value: any): value is boolean => {
+const isValidBoolean = (value: unknown): value is boolean => {
   return typeof value === 'boolean';
 };
 
-const validatePageSettings = (data: any): PageSettings => {
+const isValidFootnoteMode = (value: unknown): value is 'end' | 'page-bottom' => {
+  return value === 'end' || value === 'page-bottom';
+};
+
+const validatePageSettings = (data: unknown): PageSettings => {
   const defaults = { ...defaultPage };
-  if (!data || typeof data !== 'object') return defaults;
-  
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const m = (d.margins && typeof d.margins === 'object' ? d.margins : {}) as Record<string, unknown>;
+
   return {
-    size: isValidPageSize(data.size) ? data.size : defaults.size,
-    orientation: isValidOrientation(data.orientation) ? data.orientation : defaults.orientation,
+    size: isValidPageSize(d.size) ? d.size : defaults.size,
+    orientation: isValidOrientation(d.orientation) ? d.orientation : defaults.orientation,
     margins: {
-      top: isValidNumber(data.margins?.top) ? data.margins.top : defaults.margins.top,
-      bottom: isValidNumber(data.margins?.bottom) ? data.margins.bottom : defaults.margins.bottom,
-      left: isValidNumber(data.margins?.left) ? data.margins.left : defaults.margins.left,
-      right: isValidNumber(data.margins?.right) ? data.margins.right : defaults.margins.right,
+      top: isValidNumber(m.top) ? m.top : defaults.margins.top,
+      bottom: isValidNumber(m.bottom) ? m.bottom : defaults.margins.bottom,
+      left: isValidNumber(m.left) ? m.left : defaults.margins.left,
+      right: isValidNumber(m.right) ? m.right : defaults.margins.right,
     },
   };
 };
 
-const validateFontSettings = (data: any): FontSettings => {
+const validateFontSettings = (data: unknown): FontSettings => {
   const defaults = { ...defaultFont };
-  if (!data || typeof data !== 'object') return defaults;
-  
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+
   return {
-    body: isValidString(data.body) ? data.body : defaults.body,
-    code: isValidString(data.code) ? data.code : defaults.code,
-    baseSize: isValidNumber(data.baseSize) ? data.baseSize : defaults.baseSize,
-    lineHeight: isValidNumber(data.lineHeight) ? data.lineHeight : defaults.lineHeight,
-    paragraphSpacing: isValidNumber(data.paragraphSpacing) ? data.paragraphSpacing : defaults.paragraphSpacing,
+    body: isValidString(d.body) ? d.body : defaults.body,
+    code: isValidString(d.code) ? d.code : defaults.code,
+    baseSize: isValidNumber(d.baseSize) ? d.baseSize : defaults.baseSize,
+    lineHeight: isValidNumber(d.lineHeight) ? d.lineHeight : defaults.lineHeight,
+    paragraphSpacing: isValidNumber(d.paragraphSpacing) ? d.paragraphSpacing : defaults.paragraphSpacing,
   };
 };
 
-const validateExtensionSettings = (data: any): ExtensionSettings => {
+const validateExtensionSettings = (data: unknown): ExtensionSettings => {
   const defaults = { ...defaultExtensions };
-  if (!data || typeof data !== 'object') return defaults;
-  
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+
   return {
-    githubAlerts: isValidBoolean(data.githubAlerts) ? data.githubAlerts : defaults.githubAlerts,
-    codeHighlight: isValidBoolean(data.codeHighlight) ? data.codeHighlight : defaults.codeHighlight,
-    codeTheme: isValidString(data.codeTheme) ? data.codeTheme : defaults.codeTheme,
-    showLineNumbers: isValidBoolean(data.showLineNumbers) ? data.showLineNumbers : defaults.showLineNumbers,
-    taskLists: isValidBoolean(data.taskLists) ? data.taskLists : defaults.taskLists,
-    mermaid: isValidBoolean(data.mermaid) ? data.mermaid : defaults.mermaid,
+    githubAlerts: isValidBoolean(d.githubAlerts) ? d.githubAlerts : defaults.githubAlerts,
+    codeHighlight: isValidBoolean(d.codeHighlight) ? d.codeHighlight : defaults.codeHighlight,
+    codeTheme: isValidString(d.codeTheme) ? d.codeTheme : defaults.codeTheme,
+    showLineNumbers: isValidBoolean(d.showLineNumbers) ? d.showLineNumbers : defaults.showLineNumbers,
+    taskLists: isValidBoolean(d.taskLists) ? d.taskLists : defaults.taskLists,
+    mermaid: isValidBoolean(d.mermaid) ? d.mermaid : defaults.mermaid,
     // 兼容旧版本的 katex 设置
-    mathJax: isValidBoolean(data.mathJax) ? data.mathJax : (isValidBoolean(data.katex) ? data.katex : defaults.mathJax),
-    footnotes: isValidBoolean(data.footnotes) ? data.footnotes : defaults.footnotes,
-    footnoteMode: ['end', 'page-bottom'].includes(data.footnoteMode) ? data.footnoteMode : defaults.footnoteMode,
-    h1PageBreak: isValidBoolean(data.h1PageBreak) ? data.h1PageBreak : defaults.h1PageBreak,
-    h2PageBreak: isValidBoolean(data.h2PageBreak) ? data.h2PageBreak : defaults.h2PageBreak,
-    mark: isValidBoolean(data.mark) ? data.mark : defaults.mark,
-    ins: isValidBoolean(data.ins) ? data.ins : defaults.ins,
-    sub: isValidBoolean(data.sub) ? data.sub : defaults.sub,
-    sup: isValidBoolean(data.sup) ? data.sup : defaults.sup,
+    mathJax: isValidBoolean(d.mathJax) ? d.mathJax : (isValidBoolean(d.katex) ? d.katex : defaults.mathJax),
+    footnotes: isValidBoolean(d.footnotes) ? d.footnotes : defaults.footnotes,
+    footnoteMode: isValidFootnoteMode(d.footnoteMode) ? d.footnoteMode : defaults.footnoteMode,
+    h1PageBreak: isValidBoolean(d.h1PageBreak) ? d.h1PageBreak : defaults.h1PageBreak,
+    h2PageBreak: isValidBoolean(d.h2PageBreak) ? d.h2PageBreak : defaults.h2PageBreak,
+    mark: isValidBoolean(d.mark) ? d.mark : defaults.mark,
+    ins: isValidBoolean(d.ins) ? d.ins : defaults.ins,
+    sub: isValidBoolean(d.sub) ? d.sub : defaults.sub,
+    sup: isValidBoolean(d.sup) ? d.sup : defaults.sup,
   };
 };
 
-const validateCoverSettings = (data: any): CoverSettings => {
+const validateCoverSettings = (data: unknown): CoverSettings => {
   const defaults = { ...defaultCover };
-  if (!data || typeof data !== 'object') return defaults;
-  
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+
   return {
-    enabled: isValidBoolean(data.enabled) ? data.enabled : defaults.enabled,
+    enabled: isValidBoolean(d.enabled) ? d.enabled : defaults.enabled,
   };
 };
 
-const validateHeaderFooterSettings = (data: any): HeaderFooterSettings => {
+const validateHeaderFooterSettings = (data: unknown): HeaderFooterSettings => {
   const defaults = { ...defaultHeaderFooter };
-  if (!data || typeof data !== 'object') return defaults;
-  
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const h = (d.header && typeof d.header === 'object' ? d.header : {}) as Record<string, unknown>;
+  const f = (d.footer && typeof d.footer === 'object' ? d.footer : {}) as Record<string, unknown>;
+
   return {
-    enabled: isValidBoolean(data.enabled) ? data.enabled : defaults.enabled,
+    enabled: isValidBoolean(d.enabled) ? d.enabled : defaults.enabled,
     header: {
-      font: isValidString(data.header?.font) ? data.header.font : defaults.header.font,
-      alignment: isValidAlignment(data.header?.alignment) ? data.header.alignment : defaults.header.alignment,
-      content: isValidString(data.header?.content) ? data.header.content : defaults.header.content,
+      font: isValidString(h.font) ? h.font : defaults.header.font,
+      alignment: isValidAlignment(h.alignment) ? h.alignment : defaults.header.alignment,
+      content: isValidString(h.content) ? h.content : defaults.header.content,
     },
     footer: {
-      font: isValidString(data.footer?.font) ? data.footer.font : defaults.footer.font,
-      alignment: isValidAlignment(data.footer?.alignment) ? data.footer.alignment : defaults.footer.alignment,
-      content: isValidString(data.footer?.content) ? data.footer.content : defaults.footer.content,
+      font: isValidString(f.font) ? f.font : defaults.footer.font,
+      alignment: isValidAlignment(f.alignment) ? f.alignment : defaults.footer.alignment,
+      content: isValidString(f.content) ? f.content : defaults.footer.content,
     },
   };
 };
 
-const validatePreviewSettings = (data: any): PreviewSettings => {
+const validatePreviewSettings = (data: unknown): PreviewSettings => {
   const defaults = { ...defaultPreview };
-  if (!data || typeof data !== 'object') return defaults;
-  
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+
   let targetDPI = defaults.targetDPI;
-  if (isValidNumber(data.targetDPI)) {
-    targetDPI = Math.max(48, Math.min(480, data.targetDPI)); // 限制范围 48-480
+  if (isValidNumber(d.targetDPI)) {
+    targetDPI = Math.max(48, Math.min(480, d.targetDPI)); // 限制范围 48-480
   }
-  
+
   return { targetDPI };
 };
 
-const validateTemplateSettings = (data: any): TemplateSettings => {
-  if (!data || typeof data !== 'object') {
-    return {
-      page: defaultPage,
-      font: defaultFont,
-      extensions: defaultExtensions,
-      headerFooter: defaultHeaderFooter,
-      cover: defaultCover,
-    };
-  }
-  
+const validateTemplateSettings = (data: unknown): TemplateSettings => {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+
   return {
-    page: validatePageSettings(data.page),
-    font: validateFontSettings(data.font),
-    extensions: validateExtensionSettings(data.extensions),
-    headerFooter: validateHeaderFooterSettings(data.headerFooter),
-    cover: validateCoverSettings(data.cover),
+    page: validatePageSettings(d.page),
+    font: validateFontSettings(d.font),
+    extensions: validateExtensionSettings(d.extensions),
+    headerFooter: validateHeaderFooterSettings(d.headerFooter),
+    cover: validateCoverSettings(d.cover),
   };
 };
 
-const validateCustomTemplate = (data: any): CustomTemplate | null => {
-  if (!data || typeof data !== 'object') return null;
-  if (!isValidString(data.id) || !isValidString(data.name) || !isValidNumber(data.createdAt)) {
+const validateCustomTemplate = (data: unknown): CustomTemplate | null => {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  if (!isValidString(d.id) || !isValidString(d.name) || !isValidNumber(d.createdAt)) {
     return null;
   }
-  
+
   return {
-    id: data.id,
-    name: data.name,
-    settings: validateTemplateSettings(data.settings),
-    createdAt: data.createdAt,
+    id: d.id,
+    name: d.name,
+    settings: validateTemplateSettings(d.settings),
+    createdAt: d.createdAt,
   };
 };
 
-const validateCustomTemplates = (data: any): CustomTemplate[] => {
+const validateCustomTemplates = (data: unknown): CustomTemplate[] => {
   if (!Array.isArray(data)) return [];
-  
+
   return data
     .map(validateCustomTemplate)
     .filter((template): template is CustomTemplate => template !== null);
