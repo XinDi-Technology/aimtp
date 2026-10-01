@@ -5,7 +5,7 @@
  * - eslint:recommended        → @eslint/js configs.recommended
  * - plugin:@typescript-eslint → typescript-eslint 聚合包 configs.recommended
  * - plugin:react/recommended  → @eslint-react/eslint-plugin configs['recommended-typescript']
- * - plugin:react-hooks        → eslint-plugin-react-hooks configs['recommended-latest']
+ * - plugin:react-hooks        → eslint-plugin-react-hooks configs.flat.recommended
  * - env: browser + node       → globals.browser + globals.node
  */
 import js from '@eslint/js';
@@ -42,7 +42,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   eslintReact.configs['recommended-typescript'],
-  reactHooks.configs['recommended-latest'],
+  reactHooks.configs.flat.recommended,
 
   {
     files: ['**/*.ts', '**/*.tsx'],
