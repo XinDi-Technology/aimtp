@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.10 - 2026-10-02
+## v0.2.11 - 2026-10-02
 
 ### 工程
 - 删除零引用死文件：HeaderFooterHandler、HeaderFooterMaterializer、CssArchitecture、PreviewPanel.css、exportHtmlGenerator 及 debug-layout.html（页眉页脚功能由 PagedJsAdapter 内联实现承担，不受影响）
