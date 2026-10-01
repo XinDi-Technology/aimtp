@@ -55,6 +55,12 @@ declare module 'markdown-it-task-lists' {
   export default plugin;
 }
 
+declare module 'markdown-it-footnote' {
+  import type MarkdownIt from 'markdown-it';
+  const plugin: (md: MarkdownIt) => void;
+  export default plugin;
+}
+
 declare module 'pagedjs' {
   export class Previewer {
     preview(
