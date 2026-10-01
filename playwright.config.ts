@@ -24,7 +24,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build:vite && npx serve dist/renderer -l 4173',
+    // 用 vite preview 替代 npx serve：vite 版本受 package-lock 管控，
+    // 避免 npx 运行时隐式拉取未锁定的 serve 包（供应链风险）。构建由 CI 的 Build Vite 步骤完成
+    command: 'npx vite preview --port 4173',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 180000,

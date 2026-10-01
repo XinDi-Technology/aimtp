@@ -125,13 +125,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 构建Electron应用
-      - name: Build Electron
-        run: npm run build
-        env:
-          NODE_OPTIONS: '--max-old-space-size=4096'
-
-      # 构建Windows安装包
+      # 构建Windows安装包（dist 脚本内部已含完整构建：build:main + build:renderer，不再重复执行）
       - name: Build Electron app (Windows)
         run: npm run dist
         env:
