@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.9 - 2026-10-01
+
+### 工程
+- markdown-it v15 升级收尾：移除过时的 @types/markdown-it 与 @types/markdown-it-footnote（连带 @types/linkify-it），footnote 类型改为本地声明并锚定 v15 内建类型
+
 ## v0.2.8 - 2026-10-01
 
 ### 工程
