@@ -6,7 +6,7 @@
  *
  * 用法：
  *   const registry = HandlerRegistry.getInstance();
- *   registry.register(HeaderFooterHandler);
+ *   registry.register(MyHandler);
  *   registry.register(AnotherHandler);
  *   // ... later in PagedJsAdapter.layout():
  *   const handlerClasses = registry.getAllHandlerClasses();

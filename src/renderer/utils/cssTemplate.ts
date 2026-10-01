@@ -116,7 +116,7 @@ function buildHeaderFooterCss(
   const hfFontSize = Math.round(baseSize * 0.8);
 
   // F2: 使用 content: "" 仅触发 Paged.js 创建 margin box DOM 结构
-  // 实际内容文本由 HeaderFooterHandler DOM 注入
+  // 实际内容文本由 PagedJsAdapter.injectHeaderFooterDom 注入
   const headerCss = headerContent
     ? `
       @page {

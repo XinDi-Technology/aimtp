@@ -582,7 +582,7 @@ q { quotes: "\201C" "\201D" "\2018" "\2019"; }
 
 /* ========================================
    @media print: 导出适配（仅 printToPDF 时生效）
-   零 CSS 后处理：这些规则替代了 exportHtmlGenerator.ts 的正则替换
+   零 CSS 后处理：这些规则取代了早期 exportHtmlGenerator 的正则替换方案
    和 main.ts 的 insertCSS 注入
    ======================================== */
 @media print {
