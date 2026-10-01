@@ -288,7 +288,9 @@ app.on('web-contents-created', (event, contents) => {
 
   // will-frame-navigate 捕获 iframe 等子框架内的导航（will-navigate 仅对主框架生效）
   // 注意：Electron 回调签名为 (event, details)，preventDefault 在 event 上
-  contents.on('will-frame-navigate', (event, details) => {
+  // Electron 44.5.1 的 d.ts 缺少该事件的重载（运行时 API 存在，见官方文档），故临时使用 @ts-expect-error
+  // @ts-expect-error 待 Electron 上游补齐类型后移除此指令
+  contents.on('will-frame-navigate', (event: { preventDefault(): void }, details: { url: string }) => {
     const { url } = details;
     if (url.startsWith('http://localhost:5173') || url.startsWith('file://')) {
       return;
