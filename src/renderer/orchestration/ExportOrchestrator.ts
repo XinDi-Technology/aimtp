@@ -1,5 +1,6 @@
 import { layoutDOMManager } from '../domain/LayoutDOMManager';
 import type { LayoutDOM } from '../domain/LayoutDOM';
+import { logger } from '../utils/logger';
 import { parseFrontMatter } from '../utils/frontMatter';
 import type { ExportOptions, ExportProgress, ExportResult, ExportStage } from './ExportTypes';
 
@@ -162,7 +163,7 @@ export class ExportOrchestrator {
     // 4. 日志：验证页眉页脚 DOM 元素是否包含在序列化结果中
     const hasHeader = layoutHtml.includes('aimtp-page-header');
     const hasFooter = layoutHtml.includes('aimtp-page-footer');
-    console.debug('[ExportOrchestrator] serializeLayoutDOM:', {
+    logger.log('[ExportOrchestrator] serializeLayoutDOM:', {
       hasHeader,
       hasFooter,
       htmlLength: layoutHtml.length,

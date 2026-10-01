@@ -299,7 +299,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
 `;
 
     const fontsBaseUrl = getFontsBaseUrl();
-    let fontsCssWithRealPath = fontsCss.replace(/file:\/\/FONTS_PATH\//g, fontsBaseUrl);
+    const fontsCssWithRealPath = fontsCss.replace(/file:\/\/FONTS_PATH\//g, fontsBaseUrl);
 
     let titleText = frontMatter.title;
     if (!titleText) {

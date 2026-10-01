@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { exportOrchestrator } from '../orchestration/ExportOrchestrator';
-import { layoutDOMManager } from '../domain/LayoutDOMManager';
 import { logger } from '../utils/logger';
 
 const USE_NEW_EXPORT_PIPELINE = true;

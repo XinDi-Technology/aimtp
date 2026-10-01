@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore, PageSettings } from '../store/useAppStore';
 
 export const SettingsPanel: React.FC = () => {
-  const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, preview, setPreview, locale } = useAppStore();
+  const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, preview, setPreview } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
 

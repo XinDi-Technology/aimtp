@@ -251,13 +251,13 @@ const serializeNode = (node: unknown, mj: MathJaxGlobal): string => {
     if (typeof candidate.outerHTML === 'string') {
       return candidate.outerHTML;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
   try {
     return String(node);
-  } catch (e) {
+  } catch {
     logger.error('[MathJax] All serialization methods failed');
     return '';
   }

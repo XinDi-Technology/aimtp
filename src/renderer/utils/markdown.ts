@@ -7,7 +7,7 @@ import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
 import mdGithubAlerts from 'markdown-it-github-alerts';
-import { mermaidPlugin, initMermaidInstance } from './mermaidPlugin';
+import { mermaidPlugin } from './mermaidPlugin';
 
 export interface MarkdownItOptions {
   codeHighlight: boolean;
@@ -81,7 +81,7 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance
             }
             return html;
           }
-        } catch (__) {}
+        } catch { /* 高亮失败时回退到转义输出 */ }
       }
       
       // 未启用代码高亮或未指定语言，转义后返回

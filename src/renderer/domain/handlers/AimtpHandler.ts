@@ -11,7 +11,7 @@
  *   }
  */
 
-import type { Handler, Page } from 'pagedjs';
+import type { Page } from 'pagedjs';
 
 /** 页眉页脚配置 */
 export interface HeaderFooterConfig {

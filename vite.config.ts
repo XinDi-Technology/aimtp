@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     {
       name: 'fix-crossorigin',
-      generateBundle(_options: any, bundle: any) {
+      generateBundle(_options: unknown, bundle: { [fileName: string]: { type: string; source: string | Uint8Array } }) {
         const htmlFile = bundle['index.html'];
         if (htmlFile && htmlFile.type === 'asset') {
           // 更加健壮的替换逻辑，匹配 crossorigin, crossorigin="", crossorigin='anonymous' 等

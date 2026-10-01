@@ -12,6 +12,7 @@
 import { AimtpHandler } from './AimtpHandler';
 import type { HeaderFooterConfig, FrontMatter } from './AimtpHandler';
 import type { Page } from 'pagedjs';
+import { logger } from '../../utils/logger';
 
 /** Paged.js Page 运行时扩展字段（官方类型缺失 id/position，运行时实际存在） */
 type PagedPage = Page & { id?: number; position?: number };
@@ -52,7 +53,7 @@ export class HeaderFooterHandler extends AimtpHandler {
     // 封面页豁免：page.id 为 0 或 pageElement 含 cover-page 类
     const isCoverPage = this.isCoverPage(pageElement, page);
     if (isCoverPage && this.config.coverPageExempt) {
-      console.debug('[HeaderFooterHandler] Skipping cover page:', (page as PagedPage).position);
+      logger.log('[HeaderFooterHandler] Skipping cover page:', (page as PagedPage).position);
       return;
     }
 
@@ -63,7 +64,7 @@ export class HeaderFooterHandler extends AimtpHandler {
       const headerEl = this.createHeaderElement(pageElement, page);
       if (headerEl) {
         result.headerCount = 1;
-        console.debug('[HeaderFooterHandler] Header injected on page:', (page as PagedPage).position);
+        logger.log('[HeaderFooterHandler] Header injected on page:', (page as PagedPage).position);
       } else {
         console.warn('[HeaderFooterHandler] Header injection failed on page:', (page as PagedPage).position);
       }
@@ -74,7 +75,7 @@ export class HeaderFooterHandler extends AimtpHandler {
       const footerEl = this.createFooterElement(pageElement, page);
       if (footerEl) {
         result.footerCount = 1;
-        console.debug('[HeaderFooterHandler] Footer injected on page:', (page as PagedPage).position);
+        logger.log('[HeaderFooterHandler] Footer injected on page:', (page as PagedPage).position);
       } else {
         console.warn('[HeaderFooterHandler] Footer injection failed on page:', (page as PagedPage).position);
       }
@@ -119,7 +120,7 @@ export class HeaderFooterHandler extends AimtpHandler {
     return false;
   }
 
-  private createHeaderElement(pageElement: HTMLElement, page: Page): HTMLElement | null {
+  private createHeaderElement(pageElement: HTMLElement, _page: Page): HTMLElement | null {
     const headerConfig = this.config.header;
     if (!headerConfig || headerConfig.content === 'none') return null;
 
@@ -349,7 +350,7 @@ export class HeaderFooterHandler extends AimtpHandler {
     } catch (e) {
       console.warn('[HeaderFooterHandler] removeMarginBoxDefinitions error:', e);
     }
-    console.debug('[HeaderFooterHandler] removeMarginBoxDefinitions: removed', removedCount, 'rules');
+    logger.log('[HeaderFooterHandler] removeMarginBoxDefinitions: removed', removedCount, 'rules');
     return removedCount;
   }
 }

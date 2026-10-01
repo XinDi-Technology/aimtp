@@ -89,7 +89,6 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
   const [loading, setLoading] = useState(false);
   const [pageCount, setPageCount] = useState(0);
   const [progressText, setProgressText] = useState('');
-  const [pendingCategory, setPendingCategory] = useState<SettingChangeCategory | null>(null);
 
   // PreviewOrchestrator 实例（每个组件一个）
   const orchestratorRef = useRef<PreviewOrchestrator | null>(null);
@@ -227,7 +226,10 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
     }
   }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady, setLayoutDOM]);
 
-  doFullRenderRef.current = doFullRender;
+  // 每次渲染后同步最新 doFullRender 到 ref（官方 latest-ref 模式，避免渲染期间写 ref）
+  useEffect(() => {
+    doFullRenderRef.current = doFullRender;
+  });
 
   // 初始化 PreviewOrchestrator
   useEffect(() => {
@@ -244,7 +246,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
           }
           setSettingChangeCategory(event.category);
           break;
-        case 'render-complete':
+        case 'render-complete': {
           if (event.category !== 'visual-only') {
             setLoading(false);
           }
@@ -260,6 +262,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
             };
           }
           break;
+        }
         case 'visual-only-update':
           if (event.result.success) {
             needsCorrectionRef.current = true;
@@ -431,7 +434,9 @@ const PreviewPanel: React.FC<PreviewPanelProps> = () => {
     // 初始化 prevSettingsRef
     prevSettingsRef.current = currentSnapshot();
     prevTemplateRef.current = currentTemplate;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 时同步执行首次渲染，属官方认可的初始化例外
     doFullRender();
+    // eslint-disable-next-line react-hooks/exhaustive-deps, @eslint-react/exhaustive-deps -- 空依赖为有意设计：仅 mount 初始化一次
   }, []);
 
   // 清理 visual 修正定时器

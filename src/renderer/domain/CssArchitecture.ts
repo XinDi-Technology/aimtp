@@ -78,16 +78,6 @@ export function validate(cssText: string): CssArchitectureValidationResult {
   // 1. 提取 @media 规则
   const mediaRules = extractMediaRules(cssText);
 
-  // 2. 检查 Paged.js 视觉增强样式是否在 @media screen 内
-  const pagedjsVisualPatterns = [
-    /\.pagedjs_page\s*\{[^}]*margin\s*:/s,
-    /\.pagedjs_pages\s*\{[^}]*display\s*:/s,
-    /\.pagedjs_margin\b/,
-  ];
-
-  const screenCss = mediaRules.find(r => r.mediaType === 'screen')?.cssText || '';
-  const printCss = mediaRules.find(r => r.mediaType === 'print')?.cssText || '';
-
   // 提取全局 CSS（不在任何 @media 内的样式）
   const globalCss = extractGlobalCss(cssText);
 

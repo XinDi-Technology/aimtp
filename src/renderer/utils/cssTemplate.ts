@@ -171,10 +171,6 @@ function buildHeaderFooterCss(
   return headerCss;
 }
 
-function escapeCssString(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
-
 export function interpolate(template: string, variables: CssVariables): string {
   return template.replace(/\$\$(\w+)/g, (match, key) => {
     return variables[key] ?? match;

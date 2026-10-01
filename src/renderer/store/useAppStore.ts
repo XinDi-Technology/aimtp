@@ -17,7 +17,7 @@ const applyTheme = (theme: 'light' | 'dark' | 'system') => {
 
 // 监听系统主题变化
 if (typeof window !== 'undefined') {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const store = useAppStore.getState();
     if (store.theme === 'system') {
       applyTheme('system');
@@ -812,7 +812,7 @@ export const useAppStore = create<AppState>()(
         // layoutDOM 含 Document 引用不可序列化
       }),
       // 在状态加载（rehydrate）时执行的验证逻辑
-      onRehydrateStorage: (state) => {
+      onRehydrateStorage: (_state) => {
         return (rehydratedState, error) => {
           if (error) {
             logger.error('Failed to rehydrate app storage:', error);

@@ -59,7 +59,7 @@ ipcMain.handle('select-file', async () => {
     return { path: filePath, content };
   } catch (error) {
     logger.error('Error selecting file:', error);
-    throw new Error(t('file-read-error'));
+    throw new Error(t('file-read-error'), { cause: error });
   }
 });
 
@@ -84,7 +84,7 @@ ipcMain.handle('save-pdf-to-path', async (_, data: Uint8Array, filePath: string)
     return filePath;
   } catch (error) {
     logger.error('Error saving PDF:', error);
-    throw new Error(t('file-write-error'));
+    throw new Error(t('file-write-error'), { cause: error });
   }
 });
 
@@ -99,7 +99,6 @@ function getPageDimensionsMm(size: string, landscape: boolean): { width: number;
 }
 
 ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: { size?: string; orientation?: string }; locale?: 'zh' | 'en' }) => {
-  const locale: 'zh' | 'en' = options.locale || 'zh';
   let pdfWindow: BrowserWindow | null = null;
 
   try {
@@ -157,7 +156,7 @@ ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: { s
     return pdfData;
   } catch (error) {
     logger.error('Error generating PDF:', error);
-    throw new Error(t('pdf-generation-error'));
+    throw new Error(t('pdf-generation-error'), { cause: error });
   } finally {
     if (pdfWindow && !pdfWindow.isDestroyed()) {
       pdfWindow.destroy();
@@ -269,12 +268,12 @@ ipcMain.handle('pdf:print-from-layout-html', async (
     return output;
   } catch (error) {
     logger.error('Error in pdf:print-from-layout-html:', error);
-    throw new Error(t('pdf-generation-error'));
+    throw new Error(t('pdf-generation-error'), { cause: error });
   } finally {
     if (pdfWindow && !pdfWindow.isDestroyed()) {
       pdfWindow.destroy();
     }
-    try { fs.unlinkSync(tmpFile); } catch {}
+    try { fs.unlinkSync(tmpFile); } catch { /* 临时文件清理失败可忽略 */ }
   }
 });
 

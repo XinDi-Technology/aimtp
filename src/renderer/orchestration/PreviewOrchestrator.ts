@@ -17,7 +17,7 @@
 import type { LayoutDOM } from '../domain/LayoutDOM';
 import { layoutDOMManager } from '../domain/LayoutDOMManager';
 import { PagedJsAdapter } from '../domain/PagedJsAdapter';
-import { SettingChangeClassifier, createSettingsSnapshot, classifySettingChange } from './SettingChangeClassifier';
+import { SettingChangeClassifier, createSettingsSnapshot } from './SettingChangeClassifier';
 import type { AppSettingsSnapshot, SettingChangeCategory } from './SettingChangeClassifier';
 import { applyVisualOnlyUpdate, detectOverflow } from './applyVisualOnlyUpdate';
 import type { VisualOnlyUpdateResult, OverflowDetectionResult } from './applyVisualOnlyUpdate';

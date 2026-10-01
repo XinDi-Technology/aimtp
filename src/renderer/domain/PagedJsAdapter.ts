@@ -13,7 +13,7 @@
 
 import type { LayoutEngine } from './LayoutEngine';
 import type { LayoutDOM, LayoutDOMMetadata, LayoutDOMProvenance } from './LayoutDOM';
-import type { Flow, Page } from 'pagedjs';
+import type { Flow } from 'pagedjs';
 import { handlerRegistry } from './handlers/HandlerRegistry';
 import type { HeaderFooterConfig, FrontMatter } from './handlers/AimtpHandler';
 import pagedJsIifeCode from '../assets/vendor/pagedjs.iife.js?raw';

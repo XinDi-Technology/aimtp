@@ -236,7 +236,7 @@ export const renderMermaidSync = async (
 
   try {
     // 使用异步的 mermaid.render() 方法
-    const { svg, bindFunctions } = await mermaid.render(chartId, code);
+    const { svg } = await mermaid.render(chartId, code);
     
     logger.log(`Mermaid: Successfully rendered diagram ${chartId}`);
     
