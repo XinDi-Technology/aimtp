@@ -206,7 +206,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
           const url = new URL(src, window.location.origin);
           url.searchParams.set('t', timestamp.toString());
           img.setAttribute('src', url.toString());
-        } catch (e) {
+        } catch {
           // 无效 URL 保持原样
         }
       }
