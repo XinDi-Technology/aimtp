@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.12 - 2026-10-02
+
+### 修复
+- 修复中文长段落跨页时预览渲染崩溃（TypeError: Cannot read properties of undefined (reading 'ref')）：pagedjs 0.5.0-beta.2 发布的 dist 产物仍含旧版 indexOfTextNode，未防护溢出拆分文本节点的 previousSibling 为文本节点的场景；新增 IIFE 注入补丁 1.8 将非元素兄弟路由至按字计数路径
+
 ## v0.2.11 - 2026-10-02
 
 ### 工程

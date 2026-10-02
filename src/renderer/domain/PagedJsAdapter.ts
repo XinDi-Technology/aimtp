@@ -484,7 +484,28 @@ export class PagedJsAdapter implements LayoutEngine {
       .replace(
         /else (\w+) instanceof HTMLBRElement&&\((\w+)=(\w+)\.right,(\w+)=(\w+)\.bottom\)/,
         'else ($1 instanceof HTMLBRElement||/^(img|picture|video|audio|canvas|iframe|embed|object|svg)$/i.test($1.tagName))&&($2=$3.right,$4=$3.bottom)'
+      )
+      // [PAGEDJS_WORKAROUND] 1.8. indexOfTextNode (via createOverflow) unconditionally
+      // reads previousSibling.dataset.ref, assuming an element sibling. When pagedjs
+      // splits a text node at the overflow boundary (long CJK paragraphs break
+      // mid-text), previousSibling is another TEXT node — .dataset is undefined →
+      // "Cannot read properties of undefined (reading 'ref')". Route non-element
+      // siblings to the letters-counting path (correct for split nodes: it locates
+      // the original full text node in source and computes the split offset).
+      .replace(
+        /if\((\w+)\.previousSibling\)\{let (\w+)=(\w+)\.querySelector\(`\[data-ref='\$\{\1\.previousSibling\.dataset\.ref\}'\]`\)/,
+        (_m, node: string, refVar: string, parentVar: string) =>
+          `if(${node}.previousSibling&&${node}.previousSibling.nodeType===1){let ${refVar}=${parentVar}.querySelector(\`[data-ref='\${${node}.previousSibling.dataset.ref}']\`)`
       );
+
+    // [PAGEDJS_WORKAROUND] 1.8 sanity check: a miss means the pagedjs dist output
+    // changed shape (e.g. future upstream release) and the crash guard was NOT
+    // applied — behavior stays as-is (no new harm), but the crash would return.
+    if (!code.includes('.previousSibling.nodeType===1')) {
+      console.warn(
+        '[PAGEDJS_WORKAROUND 1.8] indexOfTextNode guard 未命中，pagedjs dist 输出可能已变化',
+      );
+    }
 
     const scriptEl = doc.createElement('script');
     scriptEl.textContent = code;
