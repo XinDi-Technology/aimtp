@@ -156,13 +156,6 @@ export interface AppState {
   
   selectPresetTemplate: (templateKey: string) => void;
 
-  autoSaveEnabled: boolean;
-  setAutoSaveEnabled: (enabled: boolean) => void;
-  lastSavedAt: number | null;
-  setLastSavedAt: (time: number | null) => void;
-  loadAutoSave: () => string | null;
-  saveAutoSave: (content: string) => void;
-
   // ─── 迭代3 新增状态 ───
 
   /** Layout DOM 引用（含 Document，不可序列化，不持久化） */
@@ -378,8 +371,6 @@ const defaultPreview: PreviewSettings = {
 };
 
 const STORAGE_KEY = 'aimtp-custom-templates';
-const AUTOSAVE_KEY = 'aimtp-autosave';
-const AUTOSAVE_ENABLED_KEY = 'aimtp-autosave-enabled';
 
 const isValidPageSize = (size: unknown): size is PageSettings['size'] => {
   return size === 'A4' || size === 'A3';
@@ -586,35 +577,6 @@ const saveCustomTemplates = (templates: CustomTemplate[]) => {
   }
 };
 
-const loadAutoSaveEnabled = (): boolean => {
-  if (!localStorageAvailable()) {
-    logger.warn('localStorage is not available, using default autosave setting');
-    return true;
-  }
-  try {
-    const stored = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return isValidBoolean(parsed) ? parsed : true;
-    }
-  } catch (error) {
-    logger.error('Failed to load autosave setting:', error);
-  }
-  return true;
-};
-
-const saveAutoSaveEnabled = (enabled: boolean) => {
-  if (!localStorageAvailable()) {
-    logger.warn('localStorage is not available, cannot save autosave setting');
-    return;
-  }
-  try {
-    localStorage.setItem(AUTOSAVE_ENABLED_KEY, JSON.stringify(enabled));
-  } catch (error) {
-    logger.error('Failed to save autosave setting:', error);
-  }
-};
-
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -730,15 +692,6 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      autoSaveEnabled: loadAutoSaveEnabled(),
-      setAutoSaveEnabled: (enabled) => {
-        saveAutoSaveEnabled(enabled);
-        set({ autoSaveEnabled: enabled });
-      },
-
-      lastSavedAt: null,
-      setLastSavedAt: (time) => set({ lastSavedAt: time }),
-
       // ─── 迭代3 新增状态 ───
 
       layoutDOM: null,
@@ -752,44 +705,6 @@ export const useAppStore = create<AppState>()(
 
       settingChangeCategory: 'content-change',
       setSettingChangeCategory: (category) => set({ settingChangeCategory: category }),
-
-      loadAutoSave: () => {
-        if (!localStorageAvailable()) {
-          logger.warn('localStorage is not available, cannot load autosave');
-          return null;
-        }
-        try {
-          const stored = localStorage.getItem(AUTOSAVE_KEY);
-          if (stored) {
-            const data = JSON.parse(stored);
-            if (isValidString(data.content) && isValidNumber(data.timestamp)) {
-              return data.content;
-            }
-          }
-        } catch (error) {
-          logger.error('Failed to load autosave:', error);
-        }
-        return null;
-      },
-
-      saveAutoSave: (content) => {
-        if (!localStorageAvailable()) {
-          logger.warn('localStorage is not available, cannot save autosave');
-          return;
-        }
-        try {
-          // TODO: [潜在问题8] localStorage 容量无限制处理
-          // 如果文档很大，可能导致存储失败
-          // 建议：检测容量超限并提示用户，或改用 IndexedDB
-          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
-            content,
-            timestamp: Date.now(),
-          }));
-          set({ lastSavedAt: Date.now() });
-        } catch (error) {
-          logger.error('Failed to save autosave:', error);
-        }
-      },
     }),
     {
       name: 'aimtp-app-storage',
@@ -804,7 +719,6 @@ export const useAppStore = create<AppState>()(
         cover: state.cover,
         headerFooter: state.headerFooter,
         preview: state.preview,
-        autoSaveEnabled: state.autoSaveEnabled,
         customTemplates: state.customTemplates,
         currentTemplate: state.currentTemplate,
         lastExportPath: state.lastExportPath,
