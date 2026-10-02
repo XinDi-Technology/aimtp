@@ -2,19 +2,18 @@
  * PagedJsAdapter — Paged.js 适配层（模块化 API 模式，方案C: IIFE 注入）
  *
  * 重构说明（迭代2）：
- * - 从 polyfill 注入模式 → 模块化 API 模式（Previewer 类 + Handler 机制）
+ * - 从 polyfill 注入模式 → 模块化 API 模式（Previewer 类）
  * - 采用方案C：将 pagedjs ESM 打包为 IIFE 注入 iframe，确保 Paged.js 在正确的 window 上下文中运行
  * - 不再使用 ?raw 导入 polyfill JS 文本
  * - 不再使用轮询检测 PagedPolyfill 全局变量
  * - 使用 Previewer 类实例化和 preview() 调用
  * - 通过 Previewer 事件系统监听分页进度
- * - 支持 Handler 注册机制（由 HandlerRegistry 管理）
+ * - 页眉页脚在 preview 结束后由 injectHeaderFooterDom() 直接注入 DOM（不走 Paged.js Handler）
  */
 
 import type { LayoutEngine } from './LayoutEngine';
 import type { LayoutDOM, LayoutDOMMetadata, LayoutDOMProvenance } from './LayoutDOM';
 import type { Flow } from 'pagedjs';
-import { handlerRegistry } from './handlers/HandlerRegistry';
 import type { HeaderFooterConfig, FrontMatter } from './handlers/AimtpHandler';
 import pagedJsIifeCode from '../assets/vendor/pagedjs.iife.js?raw';
 
@@ -47,16 +46,12 @@ interface PagedJsBridge {
   Handler: new () => unknown;
   Chunker: unknown;
   Polisher: unknown;
-  registerHandlers: (...handlers: unknown[]) => void;
-  initializeHandlers: (...args: unknown[]) => void;
   createPreviewer: () => PreviewerInstance;
-  createHandler: () => unknown;
 }
 
 export class PagedJsAdapter implements LayoutEngine {
   private disposed = false;
   private progressCallback: LayoutProgressCallback | null = null;
-  private registeredHandlerConstructors: (new (...args: unknown[]) => unknown)[] = [];
   private handlerConfig: HeaderFooterConfig | null = null;
   private frontMatter: FrontMatter | null = null;
 
@@ -65,17 +60,7 @@ export class PagedJsAdapter implements LayoutEngine {
     this.progressCallback = callback;
   }
 
-  /** 注册 Handler 类（在 layout 前调用） */
-  registerHandler(handlerClass: new (...args: unknown[]) => unknown): void {
-    this.registeredHandlerConstructors.push(handlerClass);
-  }
-
-  /** 清除所有已注册的 Handler 类 */
-  clearHandlers(): void {
-    this.registeredHandlerConstructors = [];
-  }
-
-  /** 配置页眉页脚 Handler（在 layout 前调用） */
+  /** 配置页眉页脚（在 layout 前调用） */
   setHeaderFooterConfig(config: HeaderFooterConfig, frontMatter?: FrontMatter): void {
     this.handlerConfig = config;
     this.frontMatter = frontMatter ?? null;
@@ -188,19 +173,8 @@ export class PagedJsAdapter implements LayoutEngine {
     // 3. Wait for __pagedjs bridge to be available
     const bridge = await this.waitForPagedJsBridge(iframe);
 
-    // 4. Register Handlers from HandlerRegistry + locally registered handlers
-    const allHandlerClasses = [
-      ...handlerRegistry.getAllHandlerClasses(),
-      ...this.registeredHandlerConstructors,
-    ];
-    // Deduplicate
-    const uniqueHandlerClasses = [...new Set(allHandlerClasses)];
-    if (uniqueHandlerClasses.length > 0) {
-      const handlerInstances = uniqueHandlerClasses.map(
-        (HandlerClass) => new HandlerClass(),
-      );
-      bridge.registerHandlers(...handlerInstances);
-    }
+    // 4. 注：自定义 Paged.js Handler 机制已移除（历史上从未注册过任何 Handler）。
+    //    页眉页脚由 injectHeaderFooterDom() 在 preview 结束后直接注入 DOM 实现。
 
     // 5. Inject CSS workarounds BEFORE creating the Previewer.
     //    Paged.js's Polisher reads document.stylesheets during its setup phase
@@ -338,7 +312,6 @@ export class PagedJsAdapter implements LayoutEngine {
   dispose(): void {
     this.disposed = true;
     this.progressCallback = null;
-    this.registeredHandlerConstructors = [];
     this.handlerConfig = null;
     this.frontMatter = null;
   }

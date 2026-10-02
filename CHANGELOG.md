@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.14 - 2026-10-02
+
+### 工程
+- 删除 HandlerRegistry（全库无 register() 调用，getAllHandlerClasses() 恒返回空数组）及 PagedJsAdapter 中配套的 Handler 注册链路（registerHandler / clearHandlers / registeredHandlerConstructors 与 layout() 内的注册块）：运行时从未注册过任何 Paged.js Handler，分页与预览行为零变化
+- AimtpHandler.ts 缩减为纯类型文件：移除无子类的抽象基类与 Handler 上下文，仅保留页眉页脚配置类型（HeaderFooterConfig / FrontMatter）
+
 ## v0.2.13 - 2026-10-02
 
 ### 工程
