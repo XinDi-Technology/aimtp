@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.15 - 2026-10-03
+
+### 工程
+- 删除零引用类型声明文件 `src/renderer/types/woff2.d.ts`（`*.woff2?base64` 全库无 TS 导入，字体统一由 CSS `url()` 引用）
+- 清理 `src/renderer/types/css.d.ts` 中 6 处死声明：`*.css` / `*.svg` / `*.woff` / `*.woff2` / `*.ttf` 五条资源通配声明（同等功能已由 vite/client 提供，全库资源类导入仅两处 `?raw`、一处 CSS 副作用导入），以及与 `pagedjs.d.ts` 重复的 `declare module 'pagedjs'` 副本（`import type { Flow }` 的类型来源统一为 `pagedjs.d.ts`）
+
 ## v0.2.14 - 2026-10-02
 
 ### 工程

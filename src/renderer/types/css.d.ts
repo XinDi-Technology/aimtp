@@ -1,30 +1,5 @@
 /// <reference types="vite/client" />
 
-declare module '*.css' {
-  const content: { [className: string]: string };
-  export default content;
-}
-
-declare module '*.svg' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.woff' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.woff2' {
-  const content: string;
-  export default content;
-}
-
-declare module '*.ttf' {
-  const content: string;
-  export default content;
-}
-
 declare module 'mathjax' {
   const mathjax: any;
   export default mathjax;
@@ -59,14 +34,4 @@ declare module 'markdown-it-footnote' {
   import type MarkdownIt from 'markdown-it';
   const plugin: (md: MarkdownIt) => void;
   export default plugin;
-}
-
-declare module 'pagedjs' {
-  export class Previewer {
-    preview(
-      content: HTMLElement | DocumentFragment,
-      stylesheets: (string | Record<string, string>)[],
-      target: HTMLElement
-    ): Promise<{ total: number; pages: any[] }>;
-  }
 }
