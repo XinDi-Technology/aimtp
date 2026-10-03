@@ -29,20 +29,13 @@ declare global {
   interface Window {
     /** Electron preload 暴露的 API（与 src/main/preload.ts 保持一致） */
     electronAPI?: {
-      selectFile: () => Promise<{ path: string; content: string } | null>;
       selectSavePath: () => Promise<string | null>;
       savePdfToPath: (data: Uint8Array, filePath: string) => Promise<string>;
-      exportPdf: (
-        html: string,
-        page: { size?: string; orientation?: string },
-        locale: string,
-      ) => Promise<Uint8Array>;
       printFromLayoutHtml: (
         layoutHtml: string,
         pageConfig: { size: string; orientation: string },
         metadata?: { title?: string; author?: string; subject?: string; keywords?: string[] },
       ) => Promise<Uint8Array>;
-      onWindowStateChanged: (callback: (data: { isMaximized: boolean }) => void) => void;
     };
     /** PreviewPanel 注册的最近一次预览渲染结果 */
     __aimtpGetLastRenderResult?: () => {

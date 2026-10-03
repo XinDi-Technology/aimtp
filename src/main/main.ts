@@ -28,14 +28,6 @@ function createWindow() {
     mainWindow?.show();
   });
 
-  mainWindow.on('maximize', () => {
-    mainWindow?.webContents.send('window-state-changed', { isMaximized: true });
-  });
-
-  mainWindow.on('unmaximize', () => {
-    mainWindow?.webContents.send('window-state-changed', { isMaximized: false });
-  });
-
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
@@ -46,22 +38,6 @@ function createWindow() {
     logger.error('Window failed to load:', errorCode, errorDescription);
   });
 }
-
-ipcMain.handle('select-file', async () => {
-  try {
-    const result = await dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
-    });
-    if (result.canceled || result.filePaths.length === 0) return null;
-    const filePath = result.filePaths[0];
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return { path: filePath, content };
-  } catch (error) {
-    logger.error('Error selecting file:', error);
-    throw new Error(t('file-read-error'), { cause: error });
-  }
-});
 
 ipcMain.handle('select-save-path', async () => {
   try {
@@ -97,72 +73,6 @@ function getPageDimensionsMm(size: string, landscape: boolean): { width: number;
   }
   return landscape ? { width: h, height: w } : { width: w, height: h };
 }
-
-ipcMain.handle('generate-pdf', async (_event, options: { html: string; page: { size?: string; orientation?: string }; locale?: 'zh' | 'en' }) => {
-  let pdfWindow: BrowserWindow | null = null;
-
-  try {
-    const pageSize = (options.page.size || 'A4') as 'A3' | 'A4';
-    const isLandscape = options.page.orientation === 'landscape';
-    const pageDims = getPageDimensionsMm(pageSize, isLandscape);
-    const width = Math.round(pageDims.width * 96 / 25.4);
-    const height = Math.round(pageDims.height * 96 / 25.4);
-
-    pdfWindow = new BrowserWindow({
-      width,
-      height,
-      show: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
-    });
-
-    await pdfWindow.loadURL(
-      `data:text/html;charset=utf-8,${encodeURIComponent(options.html)}`
-    );
-
-    await new Promise<void>((resolve) => {
-      pdfWindow!.webContents.once('did-finish-load', () => resolve());
-      setTimeout(resolve, 5000);
-    });
-
-    await pdfWindow.webContents.insertCSS(`
-      .pagedjs_sheet, .pagedjs_pages, .pagedjs_page {
-        position: static !important;
-      }
-      .pagedjs_page {
-        display: block !important;
-        break-after: page !important;
-        page-break-after: always !important;
-        margin: 0 auto !important;
-      }
-      .pagedjs_page:last-child {
-        break-after: auto !important;
-        page-break-after: auto !important;
-      }
-    `);
-
-    await pdfWindow.webContents.executeJavaScript('document.fonts.ready');
-
-    const pdfData = await pdfWindow.webContents.printToPDF({
-      pageSize,
-      landscape: isLandscape,
-      margins: { top: 0, bottom: 0, left: 0, right: 0 },
-      printBackground: true,
-      preferCSSPageSize: false,
-    });
-
-    return pdfData;
-  } catch (error) {
-    logger.error('Error generating PDF:', error);
-    throw new Error(t('pdf-generation-error'), { cause: error });
-  } finally {
-    if (pdfWindow && !pdfWindow.isDestroyed()) {
-      pdfWindow.destroy();
-    }
-  }
-});
 
 ipcMain.handle('pdf:print-from-layout-html', async (
   _event,

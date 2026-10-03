@@ -9,12 +9,10 @@ export interface I18nData {
 
 export const translations: I18nData = {
   zh: {
-    'file-read-error': '读取文件失败',
     'file-write-error': '写入文件失败',
     'pdf-generation-error': 'PDF生成失败',
   },
   en: {
-    'file-read-error': 'Failed to read file',
     'file-write-error': 'Failed to write file',
     'pdf-generation-error': 'PDF generation failed',
   },

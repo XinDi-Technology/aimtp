@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.19 - 2026-10-03
+
+### 工程
+- 删除三条零调用方的主进程 IPC 通道：`generate-pdf`（约 65 行，导出统一走 `pdf:print-from-layout-html`，`usePDFExport` 中的 `exportPdf` 是同名本地函数，非 IPC 调用）、`select-file`（文件导入走 `useFileImport` 的 DOM `<input type=file>`）、`window-state-changed`（maximize / unmaximize 事件发送，渲染进程无订阅）；连带删除 `preload.ts` 的 `exportPdf` / `selectFile` / `onWindowStateChanged` 桥接及 `electron.d.ts` 中对应类型声明，preload 与类型声明同步收敛为一致的 `selectSavePath` / `savePdfToPath` / `printFromLayoutHtml` 三条在用通道
+- 删除 `src/shared/i18n.ts` 中随 `select-file` 一并失去引用的 `file-read-error` key（zh / en）
+
 ## v0.2.18 - 2026-10-03
 
 ### 工程
