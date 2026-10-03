@@ -20,9 +20,6 @@ if (typeof window !== 'undefined' && window.__pagedjs) {
   window.__pagedjs.createPreviewer = function() {
     return new window.__pagedjs.Previewer();
   };
-  window.__pagedjs.createHandler = function() {
-    return new window.__pagedjs.Handler();
-  };
 }
 `;
 
