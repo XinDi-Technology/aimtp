@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.18 - 2026-10-03
+
+### 工程
+- 删除 `useAppStore` 中四个零消费的迭代3状态：`exportProgress` / `setExportProgress`（无 set 调用、无读取，连带删除仅为其服务的 `ExportProgressState` 接口）、`lastExportPath` / `setLastExportPath`（无 set 调用，唯一"读取"是 persist `partialize` 的自我持久化）、`layoutDOM` / `setLayoutDOM`（3 处写入、0 处读取，读侧一律走 `layoutDOMManager.getCurrent()`）、`settingChangeCategory` / `setSettingChangeCategory`（3 处写入、0 处读取）；`SettingChangeCategory` 类型保留（`PreviewPanel` 的分类逻辑仍在使用），`ExportOrchestrator.onProgress()` 与 `ExportTypes.ExportProgress` 为同名独立实现，不受影响
+- `layoutDOM` 移出 store 同时消除一处重复强引用：store 与 `layoutDOMManager` 各持有一份含 `Document` 的 LayoutDOM，前者阻止 GC，删除后内存收敛为单一持有者
+- `lastExportPath` 移出 persist 白名单：旧 localStorage 中的冗余键在 rehydrate 时被自动忽略，无迁移影响
+- `PreviewPanel` 移除 2 处 selector 与 6 处状态写入，同步清理 3 个副作用的依赖数组；初始化 `PreviewOrchestrator` 的 `useEffect` 依赖数组改为 `[]`（原依赖仅为两个已删除的 store setter，恒稳定）
+
 ## v0.2.17 - 2026-10-03
 
 ### 工程

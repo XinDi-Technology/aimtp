@@ -102,13 +102,6 @@ export interface PreviewSettings {
 /** 设置变更分类 — 与 SettingChangeClassifier 对齐 */
 export type SettingChangeCategory = 'visual-only' | 'layout-change' | 'content-change';
 
-/** 导出进度 — 与 ExportTypes.ts 对齐 */
-export interface ExportProgressState {
-  stage: 'validate' | 'prepare' | 'pdfGenerate' | 'postProcess' | 'save';
-  percentage: number;
-  message: string;
-}
-
 export interface AppState {
   markdown: string;
   setMarkdown: (markdown: string) => void;
@@ -155,24 +148,6 @@ export interface AppState {
   deleteTemplate: (templateId: string) => void;
   
   selectPresetTemplate: (templateKey: string) => void;
-
-  // ─── 迭代3 新增状态 ───
-
-  /** Layout DOM 引用（含 Document，不可序列化，不持久化） */
-  layoutDOM: unknown | null;
-  setLayoutDOM: (dom: unknown | null) => void;
-
-  /** 导出进度 */
-  exportProgress: ExportProgressState | null;
-  setExportProgress: (progress: ExportProgressState | null) => void;
-
-  /** 上次导出路径 */
-  lastExportPath: string | null;
-  setLastExportPath: (path: string | null) => void;
-
-  /** 最新一次设置变更分类 */
-  settingChangeCategory: SettingChangeCategory;
-  setSettingChangeCategory: (category: SettingChangeCategory) => void;
 }
 
 export const TEMPLATES = {
@@ -691,20 +666,6 @@ export const useAppStore = create<AppState>()(
           });
         }
       },
-
-      // ─── 迭代3 新增状态 ───
-
-      layoutDOM: null,
-      setLayoutDOM: (dom) => set({ layoutDOM: dom }),
-
-      exportProgress: null,
-      setExportProgress: (progress) => set({ exportProgress: progress }),
-
-      lastExportPath: null,
-      setLastExportPath: (path) => set({ lastExportPath: path }),
-
-      settingChangeCategory: 'content-change',
-      setSettingChangeCategory: (category) => set({ settingChangeCategory: category }),
     }),
     {
       name: 'aimtp-app-storage',
@@ -721,9 +682,6 @@ export const useAppStore = create<AppState>()(
         preview: state.preview,
         customTemplates: state.customTemplates,
         currentTemplate: state.currentTemplate,
-        lastExportPath: state.lastExportPath,
-        // 注意：layoutDOM、exportProgress、settingChangeCategory 不持久化
-        // layoutDOM 含 Document 引用不可序列化
       }),
       // 在状态加载（rehydrate）时执行的验证逻辑
       onRehydrateStorage: (_state) => {

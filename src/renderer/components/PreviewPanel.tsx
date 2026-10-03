@@ -99,8 +99,6 @@ const PreviewPanel: React.FC = () => {
   const preview = useAppStore((s) => s.preview);
   const currentTemplate = useAppStore((s) => s.currentTemplate);
   const isGenerating = useAppStore((s) => s.isGenerating);
-  const setLayoutDOM = useAppStore((s) => s.setLayoutDOM);
-  const setSettingChangeCategory = useAppStore((s) => s.setSettingChangeCategory);
 
   const lastRenderResultRef = useRef<{
     html: string;
@@ -209,7 +207,6 @@ const PreviewPanel: React.FC = () => {
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
 
       layoutDOMManager.update(layoutDOM);
-      setLayoutDOM(layoutDOM);
 
       const renderedHtml = layoutDOM.document.documentElement.outerHTML;
       lastRenderResultRef.current = { html: renderedHtml, totalPages: layoutDOM.metadata.totalPages };
@@ -220,7 +217,7 @@ const PreviewPanel: React.FC = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady, setLayoutDOM]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady]);
 
   // 每次渲染后同步最新 doFullRender 到 ref（官方 latest-ref 模式，避免渲染期间写 ref）
   useEffect(() => {
@@ -240,16 +237,14 @@ const PreviewPanel: React.FC = () => {
           if (event.category !== 'visual-only') {
             setLoading(true);
           }
-          setSettingChangeCategory(event.category);
           break;
         case 'render-complete': {
           if (event.category !== 'visual-only') {
             setLoading(false);
           }
-          // 更新 Layout DOM 到 Store
+          // 读取最新 Layout DOM 同步渲染结果
           const layoutDOM = layoutDOMManager.getCurrent();
           if (layoutDOM) {
-            setLayoutDOM(layoutDOM);
             setPageCount(layoutDOM.metadata.totalPages);
             const renderedHtml = layoutDOM.document.documentElement.outerHTML;
             lastRenderResultRef.current = {
@@ -287,7 +282,7 @@ const PreviewPanel: React.FC = () => {
       orchestrator.dispose();
       orchestratorRef.current = null;
     };
-  }, [setLayoutDOM, setSettingChangeCategory]);
+  }, []);
 
   // __aimtpGetLastRenderResult 全局钩子
   useEffect(() => {
@@ -345,7 +340,6 @@ const PreviewPanel: React.FC = () => {
         };
 
         orchestrator.triggerRender(prev ?? next, next, context);
-        setSettingChangeCategory('visual-only');
         return;
       }
       // 降级到完整渲染
@@ -385,19 +379,17 @@ const PreviewPanel: React.FC = () => {
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
 
       layoutDOMManager.update(layoutDOM);
-      setLayoutDOM(layoutDOM);
 
       const renderedHtml = layoutDOM.document.documentElement.outerHTML;
       lastRenderResultRef.current = { html: renderedHtml, totalPages: layoutDOM.metadata.totalPages };
 
       setPageCount(layoutDOM.metadata.totalPages);
-      setSettingChangeCategory(category);
       setLoading(false);
     } catch (err) {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady, setLayoutDOM, setSettingChangeCategory]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady]);
 
   // 设置变更触发渲染（防抖）
   useEffect(() => {

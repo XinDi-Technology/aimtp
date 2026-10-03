@@ -1,6 +1,6 @@
 {
   "name": "Aimtp",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "description": "专注合规的 Markdown 转 PDF 桌面应用",
   "main": "dist/main/main/main.js",
   "//": "dependencies 仅保留主进程运行时需要的 @cantoo/pdf-lib（main.ts 动态 import，PDF 元数据写入）。今后主进程新增 npm 依赖必须放回 dependencies，否则打包后运行时报 Cannot find module。渲染进程依赖一律放 devDependencies（vite 打进 bundle，不进 asar）",
