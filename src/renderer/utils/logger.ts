@@ -19,9 +19,4 @@ export const logger = {
       console.debug(...args);
     }
   },
-  info: (...args: unknown[]) => {
-    if (!isProduction) {
-      console.info(...args);
-    }
-  },
 };
