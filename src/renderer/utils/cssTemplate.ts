@@ -34,6 +34,7 @@ interface CssVariables {
   coverAuthorSize: string;
   coverDateSize: string;
   paragraphSpacingCss: string;
+  imageBlockMargin: string;
   targetDPI: string;
   [key: string]: string;
 }
@@ -53,6 +54,15 @@ function buildCssVariables(state: {
   const marginLeftMm = page.margins.left;
   const marginRightMm = page.margins.right;
   const contentWidthMm = pageWidthMm - marginLeftMm - marginRightMm;
+
+  // 段落下边距：段间距开启时为 paragraphSpacing em，否则沿用 preview.css 里
+  // p { margin: 1em 0 } 的 1em。图片块的最大高度要按这个值预留空间，
+  // 否则图片被压到贴满一页后，break-inside:avoid 的段落在任何一页都放不下，
+  // Paged.js 会把整段（含 <img>）丢弃。
+  const paragraphSpacingEm =
+    Number.isFinite(font.paragraphSpacing) && font.paragraphSpacing > 0
+      ? font.paragraphSpacing
+      : 1;
 
   return {
     pageSize: page.size,
@@ -98,6 +108,9 @@ function buildCssVariables(state: {
         }
       `
       : '',
+
+    // 图片段落（<p><img></p>）的垂直外边距之和：上 1em + 下 paragraphSpacingEm
+    imageBlockMargin: `${1 + paragraphSpacingEm}em`,
 
     targetDPI: String(preview.targetDPI),
   };

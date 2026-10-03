@@ -94,8 +94,20 @@ p {
    - max-width:100% 防止超宽图片横向溢出；
    - max-height 防止超高图片纵向溢出导致 Paged.js 无法拆分、
      在 addOverflowNodes 处抛 "reading 'childNodes'" 而中断分页；
-     末尾 - 2em 为图片段落自身的上下外边距预留空间（p { margin: 1em 0 }），
-     否则"满页高"的图片会比内容区高出约两个行高，在任何一张空白页上都放不下；
+     上限 = 内容区高 − 图片段落实占的垂直外边距（imageBlockMargin 变量）
+     − 6mm 安全余量：
+     * 过去固定减 2em，只够覆盖 p { margin: 1em 0 } 的情形，
+       段间距（paragraphSpacing）一旦 > 1，段落下边距就大于 1em，
+       图片块总高会超过一页内容区；
+     * 即便段间距为 0，减 2em 后图片块高度也正好等于内容区高度（零余量），
+       任何亚像素舍入都会让 break-inside:avoid 的段落放不下；
+       放不下时 Paged.js 既不留在当前页也不进下一页 → 图片彻底消失；
+     * 8px 安全余量用于吸收亚像素测量误差（内容区高度非整数、缩放取整、
+       Paged.js 的浮点 rect 比较，合计上界约 2-3px）；
+       用固定 px 而非 em：误差是像素级的，不随字号变化，
+       而 em 会随字号放大，大字号下会白白吃掉版面；
+     * max(60px, …) 兜底：极端设置（超大段间距/边距）算出过小或负值上限时，
+       负值会让整条声明失效、图片恢复原始高度，反而必定超页，故保留一个下限；
    - height:auto 必需：applyImageSizing 会写入 width/height 属性表示固有尺寸，
      若不禁用 height，max-width 只压缩宽度而布局高度仍按 height 属性计算，
      图片盒子会远超页面高度，break-inside:avoid 的段落无法放入任何一页；
@@ -106,7 +118,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: calc($$pageHeightMm - $$marginTop - $$marginBottom - 2em);
+  max-height: max(60px, calc($$pageHeightMm - $$marginTop - $$marginBottom - $$imageBlockMargin - 8px));
   object-fit: contain;
 }
 
