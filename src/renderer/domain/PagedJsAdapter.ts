@@ -43,9 +43,6 @@ interface PreviewerInstance {
 /** __pagedjs 全局变量接口（IIFE 注入后暴露） */
 interface PagedJsBridge {
   Previewer: new () => PreviewerInstance;
-  Handler: new () => unknown;
-  Chunker: unknown;
-  Polisher: unknown;
   createPreviewer: () => PreviewerInstance;
 }
 
