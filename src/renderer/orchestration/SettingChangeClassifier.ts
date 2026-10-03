@@ -11,11 +11,11 @@
  * 多个变更同时发生时，按优先级 content > layout > visual 返回最高级别。
  */
 
-import type { PageSettings, FontSettings, CoverSettings, HeaderFooterSettings, PreviewSettings } from '../store/useAppStore';
+import type { PageSettings, FontSettings, CoverSettings, HeaderFooterSettings, PreviewSettings, SettingChangeCategory } from '../store/useAppStore';
 import { getVariableCategory } from './CssVariableCategories';
 
-/** 设置变更分类 — 决定渲染路径 */
-export type SettingChangeCategory = 'visual-only' | 'layout-change' | 'content-change';
+/** 设置变更分类 — 决定渲染路径（重导出：唯一定义源见 useAppStore） */
+export type { SettingChangeCategory };
 
 /** 分类结果（含诊断信息） */
 export interface ClassifyResult {

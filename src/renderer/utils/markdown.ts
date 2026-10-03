@@ -146,7 +146,3 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance
 
   return md;
 };
-
-export const resetMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance => {
-  return createMarkdownIt(options);
-};
