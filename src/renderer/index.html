@@ -43,14 +43,12 @@
         },
       };
     </script>
-    <!-- 预加载字体，避免 Chromium "Slow network" 干预
-         生产环境字体经过 Vite 处理后输出到 assets/fonts/ -->
-    <link rel="preload" href="./assets/fonts/GWMSansUI-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="./assets/fonts/GWMSansUI-Bold.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="./assets/fonts/GWMSansUI-Light.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="./assets/fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="./assets/fonts/JetBrainsMono-Light.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- 字体不再 preload：
+         打包后渲染进程走 file:// 协议，本地磁盘读取无网络延迟，preload 没有收益；
+         且 file:// 下 <link rel="preload" crossorigin> 与 CSS @font-face 发起的字体请求
+         credentials mode 不一致，preload 缓存条目无法复用，反而导致字体被下载两次，
+         并在控制台产生 "credentials mode does not match" / "preloaded but not used" 警告。
+         字体由 fonts.css 的 @font-face 正常加载即可。 -->
     <title>Aimtp</title>
   </head>
   <body>
