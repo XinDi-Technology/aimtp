@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.21 - 2026-10-03
+
+### 工程
+- 删除 `scripts/fix-crossorigin.mjs`（18 行）：其逻辑与 `vite.config.ts` 内联的 `fix-crossorigin` 插件逐字相同（均对构建产物 `index.html` 执行同一条 `crossorigin` 正则替换），属重复实现；连带删除仅用于触发它的 `build:vite` npm 脚本。经查证 `npm run dist` 链路（`dist → build → build:renderer`）从未包含该脚本，其唯一调用入口仅存在于 CI，因此**对打包安装包零影响**
+- CI 收敛：删除 lint job 的 `Build Vite` 步骤，test job 构建命令由 `build:vite` 改为 `build:renderer` 并补 `NODE_OPTIONS: '--max-old-space-size=4096'`。Linux 构建由 2 次降为 1 次，每次 push 省约 1.5-3 分钟；同时修复「同一构建命令在 lint 有内存限制、在 test 却没有」的不一致
+- 删除 `useAppStore` 中零读写的 `generatedHtml` / `setGeneratedHtml`（4 行）：全项目无任何读取或调用点，且从未写入 persist `partialize` 白名单，localStorage 无历史数据，无迁移影响
+- 删除两份 logger（`src/main/logger.ts` 与 `src/renderer/utils/logger.ts`）中零调用的 `info()` 方法（各 5 行）：`log` / `warn` / `error` / `debug` 均有实际使用，仅 `info` 无人问津；两份文件仍各自保留（主进程读 `process.env.NODE_ENV`、渲染进程读 `import.meta.env.PROD`），维持「除首行外逐行相同」的既有对称性
+- 删除 `scripts/build-pagedjs-iife.mjs` 注入的 `window.__pagedjs.createHandler`（3 行）：全项目无调用方，自定义 Paged.js Handler 机制已随早期版本移除；`createPreviewer` 保留，分页与预览行为零变化
+- 删除 `PreviewPanel.tsx` 中未被使用的 default 导出（1 行）：唯一导入方 `App.tsx` 使用具名导入，删除后组件层导出方式统一为 named（`App.tsx` 作为应用根组件保留 default，属有意设计）
+- 删除 `base.css` 与 `layout.css` 中失效的浏览器前缀 `-moz-user-select` / `-ms-user-select`（共 4 行）：应用唯一运行环境为 Electron（Chromium 内核），Gecko / Trident 前缀永不生效且被直接忽略；保留 `-webkit-user-select`、`::-webkit-scrollbar` 系列与 `-webkit-print-color-adjust`
+
 ## v0.2.20 - 2026-10-03
 
 ### 工程
