@@ -5,7 +5,7 @@ export function getPageWidthMm(page: AppState['page']): number {
   return page.orientation === 'landscape' ? pageHeightMm : (page.size === 'A3' ? 297 : 210);
 }
 
-export interface CssVariables {
+interface CssVariables {
   pageSize: string;
   pageOrientation: string;
   pageWidthMm: string;
@@ -38,7 +38,7 @@ export interface CssVariables {
   [key: string]: string;
 }
 
-export function buildCssVariables(state: {
+function buildCssVariables(state: {
   page: AppState['page'];
   font: AppState['font'];
   cover: AppState['cover'];
@@ -171,7 +171,7 @@ function buildHeaderFooterCss(
   return headerCss;
 }
 
-export function interpolate(template: string, variables: CssVariables): string {
+function interpolate(template: string, variables: CssVariables): string {
   return template.replace(/\$\$(\w+)/g, (match, key) => {
     return variables[key] ?? match;
   });

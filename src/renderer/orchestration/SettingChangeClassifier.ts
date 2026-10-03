@@ -7,15 +7,12 @@
  * - layout-change: 重新分页 (~990ms)
  * - content-change: 完整重新渲染 (~990ms)
  *
- * 分类依据基于 CssVariableCategories 中定义的变量类别映射。
+ * 分类依据基于 CssVariableCategories 模块的变量类别映射。
  * 多个变更同时发生时，按优先级 content > layout > visual 返回最高级别。
  */
 
 import type { PageSettings, FontSettings, CoverSettings, HeaderFooterSettings, PreviewSettings } from '../store/useAppStore';
-import {
-  CSS_VARIABLE_CATEGORIES,
-  getVariableCategory,
-} from './CssVariableCategories';
+import { getVariableCategory } from './CssVariableCategories';
 
 /** 设置变更分类 — 决定渲染路径 */
 export type SettingChangeCategory = 'visual-only' | 'layout-change' | 'content-change';
@@ -82,11 +79,6 @@ export class SettingChangeClassifier {
       'visual-only';
 
     return { category, changedVariables, variableCategories };
-  }
-
-  /** 获取 CSS 变量分类定义 */
-  getVariableCategories() {
-    return CSS_VARIABLE_CATEGORIES;
   }
 
   /**
