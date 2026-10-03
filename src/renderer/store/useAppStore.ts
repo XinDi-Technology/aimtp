@@ -136,9 +136,6 @@ export interface AppState {
   isGenerating: boolean;
   setIsGenerating: (isGenerating: boolean) => void;
   
-  generatedHtml: string;
-  setGeneratedHtml: (html: string) => void;
-  
   showTemplateSelection: boolean;
   setShowTemplateSelection: (show: boolean) => void;
   
@@ -590,9 +587,6 @@ export const useAppStore = create<AppState>()(
       
       isGenerating: false,
       setIsGenerating: (isGenerating) => set({ isGenerating }),
-      
-      generatedHtml: '',
-      setGeneratedHtml: (generatedHtml) => set({ generatedHtml }),
       
       showTemplateSelection: false,
       setShowTemplateSelection: (show) => set({ showTemplateSelection: show }),
