@@ -37,7 +37,7 @@ function App() {
             </section>
           )}
             <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '预览' : 'Preview'}>
-              <PreviewPanel className="preview-full-width" />
+              <PreviewPanel />
             </div>
           </div>
           <StatusBar />

@@ -71,11 +71,7 @@ const VISUAL_CORRECTION_DELAY = 500;
 let renderIdCounter = 0;
 const pagedJsAdapter = new PagedJsAdapter();
 
-interface PreviewPanelProps {
-  className?: string;
-}
-
-const PreviewPanel: React.FC<PreviewPanelProps> = () => {
+const PreviewPanel: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const renderIdRef = useRef(0);

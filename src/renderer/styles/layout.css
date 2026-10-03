@@ -132,12 +132,6 @@ body {
   padding-right: 32px;
 }
 
-.margin-inputs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-xs);
-}
-
 .margin-input {
   text-align: center;
   padding: var(--space-xs);
@@ -199,27 +193,10 @@ body {
   gap: var(--space-md);
 }
 
-.toolbar-title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: var(--border);
-}
-
 .toolbar .btn {
   padding: var(--space-xs) var(--space-sm);
   font-size: 13px;
   white-space: nowrap;
-}
-
-.toolbar .btn-text {
-  font-size: 13px;
 }
 
 .theme-toggle {
@@ -236,16 +213,6 @@ body {
   min-width: 0;
   overflow: hidden;
   width: 100%;
-}
-
-.preview-panel.preview-full-width {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  width: 100%;
-  overflow: hidden;
 }
 
 .status-bar {

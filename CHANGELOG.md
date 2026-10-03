@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.16 - 2026-10-03
+
+### 工程
+- 删除旧版模板 UI 遗留死 CSS（约 220 行）：components.css 的 template-dropdown / -menu / -item、弹窗式 template-selection-overlay / -panel / -header / close-btn、卡片式 template-grid / template-card（-header / -actions）、.panel-header 系列及 fadeIn / slideUp keyframes；layout.css 的 toolbar-title / toolbar-divider / .toolbar .btn-text / margin-inputs / .preview-panel.preview-full-width（保留在用类：template-selection-inline(-panel) / -content / template-section / template-card-icon / -desc / template-select-btn / -delete-btn）
+- 移除 PreviewPanel 被忽略的 className prop：组件从不解构 props，App.tsx 传入的 preview-full-width 从未生效（选择器前缀 .preview-panel 无对应 DOM，根元素样式由 containerStyle 内联覆盖），同步删除调用参数与 PreviewPanelProps 类型声明
+
 ## v0.2.15 - 2026-10-03
 
 ### 工程
