@@ -453,7 +453,6 @@ const PreviewPanel: React.FC = () => {
   );
 };
 
-export default PreviewPanel;
 export { PreviewPanel };
 
 // ─── F0: HeaderFooter 配置构建辅助函数 ───
