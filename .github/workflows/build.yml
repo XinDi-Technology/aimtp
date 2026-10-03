@@ -53,12 +53,6 @@ jobs:
       - name: TypeScript type check
         run: npm run typecheck || echo "::warning::Type check has warnings, but continuing..."
 
-      # 构建Vite应用
-      - name: Build Vite
-        run: npm run build:vite
-        env:
-          NODE_OPTIONS: '--max-old-space-size=4096' # 增加内存限制
-
   # 测试作业
   test:
     needs: lint
@@ -81,7 +75,9 @@ jobs:
 
       # 构建Vite应用
       - name: Build Vite
-        run: npm run build:vite
+        run: npm run build:renderer
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096' # 增加内存限制
 
       # 安装Playwright浏览器
       - name: Install Playwright browsers
