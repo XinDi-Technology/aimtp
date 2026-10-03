@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.17 - 2026-10-03
+
+### 工程
+- 删除 `LayoutDOMManager` 中三个零引用成员：`invalidate()`（全库无调用）、`extractMetadata()` 与 `buildProvenance()`（与 `PagedJsAdapter` 内私有同名实现重复且更弱：缺 `flow.total` 精确页数，`webContentsId` 参数化但实际无人传入）；元数据与来源信息统一由 `PagedJsAdapter` 产出
+- 删除 `PreviewOrchestrator` 中 `forceRender()` / `getCurrentLayoutDOM()` / `getStats()` 三个无调用方方法，连带清理 `stats` 统计字段、`RenderPathStats` 接口、渲染耗时统计更新与只写不读的 `prevSettings`；`render-complete` 事件的 `durationMs` 保留
+- 移除导出取消链路：删除 `ExportOrchestrator.cancel()`、`abortController`、4 处 `checkAborted()` 及 catch 中的 `AbortError` 分支（导出过程无取消入口，该链路恒空转）；进度回调 `onProgress()` 保留，供后续接进度条
+- 删除 `src/shared/i18n.ts` 中零引用的 `select-file` / `pdf-filter` 两个 key（主进程 dialog filters 仍使用硬编码文案）
+- 删除 `markdown.ts` 中空 `if (options.codeHighlight) {}` 块（代码高亮已在 highlight 回调中处理，行为不变）
+- `PreviewPanel` 三处 `layoutDOMManager['hashContent']()` 方括号访问改为 `.hashContent()`
+
 ## v0.2.16 - 2026-10-03
 
 ### 工程

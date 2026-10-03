@@ -1,7 +1,5 @@
 import type {
   LayoutDOM,
-  LayoutDOMMetadata,
-  LayoutDOMProvenance,
   ValidationResult,
   ValidationError,
   ValidationWarning,
@@ -17,10 +15,6 @@ export class LayoutDOMManager {
 
   update(layoutDOM: LayoutDOM): void {
     this.current = layoutDOM;
-  }
-
-  invalidate(): void {
-    this.current = null;
   }
 
   validate(currentMarkdown: string): ValidationResult {
@@ -70,38 +64,6 @@ export class LayoutDOMManager {
     }
 
     return { isValid: errors.length === 0, errors, warnings };
-  }
-
-  extractMetadata(iframe: HTMLIFrameElement): LayoutDOMMetadata {
-    const doc = iframe.contentDocument;
-    if (!doc) {
-      return {
-        totalPages: 0,
-        pageSize: { width: 210, height: 297 },
-        hasCoverPage: false,
-        headerFooterMaterialized: false,
-        cssArchitectureValid: false,
-      };
-    }
-
-    const pages = doc.querySelectorAll('.pagedjs_page');
-    const coverPage = doc.querySelector('.cover-page');
-
-    return {
-      totalPages: pages.length,
-      pageSize: { width: 210, height: 297 },
-      hasCoverPage: !!coverPage,
-      headerFooterMaterialized: !!doc.querySelector('.aimtp-page-header') || !!doc.querySelector('.aimtp-page-footer'),
-      cssArchitectureValid: !!doc.querySelector('style[data-aimtp-css]'),
-    };
-  }
-
-  buildProvenance(sourceMarkdown: string, webContentsId: number): LayoutDOMProvenance {
-    return {
-      sourceHash: this.hashContent(sourceMarkdown),
-      renderedAt: Date.now(),
-      webContentsId,
-    };
   }
 
   private isStale(layout: LayoutDOM, currentMarkdown: string): boolean {

@@ -17,7 +17,7 @@
 import type { LayoutDOM } from '../domain/LayoutDOM';
 import { layoutDOMManager } from '../domain/LayoutDOMManager';
 import { PagedJsAdapter } from '../domain/PagedJsAdapter';
-import { SettingChangeClassifier, createSettingsSnapshot } from './SettingChangeClassifier';
+import { SettingChangeClassifier } from './SettingChangeClassifier';
 import type { AppSettingsSnapshot, SettingChangeCategory } from './SettingChangeClassifier';
 import { applyVisualOnlyUpdate, detectOverflow } from './applyVisualOnlyUpdate';
 import type { VisualOnlyUpdateResult, OverflowDetectionResult } from './applyVisualOnlyUpdate';
@@ -30,15 +30,6 @@ const SETTING_CHANGE_DEBOUNCE = {
   layoutChange: 300,    // ms，避免连续调整滑块时频繁重新分页
   contentChange: 300,   // ms，Markdown 编辑防抖
 } as const;
-
-/** 渲染路径统计 */
-export interface RenderPathStats {
-  visualOnlyCount: number;
-  fullRenderCount: number;
-  visualOnlyTotalMs: number;
-  fullRenderTotalMs: number;
-  savedMs: number;
-}
 
 /** 预览编排器事件 */
 export type PreviewOrchestratorEvent =
@@ -61,16 +52,8 @@ export type PreviewOrchestratorListener = (event: PreviewOrchestratorEvent) => v
 export class PreviewOrchestrator {
   private classifier = new SettingChangeClassifier();
   private pagedJsAdapter: PagedJsAdapter;
-  private prevSettings: AppSettingsSnapshot | null = null;
   private listeners: PreviewOrchestratorListener[] = [];
   private debounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
-  private stats: RenderPathStats = {
-    visualOnlyCount: 0,
-    fullRenderCount: 0,
-    visualOnlyTotalMs: 0,
-    fullRenderTotalMs: 0,
-    savedMs: 0,
-  };
   private disposed = false;
 
   constructor(pagedJsAdapter: PagedJsAdapter) {
@@ -93,9 +76,6 @@ export class PreviewOrchestrator {
     const result = this.classifier.classify(prevSettings, nextSettings);
     const category = result.category;
 
-    // 保存 prev settings
-    this.prevSettings = createSettingsSnapshot(nextSettings);
-
     // 取消之前同类型的防抖
     const debounceKey = category;
     const existingTimer = this.debounceTimers.get(debounceKey);
@@ -117,32 +97,6 @@ export class PreviewOrchestrator {
     }, delay);
 
     this.debounceTimers.set(debounceKey, timer);
-  }
-
-  /**
-   * 立即完整渲染（导出前使用）
-   *
-   * 取消所有待执行的防抖，立即执行 content-change 路径。
-   */
-  async forceRender(context: RenderContext): Promise<LayoutDOM | null> {
-    this.cancelPending();
-
-    try {
-      return await this.executeFullRender(context);
-    } catch (err) {
-      this.emit({ type: 'error', error: err as Error });
-      return null;
-    }
-  }
-
-  /** 获取当前 Layout DOM */
-  getCurrentLayoutDOM(): LayoutDOM | null {
-    return layoutDOMManager.getCurrent();
-  }
-
-  /** 获取渲染路径统计 */
-  getStats(): RenderPathStats {
-    return { ...this.stats };
   }
 
   /** 取消所有待执行的防抖 */
@@ -198,16 +152,6 @@ export class PreviewOrchestrator {
 
       const durationMs = performance.now() - startTime;
       this.emit({ type: 'render-complete', category, durationMs });
-
-      // 更新统计
-      if (category === 'visual-only') {
-        this.stats.visualOnlyCount++;
-        this.stats.visualOnlyTotalMs += durationMs;
-        this.stats.savedMs += (990 - durationMs); // 预估节省时间
-      } else {
-        this.stats.fullRenderCount++;
-        this.stats.fullRenderTotalMs += durationMs;
-      }
     } catch (err) {
       this.emit({ type: 'error', error: err as Error });
     }

@@ -107,10 +107,6 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance
     }
   });
 
-  if (options.codeHighlight) {
-    // 代码高亮已经在 highlight 配置函数中处理，不需要额外插件
-  }
-
   if (options.taskLists) {
     md.use(mdTaskLists);
   }

@@ -196,7 +196,7 @@ const PreviewPanel: React.FC = () => {
 
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
 
-      const sourceHash = layoutDOMManager['hashContent'](markdown);
+      const sourceHash = layoutDOMManager.hashContent(markdown);
 
       // F0: 在 layout 前设置页眉页脚配置
       pagedJsAdapter.setHeaderFooterConfig(
@@ -328,7 +328,7 @@ const PreviewPanel: React.FC = () => {
           return;
         }
 
-        const sourceHash = layoutDOMManager['hashContent'](markdown);
+        const sourceHash = layoutDOMManager.hashContent(markdown);
 
         // 确保 adapter 配置已设置，以便 orchestrator 降级到完整渲染时
         // 能正确调用 injectHeaderFooterDom()
@@ -372,7 +372,7 @@ const PreviewPanel: React.FC = () => {
 
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
 
-      const sourceHash = layoutDOMManager['hashContent'](markdown);
+      const sourceHash = layoutDOMManager.hashContent(markdown);
 
       // F0: 在 layout 前设置页眉页脚配置
       pagedJsAdapter.setHeaderFooterConfig(

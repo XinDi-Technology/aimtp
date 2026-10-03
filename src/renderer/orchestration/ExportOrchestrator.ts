@@ -21,12 +21,9 @@ export interface PdfMetadata {
 }
 
 export class ExportOrchestrator {
-  private abortController: AbortController | null = null;
   private progressCallback: ((p: ExportProgress) => void) | null = null;
 
   async start(options: ExportOptions, currentMarkdown: string): Promise<ExportResult> {
-    this.abortController = new AbortController();
-
     try {
       this.emitProgress('validate', 0, 'Validating layout...');
       const layoutDOM = layoutDOMManager.getCurrent();
@@ -41,25 +38,17 @@ export class ExportOrchestrator {
         return { success: false, error: `Validation failed: ${errorMsg}` };
       }
 
-      this.checkAborted();
-
       this.emitProgress('prepare', 0, 'Preparing layout for export...');
       const layoutHtml = this.serializeLayoutDOM(layoutDOM);
       this.emitProgress('prepare', 100, 'Layout prepared');
-
-      this.checkAborted();
 
       this.emitProgress('pdfGenerate', 0, 'Generating PDF...');
       const metadata = this.extractPdfMetadata(currentMarkdown);
       const pdfData = await this.invokePdfGeneration(layoutHtml, options, metadata);
       this.emitProgress('pdfGenerate', 100, 'PDF generated');
 
-      this.checkAborted();
-
       this.emitProgress('postProcess', 0, 'Post-processing...');
       this.emitProgress('postProcess', 100, 'Post-processing complete (no-op in iteration 1)');
-
-      this.checkAborted();
 
       this.emitProgress('save', 0, 'Selecting save location...');
       const filePath = await this.selectSavePath();
@@ -73,15 +62,8 @@ export class ExportOrchestrator {
 
       return { success: true, filePath };
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return { success: false, error: 'Export cancelled' };
-      }
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
-  }
-
-  cancel(): void {
-    this.abortController?.abort();
   }
 
   onProgress(callback: (p: ExportProgress) => void): void {
@@ -135,12 +117,6 @@ export class ExportOrchestrator {
     const [stageStart, stageEnd] = STAGE_PROGRESS[stage];
     const percentage = stageStart + (stageEnd - stageStart) * (stepProgress / 100);
     this.progressCallback({ stage, percentage, message });
-  }
-
-  private checkAborted(): void {
-    if (this.abortController?.signal.aborted) {
-      throw new DOMException('Export cancelled', 'AbortError');
-    }
   }
 
   /**
