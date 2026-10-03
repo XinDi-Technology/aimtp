@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.22 - 2026-10-03
+
+### 工程
+- 裁剪 `types/pagedjs.d.ts` 由 141 行至 20 行：运行时 pagedjs 经 `scripts/build-pagedjs-iife.mjs` 打成 IIFE 注入 iframe、不经由模块导入，故仅保留实际消费的 `Flow` 及其成员类型 `Page`，删除五个 `Previewer*` 事件接口、`Previewer` / `HandlerContext` / `Handler` / `Chunker` / `Polisher` 类与自定义 Handler 注册中心的残留声明（`registerHandlers` / `initializeHandlers` / `registeredHandlers`）；连带删除 `PagedJsAdapter.PagedJsBridge` 接口中 `Handler` / `Chunker` / `Polisher` 三个零引用字段。
+- 收敛模块导出：`cssTemplate.ts` 的 `CssVariables` / `buildCssVariables` / `interpolate` 与 `CssVariableCategories.ts` 的三个 `*_VARIABLES` 列表去掉 `export` 改为模块内部使用，并删除零引用的 `CssVariableCategories` 接口。
+- 删除 `CSS_VARIABLE_CATEGORIES` 常量及其 getter `SettingChangeClassifier.getVariableCategories()`：该常量的唯一使用点正是这个自身零调用的 getter，二者构成共同死簇，须一次清除（仅去掉 export 会因触发 `no-unused-vars` 导致 CI 的 `--max-warnings 0` 失败）；三个 `*_VARIABLES` 仍服务于 `VARIABLE_CATEGORY_MAP`
+- 删除 `markdown.ts` 的 `resetMarkdownIt`（4 行）：它是 `createMarkdownIt` 的纯别名，且其 `reset` 命名具误导性 —— 既不清理缓存也不重置状态，缓存命中时直接返回既有实例；`htmlGenerator.ts` 改用 `createMarkdownIt`。
+- 消除 `SettingChangeCategory` 类型重复定义：`useAppStore.ts` 保留唯一定义源，`SettingChangeClassifier.ts` 改为重导出（store 是三者中最底层的模块，反向做会引入 `store → orchestration` 的循环依赖）。
+
 ## v0.2.21 - 2026-10-03
 
 ### 工程
