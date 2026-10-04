@@ -219,7 +219,7 @@ const PreviewPanel: React.FC = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, renderNonce, ensureFrameReady]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady]);
 
   // 每次渲染后同步最新 doFullRender 到 ref（官方 latest-ref 模式，避免渲染期间写 ref）
   useEffect(() => {
@@ -391,7 +391,7 @@ const PreviewPanel: React.FC = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, renderNonce, ensureFrameReady]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady]);
 
   // 设置变更触发渲染（防抖）
   useEffect(() => {
@@ -417,7 +417,8 @@ const PreviewPanel: React.FC = () => {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [doRender, isGenerating, currentSnapshot]);
+  // renderNonce 为有意添加的触发依赖：导入文件后自增以强制重渲染（内容未变也要重跑一次）
+  }, [doRender, isGenerating, currentSnapshot, renderNonce]); // eslint-disable-line react-hooks/exhaustive-deps, @eslint-react/exhaustive-deps
 
   // 初始渲染
   useEffect(() => {

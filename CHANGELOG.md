@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.30 - 2026-10-04
+
+### 工程
+- 修复 ESLint 警告：PreviewPanel 中 useCallback 的 renderNonce 未使用依赖（`exhaustive-deps`）
+
 ## v0.2.29 - 2026-10-04
 
 ### 修复
