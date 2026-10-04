@@ -127,10 +127,14 @@ img {
 }
 
 /* 仅包含一张图片的段落视为原子块（图片由 Markdown 渲染为 <p><img></p>）。
-   剩余空间放不下整张图时，Paged.js 会把整个段落推到下一页，
-   而不是把图片压缩后塞进页面底部——这是让图片正确换页的关键。
-   注意：需配合 js 侧 PagedJsAdapter.waitForImages() 使用，
-   否则图片在分页时尺寸为 0，本规则无法判断"是否放得下"。 */
+   剩余空间放不下整张图时，整个段落应被推到下一页，而不是被压缩或拆分。
+
+   注意：这条规则对 Paged.js **无效**，保留它只是给浏览器/打印分支用：
+   - Paged.js 判断元素不可拆分读的是 data-original-break-inside="avoid" 属性，
+     dist 中 avoidBreakInside() 只读取该 dataset，没有任何写入它的代码；
+   - 样式表里含 break-inside 的规则会被 Paged.js 的 rulesToDisable 主动禁用。
+   真正让图片正确换页的是 PagedJsAdapter.protectImageBlocks() 在分页前
+   写入的该属性，改动换页行为请改那里，不要只改这条 CSS。 */
 p:has(> img:only-child) {
   break-inside: avoid;
 }

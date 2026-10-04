@@ -103,7 +103,11 @@ export class PagedJsAdapter implements LayoutEngine {
     // 该方法内部还会调用 applyImageSizing()，原因见其注释（避免图片跨页时被 Paged.js 丢弃）。
     await this.waitForImages(doc);
 
-    // 1.4b. 分页前把超高图片压到一页内（写内联 max-height）。
+    // 1.4b. 把「只含一张图片的段落」标记为 Paged.js 的原子块。
+    // 不标记的话，Paged.js 会尝试拆分它，而图片是原子替换元素无法拆分 → 跨页时整段丢失。
+    this.protectImageBlocks(doc);
+
+    // 1.4c. 分页前把超高图片压到一页内（写内联 max-height）。
     // 必须放在 waitForImages 之后：段落 margin 的实测值要在 CSS 应用后读取，
     // 且此时图片固有尺寸已知，父元素高度已按真实图片尺寸完成布局。
     this.applyImagePageFit(doc);
@@ -550,6 +554,38 @@ export class PagedJsAdapter implements LayoutEngine {
     }
 
     return { top, right, bottom, left };
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] 把「只含一张图片的块」标记为 Paged.js 的原子块。
+   *
+   * Paged.js 判断元素不可拆分时读的是 data-original-break-inside="avoid" 属性，
+   * 而不是 CSS —— dist 中 avoidBreakInside() 只读取 dataset.originalBreakInside，
+   * 全库没有任何写入该属性的代码；而样式表里含 break-inside 的规则会被
+   * rulesToDisable(['breakInside', 'overflow', ...]) 主动禁用。
+   * 因此 preview.css 的 p:has(> img:only-child) { break-inside: avoid }
+   * 对 Paged.js 从来就没有生效过。
+   *
+   * 后果：Paged.js 把 <p><img></p> 当成可任意拆分的普通块，而图片是原子替换元素、
+   * 无法拆分，一旦需要换页就整段丢失（当前页没有、下一页也没有）。
+   * 实测病例：连续三张图只有第一张显示，换成三张完全相同的小图现象不变 ——
+   * 与图片尺寸、与加载是否成功都无关，只取决于「这一块是否需要换页」。
+   *
+   * 与上方 1.6 给 <svg> 设置 data-original-break-inside 的处理保持一致。
+   */
+  private protectImageBlocks(doc: Document): void {
+    for (const img of doc.querySelectorAll('img')) {
+      const parent = img.parentElement;
+      if (!parent) continue;
+
+      // 只处理「图片是该块唯一元素子节点」的标准形态（Markdown 图片渲染为 <p><img></p>）。
+      // 不限 tagName，直接写在 <div> 里的图片同样能受益。
+      if (parent.children.length !== 1 || parent.firstElementChild !== img) continue;
+
+      parent.setAttribute('data-original-break-inside', 'avoid');
+      // 内联兜底：样式表里的 break-inside 规则会被 Paged.js 禁用，内联样式不受影响
+      parent.style.setProperty('break-inside', 'avoid');
+    }
   }
 
   /**
