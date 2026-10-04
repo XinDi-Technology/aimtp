@@ -21,8 +21,15 @@ const FONT_READY_TIMEOUT = 5000;
 const DOCUMENT_READY_TIMEOUT = 2000;
 const PAGEDJS_READY_TIMEOUT = 10000;
 const IMAGE_READY_TIMEOUT = 5000; // 等待图片加载的超时上限，避免个别图片卡住整个预览
-/** 图片适配页面时预留的安全余量（px）：吸收内容区高度非整数、缩放取整、浮点 rect 比较等误差 */
-const IMAGE_FIT_SAFETY_PX = 8;
+/**
+ * 图片块高上限占「页面内容区高度」的比例。
+ *
+ * 取值来自实测：块高 = 内容区 99%（963px）的两张图被 Paged.js 丢弃，
+ * 而块高 = 内容区 75%（728px）的图正常显示 —— 取 75% 与已知安全样本一致。
+ * 不要调高：Paged.js 搬移 break-inside:avoid 块的判定是
+ * `块高 > 页面可用高度` 就不搬移、改为拆分，而图片无法拆分即整段消失。
+ */
+const IMAGE_FIT_RATIO = 0.75;
 /** 极端设置（超大边距/段间距）下的 max-height 下限，避免算出负值使整条声明失效 */
 const MIN_IMAGE_MAX_HEIGHT_PX = 60;
 /** CSS 绝对长度换算：1mm = 96/25.4 px */
@@ -672,7 +679,7 @@ export class PagedJsAdapter implements LayoutEngine {
 
       const maxHeightPx = Math.max(
         MIN_IMAGE_MAX_HEIGHT_PX,
-        contentHeightPx - blockMarginPx - IMAGE_FIT_SAFETY_PX,
+        contentHeightPx * IMAGE_FIT_RATIO - blockMarginPx,
       );
 
       // 作者/模板已显式设置更小的 max-height 时取较小值，避免覆盖其意图

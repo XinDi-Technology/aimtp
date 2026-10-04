@@ -94,18 +94,15 @@ p {
    - max-width:100% 防止超宽图片横向溢出；
    - max-height 防止超高图片纵向溢出导致 Paged.js 无法拆分、
      在 addOverflowNodes 处抛 "reading 'childNodes'" 而中断分页；
-     上限 = 内容区高 − 图片段落实占的垂直外边距（imageBlockMargin 变量）
-     − 6mm 安全余量：
+     上限 = 内容区高 × 0.75 − 图片段落实占的垂直外边距（imageBlockMargin 变量）：
      * 过去固定减 2em，只够覆盖 p { margin: 1em 0 } 的情形，
        段间距（paragraphSpacing）一旦 > 1，段落下边距就大于 1em，
        图片块总高会超过一页内容区；
      * 即便段间距为 0，减 2em 后图片块高度也正好等于内容区高度（零余量），
        任何亚像素舍入都会让 break-inside:avoid 的段落放不下；
        放不下时 Paged.js 既不留在当前页也不进下一页 → 图片彻底消失；
-     * 8px 安全余量用于吸收亚像素测量误差（内容区高度非整数、缩放取整、
-       Paged.js 的浮点 rect 比较，合计上界约 2-3px）；
-       用固定 px 而非 em：误差是像素级的，不随字号变化，
-       而 em 会随字号放大，大字号下会白白吃掉版面；
+     * 0.75 是实测值：块高达内容区 99% 的图被 Paged.js 丢弃、75% 的图正常显示，
+       取 75% 即复用已知安全样本（内容区 971px 下压缩高 704px / 块高 728px）；
      * 不要改写成 max() 套 calc()：Paged.js 的 Polisher 会读取并重写 author CSS，
        嵌套函数会被丢弃，实测导致本条声明完全失效（图片恢复固有高度 → 超页 →
        整段被丢弃），这是 v0.2.23 改了数值却毫无效果的原因；
@@ -122,7 +119,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: calc($$pageHeightMm - $$marginTop - $$marginBottom - $$imageBlockMargin - 8px);
+  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) * 0.75 - $$imageBlockMargin);
   object-fit: contain;
 }
 
