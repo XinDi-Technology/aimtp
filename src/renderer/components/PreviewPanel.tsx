@@ -99,6 +99,8 @@ const PreviewPanel: React.FC = () => {
   const preview = useAppStore((s) => s.preview);
   const currentTemplate = useAppStore((s) => s.currentTemplate);
   const isGenerating = useAppStore((s) => s.isGenerating);
+  // 导入文件后自增，用于强制重渲染（内容未变时也要重跑一次完整渲染）
+  const renderNonce = useAppStore((s) => s.renderNonce);
 
   const lastRenderResultRef = useRef<{
     html: string;
@@ -217,7 +219,7 @@ const PreviewPanel: React.FC = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, renderNonce, ensureFrameReady]);
 
   // 每次渲染后同步最新 doFullRender 到 ref（官方 latest-ref 模式，避免渲染期间写 ref）
   useEffect(() => {
@@ -389,7 +391,7 @@ const PreviewPanel: React.FC = () => {
       console.error('[Aimtp] Preview render failed:', err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, renderNonce, ensureFrameReady]);
 
   // 设置变更触发渲染（防抖）
   useEffect(() => {

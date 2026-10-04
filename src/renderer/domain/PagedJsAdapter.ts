@@ -110,11 +110,14 @@ export class PagedJsAdapter implements LayoutEngine {
     // 该方法内部还会调用 applyImageSizing()，原因见其注释（避免图片跨页时被 Paged.js 丢弃）。
     await this.waitForImages(doc);
 
-    // 1.4b. 把「只含一张图片的段落」标记为 Paged.js 的原子块。
-    // 不标记的话，Paged.js 会尝试拆分它，而图片是原子替换元素无法拆分 → 跨页时整段丢失。
+    // 1.4b. 图片段落补一条内联 break-inside（供浏览器/打印分支）。
     this.protectImageBlocks(doc);
 
-    // 1.4c. 分页前把超高图片压到一页内（写内联 max-height）。
+    // 1.4c. 在「相邻的图片段落」之间插入零高度分隔块。
+    // 实测：图片之间只要有文字就能正常显示，紧挨着则后续段落整段丢失。
+    this.separateAdjacentImageBlocks(doc);
+
+    // 1.4d. 分页前把超高图片压到一页内（写内联 max-height）。
     // 必须放在 waitForImages 之后：段落 margin 的实测值要在 CSS 应用后读取，
     // 且此时图片固有尺寸已知，父元素高度已按真实图片尺寸完成布局。
     this.applyImagePageFit(doc);
@@ -619,6 +622,47 @@ export class PagedJsAdapter implements LayoutEngine {
       if (parent.children.length !== 1 || parent.firstElementChild !== img) continue;
 
       parent.style.setProperty('break-inside', 'avoid');
+    }
+  }
+
+  /**
+   * 在「相邻的图片段落」之间插入一个零高度分隔块。
+   *
+   * 实测现象：图片段落之间只要有其它内容（哪怕一行文字），后续图片都能正常显示；
+   * 一旦两个图片段落紧挨着（Markdown 里连续写 ![](a) ![](b)），后面的段落就会
+   * 整段丢失——当前页没有、下一页也没有。高度已压到安全区、图片也已确认加载成功，
+   * 仍然复现，说明 Paged.js 处理「连续相邻的原子块」时存在缺陷。
+   *
+   * 既然有内容间隔就能正常，就人为补上这个间隔：插入一个零高度、不占版面的块。
+   * - 零高度 + line-height:0 + overflow:hidden → 视觉上不引入任何空白行
+   * - 内部放一个零宽空格，避免被 Paged.js 的 lastChildCheck 当作空元素删掉
+   *   （trim() 不会移除 U+200B，因此 textContent 非空）
+   * - 只在「前后都是纯图片段落」时插入，正文之间的图片不受影响
+   */
+  private separateAdjacentImageBlocks(doc: Document): void {
+    const isImageBlock = (el: Element | null): boolean =>
+      !!el && el.children.length === 1 && el.firstElementChild?.tagName === 'IMG';
+
+    // 先收集再插入：插入会改变 DOM 结构，边遍历边改容易漏
+    const imageBlocks: Element[] = [];
+    for (const img of doc.querySelectorAll('img')) {
+      const parent = img.parentElement;
+      if (!parent) continue;
+      if (parent.children.length !== 1 || parent.firstElementChild !== img) continue;
+      imageBlocks.push(parent);
+    }
+
+    for (const block of imageBlocks) {
+      const prev = block.previousElementSibling;
+      if (!isImageBlock(prev)) continue;
+
+      const gap = doc.createElement('div');
+      gap.setAttribute('data-aimtp-image-gap', '');
+      gap.style.cssText =
+        'height:0;margin:0;padding:0;border:0;line-height:0;overflow:hidden';
+      // 零宽空格：textContent 非空，防止 lastChildCheck 把空元素删掉
+      gap.appendChild(doc.createTextNode('\u200B'));
+      prev.after(gap);
     }
   }
 

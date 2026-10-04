@@ -105,6 +105,11 @@ export type SettingChangeCategory = 'visual-only' | 'layout-change' | 'content-c
 export interface AppState {
   markdown: string;
   setMarkdown: (markdown: string) => void;
+
+  /** 导入文件时自增：内容未变也要强制触发一次完整重渲染。
+   *  不加入 persist 白名单，重启后从 0 开始。 */
+  renderNonce: number;
+  bumpRenderNonce: () => void;
   
   currentTemplate: string;
   setCurrentTemplate: (template: string) => void;
@@ -554,6 +559,9 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       markdown: TEMPLATES.blank,
       setMarkdown: (markdown) => set({ markdown }),
+
+      renderNonce: 0,
+      bumpRenderNonce: () => set((s) => ({ renderNonce: s.renderNonce + 1 })),
       
       currentTemplate: 'blank',
       setCurrentTemplate: (currentTemplate) => set({ currentTemplate }),
