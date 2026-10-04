@@ -418,7 +418,7 @@ const PreviewPanel: React.FC = () => {
       }
     };
   // renderNonce 为有意添加的触发依赖：导入文件后自增以强制重渲染（内容未变也要重跑一次）
-  }, [doRender, isGenerating, currentSnapshot, renderNonce]); // eslint-disable-line react-hooks/exhaustive-deps, @eslint-react/exhaustive-deps
+  }, [doRender, isGenerating, currentSnapshot, renderNonce]);
 
   // 初始渲染
   useEffect(() => {

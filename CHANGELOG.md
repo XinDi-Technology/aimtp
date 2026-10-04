@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.31 - 2026-10-04
+
+### 工程
+- 修复 ESLint 报错：移除 PreviewPanel 中多余的 eslint-disable 指令（未使用的禁用注释触发 `--report-unused-disable-directives` 错误）
+
 ## v0.2.30 - 2026-10-04
 
 ### 工程
