@@ -481,6 +481,27 @@ export class PagedJsAdapter implements LayoutEngine {
         /if\((\w+)\.previousSibling\)\{let (\w+)=(\w+)\.querySelector\(`\[data-ref='\$\{\1\.previousSibling\.dataset\.ref\}'\]`\)/,
         (_m, node: string, refVar: string, parentVar: string) =>
           `if(${node}.previousSibling&&${node}.previousSibling.nodeType===1){let ${refVar}=${parentVar}.querySelector(\`[data-ref='\${${node}.previousSibling.dataset.ref}']\`)`
+      )
+      // [PAGEDJS_WORKAROUND] 1.9. Neutralize checkUnderflowAfterResize().
+      //
+      // addResizeObserver() registers a ResizeObserver that calls
+      // checkUnderflowAfterResize() whenever the page wrapper SHRINKS — which is
+      // exactly what happens when images/fonts finish loading late, or the preview
+      // area is resized. Its body calls findEndToken(), which throws
+      // "Cannot read properties of undefined (reading 'nextSibling')" (TODO S6).
+      //
+      // The throw escapes from inside the ResizeObserver callback, i.e. in the
+      // middle of the pagination run, and aborts it: everything after the first
+      // page is silently missing. Observed symptom: consecutive images render only
+      // the first one, and swapping in identical small images changes nothing —
+      // because the failure is the aborted layout, not image sizing or breaking.
+      //
+      // Safe to remove: dist registers an EMPTY underflow callback upstream —
+      // `n.onUnderflow(e=>{})` — so the endToken computed here is discarded anyway.
+      // A no-op is therefore behaviour-equivalent to upstream pagedjs.
+      .replace(
+        /checkUnderflowAfterResize\((\w+)\)\{[^{}]*findEndToken[^{}]*\}/,
+        'checkUnderflowAfterResize($1){}'
       );
 
     // [PAGEDJS_WORKAROUND] 1.8 sanity check: a miss means the pagedjs dist output
@@ -489,6 +510,15 @@ export class PagedJsAdapter implements LayoutEngine {
     if (!code.includes('.previousSibling.nodeType===1')) {
       console.warn(
         '[PAGEDJS_WORKAROUND 1.8] indexOfTextNode guard 未命中，pagedjs dist 输出可能已变化',
+      );
+    }
+
+    // [PAGEDJS_WORKAROUND] 1.9 sanity check: after a successful patch the only
+    // caller of findEndToken(this.wrapper) is gone. Its return value was fed to an
+    // empty callback, so a no-op changes nothing except removing the crash.
+    if (code.includes('findEndToken(this.wrapper')) {
+      console.warn(
+        '[PAGEDJS_WORKAROUND 1.9] checkUnderflowAfterResize 补丁未命中，pagedjs dist 输出可能已变化',
       );
     }
 
