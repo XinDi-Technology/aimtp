@@ -106,8 +106,12 @@ p {
        Paged.js 的浮点 rect 比较，合计上界约 2-3px）；
        用固定 px 而非 em：误差是像素级的，不随字号变化，
        而 em 会随字号放大，大字号下会白白吃掉版面；
-     * max(60px, …) 兜底：极端设置（超大段间距/边距）算出过小或负值上限时，
-       负值会让整条声明失效、图片恢复原始高度，反而必定超页，故保留一个下限；
+     * 不要改写成 max() 套 calc()：Paged.js 的 Polisher 会读取并重写 author CSS，
+       嵌套函数会被丢弃，实测导致本条声明完全失效（图片恢复固有高度 → 超页 →
+       整段被丢弃），这是 v0.2.23 改了数值却毫无效果的原因；
+     * 本条只是后备：真正生效的是 PagedJsAdapter.applyImagePageFit() 在分页前
+       写入的内联 max-height（px）—— 不经过 Polisher，且按实测的段落 margin 计算；
+       两处同时写，内联优先；
    - height:auto 必需：applyImageSizing 会写入 width/height 属性表示固有尺寸，
      若不禁用 height，max-width 只压缩宽度而布局高度仍按 height 属性计算，
      图片盒子会远超页面高度，break-inside:avoid 的段落无法放入任何一页；
@@ -118,7 +122,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: max(60px, calc($$pageHeightMm - $$marginTop - $$marginBottom - $$imageBlockMargin - 8px));
+  max-height: calc($$pageHeightMm - $$marginTop - $$marginBottom - $$imageBlockMargin - 8px);
   object-fit: contain;
 }
 

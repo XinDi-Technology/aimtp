@@ -21,6 +21,12 @@ const FONT_READY_TIMEOUT = 5000;
 const DOCUMENT_READY_TIMEOUT = 2000;
 const PAGEDJS_READY_TIMEOUT = 10000;
 const IMAGE_READY_TIMEOUT = 5000; // 等待图片加载的超时上限，避免个别图片卡住整个预览
+/** 图片适配页面时预留的安全余量（px）：吸收内容区高度非整数、缩放取整、浮点 rect 比较等误差 */
+const IMAGE_FIT_SAFETY_PX = 8;
+/** 极端设置（超大边距/段间距）下的 max-height 下限，避免算出负值使整条声明失效 */
+const MIN_IMAGE_MAX_HEIGHT_PX = 60;
+/** CSS 绝对长度换算：1mm = 96/25.4 px */
+const MM_TO_PX = 96 / 25.4;
 const PREVIEW_TIMEOUT = 30000; // previewer.preview() 超时 30s，防止 Paged.js 卡死
 
 /** 分页进度回调 */
@@ -96,6 +102,11 @@ export class PagedJsAdapter implements LayoutEngine {
     // 等待上限为 IMAGE_READY_TIMEOUT，超时后仍会继续分页，不会阻塞预览。
     // 该方法内部还会调用 applyImageSizing()，原因见其注释（避免图片跨页时被 Paged.js 丢弃）。
     await this.waitForImages(doc);
+
+    // 1.4b. 分页前把超高图片压到一页内（写内联 max-height）。
+    // 必须放在 waitForImages 之后：段落 margin 的实测值要在 CSS 应用后读取，
+    // 且此时图片固有尺寸已知，父元素高度已按真实图片尺寸完成布局。
+    this.applyImagePageFit(doc);
 
     // [PAGEDJS_WORKAROUND] 1.5. Protect TD/TH/LI from lastChildCheck removal.
     // pagedjs removes empty overflowTagged elements. For TD/TH/LI, this breaks
@@ -489,16 +500,39 @@ export class PagedJsAdapter implements LayoutEngine {
    * the IIFE strip removed the base :root --pagedjs-margin-* declarations).
    */
   private injectMarginCssVars(doc: Document): void {
+    const margins = this.parsePageMargins(doc);
+    if (!margins) return;
+    const { top, right, bottom, left } = margins;
+
+    const style = doc.createElement('style');
+    style.setAttribute('data-aimtp-margin-vars', '');
+    style.textContent =
+      `:root {\n` +
+      `  --pagedjs-margin-top: ${top};\n` +
+      `  --pagedjs-margin-right: ${right};\n` +
+      `  --pagedjs-margin-bottom: ${bottom};\n` +
+      `  --pagedjs-margin-left: ${left};\n` +
+      `}`;
+    doc.head.appendChild(style);
+  }
+
+  /**
+   * 从 author CSS 的 @page 规则解析四边 margin，原样返回带单位的字符串（如 "20mm"）。
+   * 供 injectMarginCssVars() 注入 CSS 变量、以及 applyImagePageFit() 计算内容区高度复用。
+   */
+  private parsePageMargins(
+    doc: Document,
+  ): { top: string; right: string; bottom: string; left: string } | null {
     const aimtpStyle = doc.querySelector('style[data-aimtp-css]');
-    if (!aimtpStyle) return;
+    if (!aimtpStyle) return null;
 
     const cssText = aimtpStyle.textContent || '';
     const pageMatch = cssText.match(/@page\s*\{[^}]*size[^}]*\}/);
-    if (!pageMatch) return;
+    if (!pageMatch) return null;
 
     // Extract margin values from the @page rule (e.g. "25mm 22mm 25mm 22mm")
     const marginMatch = pageMatch[0].match(/margin:\s*([^;]+);/);
-    if (!marginMatch) return;
+    if (!marginMatch) return null;
 
     const parts = marginMatch[1].trim().split(/\s+/);
     let top: string, right: string, bottom: string, left: string;
@@ -515,16 +549,73 @@ export class PagedJsAdapter implements LayoutEngine {
       [top, right, bottom, left] = parts;
     }
 
-    const style = doc.createElement('style');
-    style.setAttribute('data-aimtp-margin-vars', '');
-    style.textContent =
-      `:root {\n` +
-      `  --pagedjs-margin-top: ${top};\n` +
-      `  --pagedjs-margin-right: ${right};\n` +
-      `  --pagedjs-margin-bottom: ${bottom};\n` +
-      `  --pagedjs-margin-left: ${left};\n` +
-      `}`;
-    doc.head.appendChild(style);
+    return { top, right, bottom, left };
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] 分页前给每张 <img> 写入内联 max-height（px），
+   * 保证「图片高 + 所在块的外边距」不会超过一页内容区。
+   *
+   * 为什么必须走内联样式：preview.css 里的 img { max-height: calc(...) }
+   * 要经 Paged.js 的 Polisher 读取并重写 author CSS，实测该声明会丢失
+   * （嵌套 max()/calc() 尤其明显），图片于是仍按固有高度参与排版；
+   * 一旦块高超过内容区，break-inside:avoid 的段落在任何一页都放不下，
+   * Paged.js 既不留在当前页也不进下一页 —— 图片彻底消失。
+   * 实测病例：A4 竖版 + 上下边距 20mm（内容区约 971px）下的 450x1070 与 450x986，
+   * 而同文档中 450x644 的图不受影响（本就放得下）。
+   *
+   * 内联样式优先级最高且不经过 Polisher 重写；段落 margin 用 getComputedStyle
+   * 实测，段间距 / 字号 / 容器差异全部自动适配，比模板变量更准。
+   * 解析不到页面尺寸或 margin 时直接跳过，回退到 CSS 规则，不会让预览失败。
+   */
+  private applyImagePageFit(doc: Document): void {
+    const images = Array.from(doc.querySelectorAll('img'));
+    if (images.length === 0) return;
+
+    const win = doc.defaultView;
+    if (!win) return;
+
+    // --paper-height-mm 由 htmlGenerator 写入 :root（@page 的 size 只有 A4/A3 纸张名，不含毫米数）
+    const pageHeightMm = parseFloat(
+      win.getComputedStyle(doc.documentElement).getPropertyValue('--paper-height-mm'),
+    );
+    const margins = this.parsePageMargins(doc);
+    const marginTopMm = margins ? parseFloat(margins.top) : NaN;
+    const marginBottomMm = margins ? parseFloat(margins.bottom) : NaN;
+
+    if (
+      !Number.isFinite(pageHeightMm) ||
+      !Number.isFinite(marginTopMm) ||
+      !Number.isFinite(marginBottomMm)
+    ) {
+      console.warn(
+        '[PagedJsAdapter] 无法解析页面尺寸或页边距，跳过图片高度适配（回退到 preview.css 的 max-height）',
+      );
+      return;
+    }
+
+    const contentHeightPx = (pageHeightMm - marginTopMm - marginBottomMm) * MM_TO_PX;
+
+    for (const img of images) {
+      const parent = img.parentElement;
+      if (!parent) continue;
+
+      const parentStyle = win.getComputedStyle(parent);
+      const blockMarginPx =
+        (parseFloat(parentStyle.marginTop) || 0) + (parseFloat(parentStyle.marginBottom) || 0);
+
+      const maxHeightPx = Math.max(
+        MIN_IMAGE_MAX_HEIGHT_PX,
+        contentHeightPx - blockMarginPx - IMAGE_FIT_SAFETY_PX,
+      );
+
+      // 作者/模板已显式设置更小的 max-height 时取较小值，避免覆盖其意图
+      const declaredPx = parseFloat(img.style.maxHeight);
+      img.style.maxHeight =
+        Number.isFinite(declaredPx) && declaredPx > 0
+          ? `${Math.round(Math.min(declaredPx, maxHeightPx))}px`
+          : `${Math.round(maxHeightPx)}px`;
+    }
   }
 
   /**

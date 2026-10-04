@@ -8,7 +8,7 @@ import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
 import { parseFrontMatter, formatDate } from './frontMatter';
 import { renderMermaidSync } from './mermaidPlugin';
 import { renderMathInlineAsync, renderMathDisplayAsync } from './mathjaxPlugin';
-import { buildFinalCss, getPageWidthMm } from './cssTemplate';
+import { buildFinalCss, getPageWidthMm, getPageHeightMm } from './cssTemplate';
 import previewCssTemplate from '../assets/preview.css?raw';
 
 type RuntimeEnvironment =
@@ -325,7 +325,10 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
   <meta charset="UTF-8">
 <style>${fontsCssWithRealPath}</style>${hljsStyles}
   <style data-aimtp-css>
-  :root { --paper-width-mm: ${getPageWidthMm(page)}mm; }
+  /* --paper-height-mm 供 PagedJsAdapter 计算图片 max-height：分页前需要知道
+     内容区可用高度，而 @page 的 size 只写纸张名（A4 / A3）不含毫米数，
+     从 CSSOM 读这个变量最简单可靠。 */
+  :root { --paper-width-mm: ${getPageWidthMm(page)}mm; --paper-height-mm: ${getPageHeightMm(page)}mm; }
   .cover-page { width: calc(var(--paper-width-mm) - (${page.margins.left}mm + ${page.margins.right}mm)); margin: 0 auto; }
     ${processedCss}
   </style>

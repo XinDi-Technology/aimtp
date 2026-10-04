@@ -5,6 +5,13 @@ export function getPageWidthMm(page: AppState['page']): number {
   return page.orientation === 'landscape' ? pageHeightMm : (page.size === 'A3' ? 297 : 210);
 }
 
+/** 纸张高度（mm）：A4 竖版 297 / A4 横向 210 / A3 竖版 420 / A3 横向 297 */
+export function getPageHeightMm(page: AppState['page']): number {
+  return page.size === 'A3'
+    ? (page.orientation === 'landscape' ? 297 : 420)
+    : (page.orientation === 'landscape' ? 210 : 297);
+}
+
 interface CssVariables {
   pageSize: string;
   pageOrientation: string;
@@ -49,7 +56,7 @@ function buildCssVariables(state: {
   const { page, font, cover, headerFooter, preview } = state;
 
   const pageWidthMm = getPageWidthMm(page);
-  const pageHeightMm = page.size === 'A3' ? (page.orientation === 'landscape' ? 297 : 420) : (page.orientation === 'landscape' ? 210 : 297);
+  const pageHeightMm = getPageHeightMm(page);
 
   const marginLeftMm = page.margins.left;
   const marginRightMm = page.margins.right;
