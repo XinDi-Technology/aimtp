@@ -24,12 +24,12 @@ const IMAGE_READY_TIMEOUT = 5000; // 等待图片加载的超时上限，避免�
 /**
  * 图片块高上限占「页面内容区高度」的比例。
  *
- * 取值来自实测：块高 = 内容区 99%（963px）的两张图被 Paged.js 丢弃，
- * 而块高 = 内容区 75%（728px）的图正常显示 —— 取 75% 与已知安全样本一致。
- * 不要调高：Paged.js 搬移 break-inside:avoid 块的判定是
+ * 边界实测：块高 = 内容区 99%（963px）时图片被 Paged.js 丢弃；75%（728px）正常显示。
+ * 取 0.85（825px）是在两者之间向上试探，让图片尽可能大又不触发丢弃判定。
+ * 不要调高到 0.95 以上：Paged.js 搬移 break-inside:avoid 块的判定是
  * `块高 > 页面可用高度` 就不搬移、改为拆分，而图片无法拆分即整段消失。
  */
-const IMAGE_FIT_RATIO = 0.75;
+const IMAGE_FIT_RATIO = 0.85;
 /** 极端设置（超大边距/段间距）下的 max-height 下限，避免算出负值使整条声明失效 */
 const MIN_IMAGE_MAX_HEIGHT_PX = 60;
 /** CSS 绝对长度换算：1mm = 96/25.4 px */
@@ -594,21 +594,20 @@ export class PagedJsAdapter implements LayoutEngine {
   }
 
   /**
-   * [PAGEDJS_WORKAROUND] 把「只含一张图片的块」标记为 Paged.js 的原子块。
+   * 给「只含一张图片的块」补一条内联 break-inside: avoid。
    *
-   * Paged.js 判断元素不可拆分时读的是 data-original-break-inside="avoid" 属性，
-   * 而不是 CSS —— dist 中 avoidBreakInside() 只读取 dataset.originalBreakInside，
-   * 全库没有任何写入该属性的代码；而样式表里含 break-inside 的规则会被
-   * rulesToDisable(['breakInside', 'overflow', ...]) 主动禁用。
-   * 因此 preview.css 的 p:has(> img:only-child) { break-inside: avoid }
-   * 对 Paged.js 从来就没有生效过。
+   * 注意：这里**不要**设置 data-original-break-inside="avoid"（v0.2.25 设置过，已移除）。
+   * Paged.js 判断元素不可拆分读的是该属性而非 CSS：dist 中 avoidBreakInside() 只读取
+   * dataset.originalBreakInside，全库没有写入它的代码；而样式表里含 break-inside 的规则
+   * 会被 rulesToDisable(['breakInside', ...]) 主动禁用。
    *
-   * 后果：Paged.js 把 <p><img></p> 当成可任意拆分的普通块，而图片是原子替换元素、
-   * 无法拆分，一旦需要换页就整段丢失（当前页没有、下一页也没有）。
-   * 实测病例：连续三张图只有第一张显示，换成三张完全相同的小图现象不变 ——
-   * 与图片尺寸、与加载是否成功都无关，只取决于「这一块是否需要换页」。
+   * 手动写上该属性后实测：单张图片正常，但**连续**多个图片段落中后续的块会整段丢失
+   * （高度安全、加载正常的前提下仍然如此），即 Paged.js 对连续 avoid 块的搬移有问题。
+   * 去掉该属性后，图片换页交给 Paged.js 对替换元素的原生处理 —— 补丁 1.7b 已让
+   * img/picture/video 等元素成为溢出起点，整块换页由它负责。
    *
-   * 与上方 1.6 给 <svg> 设置 data-original-break-inside 的处理保持一致。
+   * 这里只保留内联 CSS：不影响 Paged.js 的 JS 分页，仅供浏览器/打印分支使用
+   * （样式表里的同类规则会被 Paged.js 禁用，内联样式不受影响）。
    */
   private protectImageBlocks(doc: Document): void {
     for (const img of doc.querySelectorAll('img')) {
@@ -619,8 +618,6 @@ export class PagedJsAdapter implements LayoutEngine {
       // 不限 tagName，直接写在 <div> 里的图片同样能受益。
       if (parent.children.length !== 1 || parent.firstElementChild !== img) continue;
 
-      parent.setAttribute('data-original-break-inside', 'avoid');
-      // 内联兜底：样式表里的 break-inside 规则会被 Paged.js 禁用，内联样式不受影响
       parent.style.setProperty('break-inside', 'avoid');
     }
   }

@@ -94,15 +94,15 @@ p {
    - max-width:100% 防止超宽图片横向溢出；
    - max-height 防止超高图片纵向溢出导致 Paged.js 无法拆分、
      在 addOverflowNodes 处抛 "reading 'childNodes'" 而中断分页；
-     上限 = 内容区高 × 0.75 − 图片段落实占的垂直外边距（imageBlockMargin 变量）：
+     上限 = 内容区高 × 0.85 − 图片段落实占的垂直外边距（imageBlockMargin 变量）：
      * 过去固定减 2em，只够覆盖 p { margin: 1em 0 } 的情形，
        段间距（paragraphSpacing）一旦 > 1，段落下边距就大于 1em，
        图片块总高会超过一页内容区；
      * 即便段间距为 0，减 2em 后图片块高度也正好等于内容区高度（零余量），
        任何亚像素舍入都会让 break-inside:avoid 的段落放不下；
        放不下时 Paged.js 既不留在当前页也不进下一页 → 图片彻底消失；
-     * 0.75 是实测值：块高达内容区 99% 的图被 Paged.js 丢弃、75% 的图正常显示，
-       取 75% 即复用已知安全样本（内容区 971px 下压缩高 704px / 块高 728px）；
+     * 0.85 是实测边界内的取值：块高达内容区 99%（963px）的图被 Paged.js 丢弃、
+       75%（728px）的图正常显示，0.85（825px）在安全区内让图片尽可能大；
      * 不要改写成 max() 套 calc()：Paged.js 的 Polisher 会读取并重写 author CSS，
        嵌套函数会被丢弃，实测导致本条声明完全失效（图片恢复固有高度 → 超页 →
        整段被丢弃），这是 v0.2.23 改了数值却毫无效果的原因；
@@ -119,7 +119,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) * 0.75 - $$imageBlockMargin);
+  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) * 0.85 - $$imageBlockMargin);
   object-fit: contain;
 }
 
@@ -130,8 +130,9 @@ img {
    - Paged.js 判断元素不可拆分读的是 data-original-break-inside="avoid" 属性，
      dist 中 avoidBreakInside() 只读取该 dataset，没有任何写入它的代码；
    - 样式表里含 break-inside 的规则会被 Paged.js 的 rulesToDisable 主动禁用。
-   真正让图片正确换页的是 PagedJsAdapter.protectImageBlocks() 在分页前
-   写入的该属性，改动换页行为请改那里，不要只改这条 CSS。 */
+   也不要手动给段落加 data-original-break-inside="avoid"：实测单张图片正常，
+   但连续多个图片段落中后续的块会整段丢失（Paged.js 对连续 avoid 块的搬移有问题）。
+   图片换页交给 Paged.js 对替换元素的原生处理（补丁 1.7b 让 img 自己成为溢出起点）。 */
 p:has(> img:only-child) {
   break-inside: avoid;
 }
