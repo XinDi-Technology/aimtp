@@ -29,7 +29,7 @@ const IMAGE_READY_TIMEOUT = 5000; // 等待图片加载的超时上限，避免�
  * 不要调高到 0.95 以上：Paged.js 搬移 break-inside:avoid 块的判定是
  * `块高 > 页面可用高度` 就不搬移、改为拆分，而图片无法拆分即整段消失。
  */
-const IMAGE_FIT_RATIO = 0.96;
+const IMAGE_FIT_RATIO = 0.97;
 /** 极端设置（超大边距/段间距）下的 max-height 下限，避免算出负值使整条声明失效 */
 const MIN_IMAGE_MAX_HEIGHT_PX = 60;
 /** CSS 绝对长度换算：1mm = 96/25.4 px */
