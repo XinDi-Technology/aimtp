@@ -119,7 +119,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) * 0.96 - $$imageBlockMargin);
+  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) * 0.95 - $$imageBlockMargin);
   object-fit: contain;
 }
 
