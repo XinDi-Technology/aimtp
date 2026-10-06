@@ -828,7 +828,39 @@ export class PagedJsAdapter implements LayoutEngine {
     img.style.setProperty('max-height', '100%');
     img.style.setProperty('object-fit', 'contain');
 
+    this.appendTailSentinel(parent);
+
     return true;
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] 给「末位整页图片块」补一个零高度后继哨兵。
+   *
+   * Paged.js 的 tagAndCreateOverflowRange() 收尾有一段向上标记溢出的循环：
+   *   for (; !v.nextElementSibling && v !== i; ) v = v.parentElement, v.dataset.overflowTagged = !0;
+   * 拆分溢出时 v 从图片块出发，只要它没有后继兄弟节点，就会一路把
+   * data-overflow-tagged 打到「页内容容器」上；被打标记的容器与其克隆体随后被当作
+   * "已被 range 抽空的溢出残留"清理掉，表现为图片在当前页和下一页都不显示。
+   * 实测：三张连续图片（正常图 → 超长图 → 450x986），末位那张丢失；把顺序调成
+   * 让该图不在末位则三张都正常 —— 触发条件是「末位 + 满页块」，与高度比例无关
+   * （这也是 v0.2.36~v0.2.38 反复调整适配比例都无效的原因）。
+   *
+   * 补上哨兵后，上面的循环在图片块这一级就停下，页内容容器不会被污染。
+   * 哨兵写法沿用 separateAdjacentImageBlocks() 已验证的形态：零高度不占版面、
+   * 不会多排一页（Paged.js 的 firstOverflowingChild() 会跳过 0 高度元素），
+   * 内部放 U+200B 使其 textContent 非空，避免被 lastChildCheck() 当空元素删除。
+   */
+  private appendTailSentinel(block: HTMLElement): void {
+    // 已有后继兄弟时循环本就不会向上走，不必插入
+    if (block.nextElementSibling) return;
+
+    const doc = block.ownerDocument;
+    const sentinel = doc.createElement('div');
+    sentinel.setAttribute('data-aimtp-image-tail', '');
+    sentinel.style.cssText =
+      'height:0;margin:0;padding:0;border:0;line-height:0;overflow:hidden';
+    sentinel.appendChild(doc.createTextNode('\u200B'));
+    block.after(sentinel);
   }
 
   /**
