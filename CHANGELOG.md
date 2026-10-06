@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.45 - 2026-10-07
+
+### 修复
+- 修复「每格一张图片」的表格列宽错乱、图片被压小：图片块判定把 `<td><img></td>` 当成了独立的图片段落（它与正文里的 `<p><img></p>` 在判定上完全同构），于是 `separateAdjacentImageBlocks()` 在 `<tr>` 的两个 `<td>` 之间插入零高度 gap 元素。`<tr>` 只接受 `td`/`th` 子元素，多余的 `<div>` 会被浏览器包成匿名单元格，表格网格从 N 列变成 N+1 列（表头仍是 N 个 `th`），列宽随之重排。现在 `protectImageBlocks()` 与 `separateAdjacentImageBlocks()` 共用新的 `isStandaloneImageBlock()` 判定，一律排除表格上下文内的图片，与既有的 `tryFitImageBlockToPage()`（只认 P/DIV 父容器）保持一致；正文里连续相邻的 `<p><img></p>` 仍照旧补 gap，防止后续图片段落丢失。表格单元格专用的处理（零高度守卫、固有尺寸回填、图片 `max-height` 兜底）不受影响
+
 ## v0.2.44 - 2026-10-07
 
 ### 修复

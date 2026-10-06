@@ -628,6 +628,24 @@ export class PagedJsAdapter implements LayoutEngine {
   }
 
   /**
+   * 「独立图片块」判定：图片是父元素唯一的元素子节点。
+   * 不限 tagName：正文的图片段落是 <p><img></p>，直接写在 <div> 里的图片同样受益。
+   *
+   * 刻意排除表格内的图片：<td><img></td>（Markdown 里「每格一张图」的形态）在判定上
+   * 与 <p><img></p> 完全同构，但单元格并不是可自流动的块 —— 对它做任何插入或尺寸改写
+   * 都会破坏表格网格。典型事故见 separateAdjacentImageBlocks()。
+   * 这里与 tryFitImageBlockToPage() 保持一致（该函数只认 P/DIV 父容器）。
+   */
+  private isStandaloneImageBlock(el: Element | null): boolean {
+    return (
+      !!el &&
+      !el.closest('table') &&
+      el.children.length === 1 &&
+      el.firstElementChild?.tagName === 'IMG'
+    );
+  }
+
+  /**
    * 给「只含一张图片的块」补一条内联 break-inside: avoid。
    *
    * 注意：这里**不要**设置 data-original-break-inside="avoid"（v0.2.25 设置过，已移除）。
@@ -648,9 +666,9 @@ export class PagedJsAdapter implements LayoutEngine {
       const parent = img.parentElement;
       if (!parent) continue;
 
-      // 只处理「图片是该块唯一元素子节点」的标准形态（Markdown 图片渲染为 <p><img></p>）。
-      // 不限 tagName，直接写在 <div> 里的图片同样能受益。
-      if (parent.children.length !== 1 || parent.firstElementChild !== img) continue;
+      // 表格单元格（<td><img></td>）不算图片块：给单元格写 break-inside: avoid
+      // 会让整行趋向不可拆分，跨页表格的取行行为随之改变。
+      if (!this.isStandaloneImageBlock(parent)) continue;
 
       parent.style.setProperty('break-inside', 'avoid');
     }
@@ -669,17 +687,23 @@ export class PagedJsAdapter implements LayoutEngine {
    * - 内部放一个零宽空格，避免被 Paged.js 的 lastChildCheck 当作空元素删掉
    *   （trim() 不会移除 U+200B，因此 textContent 非空）
    * - 只在「前后都是纯图片段落」时插入，正文之间的图片不受影响
+   *
+   * 表格内的图片必须排除：「| ![](a) | ![](b) |」渲染出的每个单元格都是 <td><img></td>，
+   * 于是后一个单元格的 previousElementSibling 正好是「前一个图片单元格」，判定命中后
+   * 会把 gap 插到 <tr> 的两个 <td> 之间。而 <tr> 只接受 td/th 子元素，多余的 <div> 会被
+   * 浏览器包成匿名单元格，表格网格从 N 列变成 N+1 列（表头仍是 N 个 th），列宽随之重排
+   * —— 表现为「每格一张图」的表格里列宽不等、图片被压小、版式走形。
+   * 这种场景本来也不需要该兜底：同一个 <tr> 里的单元格不属于「连续相邻的原子块」。
    */
   private separateAdjacentImageBlocks(doc: Document): void {
-    const isImageBlock = (el: Element | null): boolean =>
-      !!el && el.children.length === 1 && el.firstElementChild?.tagName === 'IMG';
+    const isImageBlock = (el: Element | null): boolean => this.isStandaloneImageBlock(el);
 
     // 先收集再插入：插入会改变 DOM 结构，边遍历边改容易漏
     const imageBlocks: Element[] = [];
     for (const img of doc.querySelectorAll('img')) {
       const parent = img.parentElement;
       if (!parent) continue;
-      if (parent.children.length !== 1 || parent.firstElementChild !== img) continue;
+      if (!this.isStandaloneImageBlock(parent)) continue;
       imageBlocks.push(parent);
     }
 
