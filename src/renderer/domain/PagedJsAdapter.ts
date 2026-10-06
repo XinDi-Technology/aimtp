@@ -688,8 +688,9 @@ export class PagedJsAdapter implements LayoutEngine {
    * 不裁切、不变形、不出血、不把一张图拆成多张。分两种处理：
    *
    * 1) 整页模式 —— 放不进内容区、且高度是约束侧的高图（绝大多数长图属于此类）：
-   *    段边距归零、图片写 max-height = 内容区高 − IMAGE_FIT_SAFE_PX，并强制从新页开始，
-   *    使图片铺满一页内容区；块本身保持普通块级流结构。
+   *    段边距归零、图片写 max-height = 内容区高 − IMAGE_FIT_SAFE_PX，使图片铺满一页内容区；
+   *    块本身保持普通块级流结构，并在块内补一个含 U+200B 的零高度守卫子元素，
+   *    防止 Paged.js 的 lastChildCheck() 在溢出处理中把整块（连同图片）删除。
    *    本来就放得下的小图不整页化，继续与正文同页排版。
    *    相比过去「给 <img> 写 max-height = 内容区高 × 0.95 − 段边距」：
    *      - 0.95 的比例折扣让纵向白丢 8%（971px → 922px），现在只留 4px 安全余量；
@@ -768,13 +769,14 @@ export class PagedJsAdapter implements LayoutEngine {
 
   /**
    * 让「只含一张图片、确实需要缩小、且高度是约束侧」的高图铺满内容区：
-   * 段边距归零、图片写精确高度上限、并强制从新页开始（详见 forcePageStart）。
+   * 段边距归零、图片写精确高度上限，并补上防删除守卫（详见 protectImageBlockFromDrop）。
    * 不裁切、不变形、不出血、不拆成多张。
    *
    * 刻意**不改块的结构**：仍是普通块级流的 <p><img></p>（不套固定高度容器、不用 flex），
-   * 与非超长图完全同构。实测那种形态与文字混排一切正常；而"贴边满页块"一旦需要
-   * Paged.js 走 findOverflow 的搬移/拆分路径，<img> 作为不可拆分元素就会被清理掉。
-   * 解决思路是让它永远不需要搬移（强制分页 + 页顶放置），而不是和拆分逻辑硬碰。
+   * 与非超长图完全同构。真正的杀手是 Paged.js 的 lastChildCheck()：图片块 textContent
+   * 恒为空，一旦所在页触发溢出处理、块被打上 data-overflow-tagged，就会被整块 removeChild。
+   * 所以铺满的关键不是避开溢出处理（无法避免：后面只要有正文就会触发），
+   * 而是让块在溢出处理中"不可删除"。
    *
    * 返回 false 表示不适用（宽度受限的图、本来就放得下的小图、非纯图片块、
    * 作者显式设定尺寸、固有尺寸未知等），调用方回退到写内联 max-height 的旧路径。
@@ -826,32 +828,42 @@ export class PagedJsAdapter implements LayoutEngine {
     img.style.setProperty('max-width', '100%');
     img.style.setProperty('max-height', `${imageMaxHeightPx.toFixed(2)}px`);
 
-    // 强制从新页开始：满页块只需"放在页顶"，不必再走搬移/拆分路径
-    this.forcePageStart(parent);
+    // 关键防护：让块的 textContent 非空，避免被 lastChildCheck() 整块删除
+    this.protectImageBlockFromDrop(parent);
     this.appendTailSentinel(parent);
 
     return true;
   }
 
   /**
-   * [PAGEDJS_WORKAROUND] 让整页图片块强制从新的一页开始。
+   * [PAGEDJS_WORKAROUND] 给整页图片块内部补一个零高度、含 U+200B 的子元素。
    *
-   * Paged.js 支持 data-break-before="page"（与 H1/H2 自动分页同一套机制：
-   * 源码里 dataset.breakBefore 会被提取并传播，preview.css 也有对应的
-   * .aimtp-page-break-before { break-before: page }）。
+   * Paged.js 的 lastChildCheck() 会删除同时满足两个条件的元素：
+   *   e.dataset.overflowTagged && e.textContent.trim() === ''
+   * 而「只含一张图片的块」的 textContent 恒为空（<img> 不产生文本）。
+   * 于是只要这个块（或它的祖先「页内容容器」）在溢出处理中被打上
+   * data-overflow-tagged，整个块连同里面的 <img> 会被 removeChild 掉 ——
+   * 图片不是被裁、不是 0 尺寸，而是直接从 DOM 里消失。
    *
-   * 满页图片块（高度 ≈ 内容区高）只有在"正好排在页顶"时才放得下；
-   * 放在已有内容的页里就必须走 findOverflow → tagAndCreateOverflowRange 的
-   * 搬移/拆分路径，而 <img> 不可拆分，实测会被清理掉（当前页和下一页都不显示）。
-   * 强制分页后它总是独占一页顶部，稳稳放得下，也就不再需要那条路径。
+   * 实测（内容区 593x941，图片块 937px）：单独一张 450x986 的图正常显示；
+   * 后面跟一行正文后，文字放不下触发溢出处理，<img> 数量变为 0、只剩 1 页。
+   * 这也是"后面是零高度哨兵/没有正文时不复现"的原因：那种情况压根不触发溢出处理。
    *
-   * 块已是父容器的第一个元素子节点时不加：否则会在文档/章节开头多出一页空白。
+   * 塞入 U+200B 让 textContent 非空即可阻止删除：
+   * String.prototype.trim() 不会移除 U+200B（它不属于 ECMAScript 的 WhiteSpace），
+   * 项目里 separateAdjacentImageBlocks() 的间隔块已用同一手法验证过。
+   * 用嵌套块（height:0 + line-height:0 + overflow:hidden）而不是直接放文本节点，
+   * 是因为 <img> 为 display:block 时，块内任何文本节点都会撑出一行可见空白，
+   * 只有嵌套的零高度块能避免（代价是打破 `> img:only-child` 选择器，
+   * 该选择器只影响浏览器/打印分支的 break-inside，这里已内联写过）。
    */
-  private forcePageStart(block: HTMLElement): void {
-    if (!block.previousElementSibling) return;
-
-    block.classList.add('aimtp-page-break-before');
-    block.setAttribute('data-break-before', 'page');
+  private protectImageBlockFromDrop(block: HTMLElement): void {
+    const doc = block.ownerDocument;
+    const guard = doc.createElement('div');
+    guard.setAttribute('data-aimtp-image-guard', '');
+    guard.style.cssText = 'height:0;margin:0;padding:0;border:0;line-height:0;overflow:hidden';
+    guard.appendChild(doc.createTextNode('\u200B'));
+    block.appendChild(guard);
   }
 
   /**

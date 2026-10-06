@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.42 - 2026-10-06
+
+### 修复
+- 修复满页图片块被 Paged.js 整块删除：其 `lastChildCheck()` 会移除「带 `data-overflow-tagged` 且 `textContent` 为空」的元素，而图片块的 `textContent` 恒为空（`<img>` 不产生文本），一旦所在页触发溢出处理（后面只要跟正文就会触发），块连同图片一起被 `removeChild`，表现为图片从 DOM 中彻底消失、`img` 数量为 0。现在给整页图片块内追加一个含 U+200B 的零高度守卫子元素，使 `textContent` 非空、块不可删除
+- 移除上一版的强制分页（`data-break-before="page"`）尝试：溢出处理无法回避，强制分页既没解决问题又有产生空白页的风险
+
 ## v0.2.41 - 2026-10-06
 
 ### 修复
