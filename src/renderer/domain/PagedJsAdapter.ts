@@ -688,8 +688,8 @@ export class PagedJsAdapter implements LayoutEngine {
    * 不裁切、不变形、不出血、不把一张图拆成多张。分两种处理：
    *
    * 1) 整页模式 —— 放不进内容区、且高度是约束侧的高图（绝大多数长图属于此类）：
-   *    把「只含一张图片的块」改成精确的整页容器（height = 内容区高 − IMAGE_FIT_SAFE_PX、
-   *    margin 归零、flex 居中），图片 max-width/max-height:100% 在容器内等比最大化。
+   *    段边距归零、图片写 max-height = 内容区高 − IMAGE_FIT_SAFE_PX，并强制从新页开始，
+   *    使图片铺满一页内容区；块本身保持普通块级流结构。
    *    本来就放得下的小图不整页化，继续与正文同页排版。
    *    相比过去「给 <img> 写 max-height = 内容区高 × 0.95 − 段边距」：
    *      - 0.95 的比例折扣让纵向白丢 8%（971px → 922px），现在只留 4px 安全余量；
@@ -767,13 +767,19 @@ export class PagedJsAdapter implements LayoutEngine {
   }
 
   /**
-   * 把「只含一张图片、确实需要缩小、且高度是约束侧」的块改造成精确的整页容器，
-   * 让图片在内容区内等比缩放到理论最大（不裁切、不变形、不出血）。
+   * 让「只含一张图片、确实需要缩小、且高度是约束侧」的高图铺满内容区：
+   * 段边距归零、图片写精确高度上限、并强制从新页开始（详见 forcePageStart）。
+   * 不裁切、不变形、不出血、不拆成多张。
+   *
+   * 刻意**不改块的结构**：仍是普通块级流的 <p><img></p>（不套固定高度容器、不用 flex），
+   * 与非超长图完全同构。实测那种形态与文字混排一切正常；而"贴边满页块"一旦需要
+   * Paged.js 走 findOverflow 的搬移/拆分路径，<img> 作为不可拆分元素就会被清理掉。
+   * 解决思路是让它永远不需要搬移（强制分页 + 页顶放置），而不是和拆分逻辑硬碰。
    *
    * 返回 false 表示不适用（宽度受限的图、本来就放得下的小图、非纯图片块、
    * 作者显式设定尺寸、固有尺寸未知等），调用方回退到写内联 max-height 的旧路径。
    *
-   * 只在 P/DIV 上生效：TD/TH/LI 等容器被强行指定高度会破坏表格与列表结构。
+   * 只在 P/DIV 上生效：TD/TH/LI 等容器被改写尺寸会破坏表格与列表结构。
    */
   private tryFitImageBlockToPage(
     img: HTMLImageElement,
@@ -803,34 +809,49 @@ export class PagedJsAdapter implements LayoutEngine {
     // 高度不是约束侧（宽度受限）时图片放不满一页，剩余空间留给后续正文，不整页化
     if (!(fittedHeightPx >= contentHeightPx - IMAGE_FIT_SAFE_PX)) return false;
 
-    const blockHeightPx = Math.max(
-      MIN_IMAGE_MAX_HEIGHT_PX,
-      contentHeightPx - IMAGE_FIT_SAFE_PX,
-    );
-
-    parent.style.setProperty('height', `${blockHeightPx.toFixed(2)}px`);
-    // border-box：主题若给段落加了 padding，高度也要把它算进去，避免块实际占位超出一页
-    parent.style.setProperty('box-sizing', 'border-box');
-    // 独占一页时上下外边距没有排版意义，却会挤占可用高度导致 Paged.js 判定放不下
+    // 段边距归零：图片独占一页时上下外边距没有排版意义，
+    // 却会挤占可用高度（约 32px），把这段空间让给图片即可多铺满一截。
     parent.style.setProperty('margin', '0');
-    parent.style.setProperty('display', 'flex');
-    parent.style.setProperty('align-items', 'center');
-    parent.style.setProperty('justify-content', 'center');
     parent.style.setProperty('break-inside', 'avoid');
     parent.setAttribute('data-aimtp-page-image', '');
 
-    // 图片在整页容器内等比最大化：两个方向都只受容器约束，比例由浏览器保持不变
-    img.style.setProperty('display', 'block');
-    img.style.setProperty('margin', '0 auto');
-    img.style.setProperty('width', 'auto');
-    img.style.setProperty('height', 'auto');
+    // 图片只写精确的高度上限，宽度仍交给 max-width:100%。
+    // 刻意保持普通 <p><img></p> 的块级流结构（不套固定高度容器、不用 flex），
+    // 与非超长图完全同构 —— 实测那种形态与文字混排一切正常，
+    // 而"贴边满页块 + 不可拆分元素"一旦需要 Paged.js 搬移/拆分就会整块丢失。
+    const imageMaxHeightPx = Math.max(
+      MIN_IMAGE_MAX_HEIGHT_PX,
+      contentHeightPx - IMAGE_FIT_SAFE_PX,
+    );
     img.style.setProperty('max-width', '100%');
-    img.style.setProperty('max-height', '100%');
-    img.style.setProperty('object-fit', 'contain');
+    img.style.setProperty('max-height', `${imageMaxHeightPx.toFixed(2)}px`);
 
+    // 强制从新页开始：满页块只需"放在页顶"，不必再走搬移/拆分路径
+    this.forcePageStart(parent);
     this.appendTailSentinel(parent);
 
     return true;
+  }
+
+  /**
+   * [PAGEDJS_WORKAROUND] 让整页图片块强制从新的一页开始。
+   *
+   * Paged.js 支持 data-break-before="page"（与 H1/H2 自动分页同一套机制：
+   * 源码里 dataset.breakBefore 会被提取并传播，preview.css 也有对应的
+   * .aimtp-page-break-before { break-before: page }）。
+   *
+   * 满页图片块（高度 ≈ 内容区高）只有在"正好排在页顶"时才放得下；
+   * 放在已有内容的页里就必须走 findOverflow → tagAndCreateOverflowRange 的
+   * 搬移/拆分路径，而 <img> 不可拆分，实测会被清理掉（当前页和下一页都不显示）。
+   * 强制分页后它总是独占一页顶部，稳稳放得下，也就不再需要那条路径。
+   *
+   * 块已是父容器的第一个元素子节点时不加：否则会在文档/章节开头多出一页空白。
+   */
+  private forcePageStart(block: HTMLElement): void {
+    if (!block.previousElementSibling) return;
+
+    block.classList.add('aimtp-page-break-before');
+    block.setAttribute('data-break-before', 'page');
   }
 
   /**
