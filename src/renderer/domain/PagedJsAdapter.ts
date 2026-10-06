@@ -38,6 +38,35 @@ const MIN_IMAGE_MAX_HEIGHT_PX = 60;
 const MM_TO_PX = 96 / 25.4;
 const PREVIEW_TIMEOUT = 30000; // previewer.preview() 超时 30s，防止 Paged.js 卡死
 
+/**
+ * 创建一个「零高度块级守卫」元素：内部放一个零宽空格，让所在容器的 textContent
+ * 非空，从而绕开 Paged.js 的 lastChildCheck()（它只按 textContent.trim() === ''
+ * 判定并把元素 removeChild）。
+ *
+ * 为什么用块级元素而不是裸文本节点：容器里只要存在行内内容，就会生成行盒；
+ * 若容器的首个子节点是块级的（<img> 在 preview.css 下是 display:block，
+ * 所以「图片在表格里」的实际形态是 <td><img></td>），这个行盒会独占一行，
+ * 表现为图片上方一条空白行。块级守卫高度归零，容器自身不再产生行盒，
+ * 守卫内部那个行盒被 height:0 + line-height:0 + overflow:hidden 压掉。
+ */
+function createTextGuard(doc: Document): Element {
+  const guard = doc.createElement('div');
+  guard.setAttribute('data-aimtp-text-guard', '');
+  guard.style.cssText = 'height:0;margin:0;padding:0;border:0;line-height:0;overflow:hidden';
+  // 零宽空格：trim() 不会移除 U+200B，因此 textContent 非空
+  guard.appendChild(doc.createTextNode('\u200B'));
+  return guard;
+}
+
+/** 取第一个「有意义」的子节点（跳过纯空白文本节点），没有则返回 null */
+function findFirstSignificantChild(parent: Element): ChildNode | null {
+  for (const child of parent.childNodes) {
+    if (child.nodeType === 3 /* Text */ && (child.textContent || '').trim() === '') continue;
+    return child;
+  }
+  return null;
+}
+
 /** 分页进度回调 */
 export type LayoutProgressCallback = (
   phase: 'fonts' | 'document' | 'injecting' | 'rendering' | 'page' | 'done',
@@ -907,7 +936,9 @@ export class PagedJsAdapter implements LayoutEngine {
    *   separate line from the content.
    * - Otherwise (text node, inline element), insert ZWS before firstChild
    *   as before.
-   * - TD/TH: always insert ZWS before firstChild (no list marker issue).
+   * - TD/TH: 首个子节点是块级元素（含 <img>，preview.css 让它 display:block）时，
+   *   插入一个零高度的块级守卫元素；否则（行内文本、空单元格）仍插裸 ZWS。
+   *   原因见 createTextGuard()。
    *
    * Image-only paragraphs are deliberately left untouched:
    * - <img> is display:block, so ANY text node inside the <p> (ZWS included)
@@ -921,10 +952,21 @@ export class PagedJsAdapter implements LayoutEngine {
   private protectStructuralElements(doc: Document): void {
     const blockTags = new Set(['P', 'DIV', 'UL', 'OL', 'PRE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TABLE', 'DL']);
 
+    // <img> 在 preview.css 里是 display:block，因此单元格中「图片在表格里」的实际
+    // 形态是 <td><img></td>；行内 ZWS 会被包成匿名块并独占一个行盒 → 图片上方一条
+    // 空白行。块级首子节点改用零高度守卫，行内首子节点（纯文本/空单元格）维持原样：
+    // 行内 ZWS 会并入同一文本行，不产生额外行盒，也不改变单元格的行内基线对齐。
+    const guardTags = new Set(blockTags);
+    guardTags.add('IMG');
+
     const cells = doc.querySelectorAll('td, th');
     for (const el of cells) {
-      const zws = doc.createTextNode('\u200B');
-      el.insertBefore(zws, el.firstChild);
+      const first = findFirstSignificantChild(el);
+      if (first && first.nodeType === 1 /* Element */ && guardTags.has((first as Element).tagName)) {
+        el.insertBefore(createTextGuard(doc), first);
+      } else {
+        el.insertBefore(doc.createTextNode('\u200B'), el.firstChild);
+      }
     }
 
     const listItems = doc.querySelectorAll('li');

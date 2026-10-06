@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.43 - 2026-10-07
+
+### 修复
+- 修复表格单元格内图片上方多出一条空白行：为绕开 Paged.js `lastChildCheck()`（移除「带 `data-overflow-tagged` 且 `textContent` 为空」的元素），每个 `td`/`th` 最前面都会插入一个零宽空格文本节点；而 `<img>` 在 preview.css 下是 `display:block`，该文本节点会被包成匿名块并独占一个行盒，表现为图片上方多一条空白行。现在单元格的首个子节点是块级元素时改为插入零高度块级守卫（`height:0;line-height:0;overflow:hidden` + 内部 U+200B），`textContent` 仍非空、块依旧不会被删除，但单元格内不再产生行盒；纯文本与空单元格维持原样，不影响行内基线对齐
+
 ## v0.2.42 - 2026-10-06
 
 ### 修复
