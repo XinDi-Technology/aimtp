@@ -94,21 +94,19 @@ p {
    - max-width:100% 防止超宽图片横向溢出；
    - max-height 防止超高图片纵向溢出导致 Paged.js 无法拆分、
      在 addOverflowNodes 处抛 "reading 'childNodes'" 而中断分页；
-     上限 = 内容区高 × 0.95 − 图片段落实占的垂直外边距（imageBlockMargin 变量）：
-     * 过去固定减 2em，只够覆盖 p { margin: 1em 0 } 的情形，
-       段间距（paragraphSpacing）一旦 > 1，段落下边距就大于 1em，
-       图片块总高会超过一页内容区；
-     * 即便段间距为 0，减 2em 后图片块高度也正好等于内容区高度（零余量），
-       任何亚像素舍入都会让 break-inside:avoid 的段落放不下；
-       放不下时 Paged.js 既不留在当前页也不进下一页 → 图片彻底消失；
-     * 0.95 是实测安全上界：块高达内容区 99%（963px）的图被 Paged.js 丢弃、
-       75%（728px）的图正常显示，0.95（约 922px）在安全区内让图片尽可能大；
+     上限 = 内容区高 − 安全余量 4px − 图片段落实占的垂直外边距（imageBlockMargin 变量）：
+     * 图片块放不下时 Paged.js 既不留在当前页也不进下一页 → 图片彻底消失，
+       所以不能把上限写成内容区满高，必须留一点余量；
+     * 过去用「内容区高 × 0.95」的比例折扣（A4/20mm 下 971px → 922px，纵向白丢 8%）；
+       实测消失的诱因是「块高 + 段边距 > 页面可用高度」，段边距已被 imageBlockMargin
+       覆盖，剩下只需兜住亚像素取整，4px 足够，浪费从 8% 降到约 0.4%；
      * 不要改写成 max() 套 calc()：Paged.js 的 Polisher 会读取并重写 author CSS，
        嵌套函数会被丢弃，实测导致本条声明完全失效（图片恢复固有高度 → 超页 →
        整段被丢弃），这是 v0.2.23 改了数值却毫无效果的原因；
      * 本条只是后备：真正生效的是 PagedJsAdapter.applyImagePageFit() 在分页前
-       写入的内联 max-height（px）—— 不经过 Polisher，且按实测的段落 margin 计算；
-       两处同时写，内联优先；
+       写入的内联样式（px）—— 不经过 Polisher，且按实测的段落 margin 计算；
+       长图还会走整页模式（图片块被改造成精确内容区高的容器，图片在其中等比最大化），
+       内联样式优先于本条；
    - height:auto 必需：applyImageSizing 会写入 width/height 属性表示固有尺寸，
      若不禁用 height，max-width 只压缩宽度而布局高度仍按 height 属性计算，
      图片盒子会远超页面高度，break-inside:avoid 的段落无法放入任何一页；
@@ -119,7 +117,7 @@ img {
   margin: 0 auto;
   height: auto;
   max-width: 100%;
-  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) * 0.95 - $$imageBlockMargin);
+  max-height: calc(($$pageHeightMm - $$marginTop - $$marginBottom) - $$imageBlockMargin - 4px);
   object-fit: contain;
 }
 

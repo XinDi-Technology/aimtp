@@ -22,14 +22,16 @@ const DOCUMENT_READY_TIMEOUT = 2000;
 const PAGEDJS_READY_TIMEOUT = 10000;
 const IMAGE_READY_TIMEOUT = 5000; // 等待图片加载的超时上限，避免个别图片卡住整个预览
 /**
- * 图片块高上限占「页面内容区高度」的比例。
+ * 图片块高相对「内容区高度」保留的安全余量（px）。
  *
- * 边界实测：块高 = 内容区 99%（963px）时图片被 Paged.js 丢弃；75%（728px）正常显示。
- * 取 0.95（约 922px）作为安全上界，让图片尽可能大又不触发丢弃判定。
- * 不要调高到 0.95 以上：Paged.js 搬移 break-inside:avoid 块的判定是
- * `块高 > 页面可用高度` 就不搬移、改为拆分，而图片无法拆分即整段消失。
+ * Paged.js 判定 break-inside:avoid 的块「放不下」时，既不留在当前页也不进下一页，
+ * 图片会整段消失。早期用 0.95 的比例折扣规避（A4/20mm 下 971px → 922px，
+ * 纵向白丢 8%）。消失的诱因是「块高 + 段边距 > 页面可用高度」：
+ * 整页模式下段边距已归零，这里只需覆盖亚像素取整（内容区高常是 971.34px 这类值），
+ * 4px 足够安全，浪费从 8% 降到约 0.4%。
+ * 不要改成 0：内容区高与 Paged.js 可用高度都带小数，零余量会重新触发图片消失。
  */
-const IMAGE_FIT_RATIO = 0.95;
+const IMAGE_FIT_SAFE_PX = 4;
 /** 极端设置（超大边距/段间距）下的 max-height 下限，避免算出负值使整条声明失效 */
 const MIN_IMAGE_MAX_HEIGHT_PX = 60;
 /** CSS 绝对长度换算：1mm = 96/25.4 px */
@@ -681,6 +683,21 @@ export class PagedJsAdapter implements LayoutEngine {
    * 内联样式优先级最高且不经过 Polisher 重写；段落 margin 用 getComputedStyle
    * 实测，段间距 / 字号 / 容器差异全部自动适配，比模板变量更准。
    * 解析不到页面尺寸或 margin 时直接跳过，回退到 CSS 规则，不会让预览失败。
+   *
+   * 目标：让图片在「内容区」（纸张 − 设置的页边距）内达到理论最大尺寸，
+   * 不裁切、不变形、不出血、不把一张图拆成多张。分两种处理：
+   *
+   * 1) 整页模式 —— 放不进内容区、且高度是约束侧的高图（绝大多数长图属于此类）：
+   *    把「只含一张图片的块」改成精确的整页容器（height = 内容区高 − IMAGE_FIT_SAFE_PX、
+   *    margin 归零、flex 居中），图片 max-width/max-height:100% 在容器内等比最大化。
+   *    本来就放得下的小图不整页化，继续与正文同页排版。
+   *    相比过去「给 <img> 写 max-height = 内容区高 × 0.95 − 段边距」：
+   *      - 0.95 的比例折扣让纵向白丢 8%（971px → 922px），现在只留 4px 安全余量；
+   *      - 段边距在图片独占一页时没有排版意义，过去却同样被扣掉，现在归零；
+   *      - 块高仍 ≤ 页面可用高度，不会触发上面的「放不下 → 拆分 → 图片消失」。
+   *    宽度方向的留白由图片自身宽高比决定，等比前提下无法再压缩。
+   * 2) 其余图片（宽度受限的图、与正文混排的图、作者显式设定尺寸的图）保持原策略：
+   *    写内联 max-height，但同样改用精确内容区高减去安全余量与实测段落 margin。
    */
   private applyImagePageFit(doc: Document): void {
     const images = Array.from(doc.querySelectorAll('img'));
@@ -689,13 +706,16 @@ export class PagedJsAdapter implements LayoutEngine {
     const win = doc.defaultView;
     if (!win) return;
 
-    // --paper-height-mm 由 htmlGenerator 写入 :root（@page 的 size 只有 A4/A3 纸张名，不含毫米数）
-    const pageHeightMm = parseFloat(
-      win.getComputedStyle(doc.documentElement).getPropertyValue('--paper-height-mm'),
-    );
+    // --paper-height-mm / --paper-width-mm 由 htmlGenerator 写入 :root
+    //（@page 的 size 只有 A4/A3 纸张名，不含毫米数）
+    const rootStyle = win.getComputedStyle(doc.documentElement);
+    const pageHeightMm = parseFloat(rootStyle.getPropertyValue('--paper-height-mm'));
+    const pageWidthMm = parseFloat(rootStyle.getPropertyValue('--paper-width-mm'));
     const margins = this.parsePageMargins(doc);
     const marginTopMm = margins ? parseFloat(margins.top) : NaN;
     const marginBottomMm = margins ? parseFloat(margins.bottom) : NaN;
+    const marginLeftMm = margins ? parseFloat(margins.left) : NaN;
+    const marginRightMm = margins ? parseFloat(margins.right) : NaN;
 
     if (
       !Number.isFinite(pageHeightMm) ||
@@ -709,10 +729,24 @@ export class PagedJsAdapter implements LayoutEngine {
     }
 
     const contentHeightPx = (pageHeightMm - marginTopMm - marginBottomMm) * MM_TO_PX;
+    // 内容区宽度只用于判定「高度是否成为约束的一侧」；解析不到时退化为只用高度判定
+    const hasWidthMm =
+      Number.isFinite(pageWidthMm) &&
+      Number.isFinite(marginLeftMm) &&
+      Number.isFinite(marginRightMm);
+    const contentWidthPx = hasWidthMm
+      ? (pageWidthMm - marginLeftMm - marginRightMm) * MM_TO_PX
+      : NaN;
+
+    if (!(contentHeightPx > MIN_IMAGE_MAX_HEIGHT_PX)) return;
 
     for (const img of images) {
       const parent = img.parentElement;
       if (!parent) continue;
+
+      if (this.tryFitImageBlockToPage(img, parent, contentHeightPx, contentWidthPx)) {
+        continue;
+      }
 
       const parentStyle = win.getComputedStyle(parent);
       const blockMarginPx =
@@ -720,7 +754,7 @@ export class PagedJsAdapter implements LayoutEngine {
 
       const maxHeightPx = Math.max(
         MIN_IMAGE_MAX_HEIGHT_PX,
-        contentHeightPx * IMAGE_FIT_RATIO - blockMarginPx,
+        contentHeightPx - IMAGE_FIT_SAFE_PX - blockMarginPx,
       );
 
       // 作者/模板已显式设置更小的 max-height 时取较小值，避免覆盖其意图
@@ -730,6 +764,71 @@ export class PagedJsAdapter implements LayoutEngine {
           ? `${Math.round(Math.min(declaredPx, maxHeightPx))}px`
           : `${Math.round(maxHeightPx)}px`;
     }
+  }
+
+  /**
+   * 把「只含一张图片、确实需要缩小、且高度是约束侧」的块改造成精确的整页容器，
+   * 让图片在内容区内等比缩放到理论最大（不裁切、不变形、不出血）。
+   *
+   * 返回 false 表示不适用（宽度受限的图、本来就放得下的小图、非纯图片块、
+   * 作者显式设定尺寸、固有尺寸未知等），调用方回退到写内联 max-height 的旧路径。
+   *
+   * 只在 P/DIV 上生效：TD/TH/LI 等容器被强行指定高度会破坏表格与列表结构。
+   */
+  private tryFitImageBlockToPage(
+    img: HTMLImageElement,
+    parent: HTMLElement,
+    contentHeightPx: number,
+    contentWidthPx: number,
+  ): boolean {
+    if (parent.tagName !== 'P' && parent.tagName !== 'DIV') return false;
+    // 只处理「图片是该块唯一元素子节点」的标准形态（Markdown 图片渲染为 <p><img></p>）
+    if (parent.children.length !== 1 || parent.firstElementChild !== img) return false;
+    // 作者/模板已显式指定尺寸时尊重其意图，不改写容器
+    if (/\b(width|height)\s*:/i.test(img.getAttribute('style') ?? '')) return false;
+    // 固有尺寸未知（未加载完成或加载失败）时无法判定哪一侧是约束，交给旧路径
+    if (!(img.naturalWidth > 0) || !(img.naturalHeight > 0)) return false;
+
+    // 等比放入内容区的缩放比：取宽、高两侧约束的较小者
+    const scaleByWidth = Number.isFinite(contentWidthPx)
+      ? contentWidthPx / img.naturalWidth
+      : Number.POSITIVE_INFINITY;
+    const scale = Math.min(scaleByWidth, contentHeightPx / img.naturalHeight);
+    const fittedHeightPx = img.naturalHeight * scale;
+
+    // 只有「放不进内容区、必须缩小」的图才整页化。小图（scale ≥ 1）本来就能与正文同页，
+    // 整页化只会白占一页，且 max-width/max-height 不会把图放大，结果是大页里居中一张小图。
+    if (!(scale < 1)) return false;
+
+    // 高度不是约束侧（宽度受限）时图片放不满一页，剩余空间留给后续正文，不整页化
+    if (!(fittedHeightPx >= contentHeightPx - IMAGE_FIT_SAFE_PX)) return false;
+
+    const blockHeightPx = Math.max(
+      MIN_IMAGE_MAX_HEIGHT_PX,
+      contentHeightPx - IMAGE_FIT_SAFE_PX,
+    );
+
+    parent.style.setProperty('height', `${blockHeightPx.toFixed(2)}px`);
+    // border-box：主题若给段落加了 padding，高度也要把它算进去，避免块实际占位超出一页
+    parent.style.setProperty('box-sizing', 'border-box');
+    // 独占一页时上下外边距没有排版意义，却会挤占可用高度导致 Paged.js 判定放不下
+    parent.style.setProperty('margin', '0');
+    parent.style.setProperty('display', 'flex');
+    parent.style.setProperty('align-items', 'center');
+    parent.style.setProperty('justify-content', 'center');
+    parent.style.setProperty('break-inside', 'avoid');
+    parent.setAttribute('data-aimtp-page-image', '');
+
+    // 图片在整页容器内等比最大化：两个方向都只受容器约束，比例由浏览器保持不变
+    img.style.setProperty('display', 'block');
+    img.style.setProperty('margin', '0 auto');
+    img.style.setProperty('width', 'auto');
+    img.style.setProperty('height', 'auto');
+    img.style.setProperty('max-width', '100%');
+    img.style.setProperty('max-height', '100%');
+    img.style.setProperty('object-fit', 'contain');
+
+    return true;
   }
 
   /**
