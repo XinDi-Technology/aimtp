@@ -673,7 +673,8 @@ export const useAppStore = create<AppState>()(
       name: 'aimtp-app-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        markdown: state.markdown,
+        // 刻意不持久化 markdown：启动时始终回到默认模板，
+        // 避免打开软件就渲染上次导入的文件内容。
         locale: state.locale,
         theme: state.theme,
         page: state.page,
@@ -683,7 +684,15 @@ export const useAppStore = create<AppState>()(
         headerFooter: state.headerFooter,
         preview: state.preview,
         customTemplates: state.customTemplates,
-        currentTemplate: state.currentTemplate,
+      }),
+      // 默认合并是「持久化值覆盖初始值」的浅合并。
+      // 旧版本曾把 markdown / currentTemplate 写进 localStorage，
+      // 这里显式重置，保证即使本机残留历史数据也不会被恢复。
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState as Partial<AppState>),
+        markdown: TEMPLATES.blank,
+        currentTemplate: 'blank',
       }),
       // 在状态加载（rehydrate）时执行的验证逻辑
       onRehydrateStorage: (_state) => {

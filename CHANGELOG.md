@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.44 - 2026-10-07
+
+### 修复
+- 修复打开软件时会渲染上次导入的文件：zustand `persist` 此前把正文 `markdown` 一并写入 localStorage（`aimtp-app-storage`），启动时 rehydrate 直接把旧正文恢复进 `PreviewPanel`。现在 `partialize` 不再持久化 `markdown` 与 `currentTemplate`，并在 `merge` 中显式重置为默认模板（空白文档），因此即使本机已存在历史数据也不会被浅合并恢复；locale、主题、页面、字体、扩展、封面、页眉页脚、预览等设置仍照旧持久化
+
 ## v0.2.43 - 2026-10-07
 
 ### 修复
