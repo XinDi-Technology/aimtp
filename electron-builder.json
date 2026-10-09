@@ -28,6 +28,7 @@
   "asar": true,
   "asarUnpack": [],
   "compression": "maximum",
+  "artifactName": "Aimtp-${version}-${os}-${arch}.${ext}",
   "win": { 
     "target": [
       {
@@ -36,11 +37,28 @@
       }
     ]
   },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Aimtp",
+    "installerLanguages": ["zh_CN", "en_US"],
+    "displayLanguageSelector": true,
+    "uninstallDisplayName": "Aimtp",
+    "runAfterFinish": true,
+    "deleteAppDataOnUninstall": false,
+    "include": "build/uninstall-info.nsh"
+  },
   "mac": { 
-    "target": "dmg"
+    "target": "dmg",
+    "category": "public.app-category.productivity"
   },
   "linux": { 
-    "target": "AppImage"
+    "target": "AppImage",
+    "category": "Utility"
   },
   "publish": null
 }

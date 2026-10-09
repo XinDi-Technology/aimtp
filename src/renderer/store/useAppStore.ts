@@ -152,200 +152,233 @@ export interface AppState {
   selectPresetTemplate: (templateKey: string) => void;
 }
 
-export const TEMPLATES = {
-  blank: `# 空白文档
+/** 预设模板：正文 + 该模板对应的完整设置 */
+export interface PresetTemplate {
+  markdown: string;
+  settings: {
+    page: PageSettings;
+    font: FontSettings;
+    extensions: ExtensionSettings;
+    headerFooter: HeaderFooterSettings;
+    cover: CoverSettings;
+    preview: PreviewSettings;
+  };
+}
 
-在这里输入您的内容...
+// 预设模板目前只保留「中文技术文档」一个。
+// 它的 settings 同时是应用默认值（defaultPage/defaultFont/...）的唯一来源，
+// 避免「模板里一套、默认值另一套」的两处维护。
+export const TEMPLATES: Record<'zhTech', PresetTemplate> = {
+  zhTech: {
+    markdown: `---
+title: 中文技术文档
+author: 文档作者
+date: 2026-10-09
+---
 
-## 标题
+# 中文技术文档
 
-正文内容...
-`,
+> 本文件是 Aimtp 内置模板「中文技术文档」的示例正文，展示了一套面向中文技术文档的排版规范，以及常用 Markdown 语法的渲染效果。
 
-  report: `# 项目报告
+## 文档设置
+
+本模板采用的排版设置如下，可在右侧「设置」面板中按需调整，也可另存为自定义模板。
+
+| 设置项 | 取值 |
+| --- | --- |
+| 页面尺寸 | A4 |
+| 页面方向 | 纵向 |
+| 页边距 | 上 20mm、下 20mm、左 24mm、右 24mm |
+| 正文字体 | GWM Sans UI |
+| 代码字体 | JetBrains Mono |
+| 基础字号 | 18px |
+| 行高 | 2 |
+| 段落间距 | 0.5em |
+| 代码高亮 | 启用，GitHub 主题，显示行号 |
+| 脚注 | 启用，统一置于文档末尾 |
+| 标题分页 | 二级标题自动另起一页 |
+| 页眉 | 居中显示文档标题 |
+| 页脚 | 居中显示「第 x 页 / 共 x 页」 |
+| 封面 | 启用，信息取自 YAML Front Matter |
+| 目标 DPI | 93 |
+
+## 修订记录
+
+| 版本 | 日期 | 修订人 | 修订说明 |
+| --- | --- | --- | --- |
+| 1.0 | 2026-10-09 | 文档作者 | 初稿创建 |
 
 ## 概述
 
-本文档概述了项目的关键信息和成果。
+说明文档的编写目的、适用范围与预期读者。
 
-## 背景
+## 术语与缩略语
 
-描述项目的背景和目标。
+| 术语 | 全称 | 说明 |
+| --- | --- | --- |
+| PDF | Portable Document Format | 便携式文档格式 |
+| DPI | Dots Per Inch | 每英寸点数，用于预览缩放校准 |
 
-## 主要成果
+## 系统架构
 
-- 成果一：完成核心功能开发
-- 成果二：优化用户体验
-- 成果三：提升系统性能
+系统由编辑器、解析层、分页引擎与导出层四部分组成。
 
-## 数据分析
-
-| 指标 | 数值 | 增长率 |
-|------|------|--------|
-| 用户数 | 1000 | 10% |
-| 收入 | 50000 | 25% |
-
-## 结论
-
-项目已达到预期目标。
-
----
-
-*报告人：*
-*日期：2024年*
-`,
-
-  article: `# 文章标题
-
-> 一句简短的副标题或引用
-
-**作者名** | *2024年1月*
-
----
-
-## 简介
-
-在这里介绍文章的背景和主题。
-
-## 主要内容
-
-### 第一部分
-
-详细说明...
-
-### 第二部分
-
-详细说明...
-
-## 总结
-
-总结文章的主要观点。
-
----
-
-## 参考资料
-
-1. 参考来源一
-2. 参考来源二
-`,
-
-  documentation: `# API 文档
-
-## 概述
-
-本文档描述了系统 API 的使用方法。
-
-## 认证
-
-所有 API 请求需要携带 API Key：
-
-\`\`\`
-Authorization: Bearer YOUR_API_KEY
+\`\`\`mermaid
+graph LR
+  A[Markdown 编辑器] --> B[解析层]
+  B --> C[Paged.js 分页引擎]
+  C --> D[PDF 导出]
 \`\`\`
 
-## 接口列表
+## 功能说明
 
-### 获取用户信息
+### 模块一
 
+描述模块一的职责与边界。
+
+### 模块二
+
+描述模块二的职责与边界。
+
+## 接口说明
+
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| /api/documents | GET | 获取文档列表 |
+| /api/documents | POST | 创建文档 |
+| /api/documents/:id | DELETE | 删除文档 |
+
+## 部署与运维
+
+\`\`\`bash
+npm install
+npm run build
+npm run dist
 \`\`\`
-GET /api/users/:id
-\`\`\`
 
-**参数：**
-- \`id\` (必需): 用户 ID
+## Markdown 语法示例
 
-**响应：**
-\`\`\`json
-{
-  "id": "1",
-  "name": "张三",
-  "email": "user@example.com"
+### 标题层级
+
+四级、五级、六级标题依此类推。
+
+### 强调与行内格式
+
+**加粗**、*斜体*、\`行内代码\`、==高亮==、++插入++、~下标~、^上标^、[链接](https://github.com/XinDi-Technology/aimtp)。
+
+### 列表
+
+1. 有序列表第一项
+2. 有序列表第二项
+
+- 无序列表第一项
+- 无序列表第二项
+
+### 任务列表
+
+- [x] 已完成事项
+- [ ] 待办事项
+
+### 引用
+
+> 引用用于突出关键结论或外部来源。
+
+### 提示块
+
+> [!NOTE]
+> 这是 NOTE 提示块，用于补充说明。
+
+> [!WARNING]
+> 这是 WARNING 提示块，用于提醒风险。
+
+### 代码块
+
+\`\`\`typescript
+export function renderMarkdown(source: string): string {
+  return source.trim();
 }
 \`\`\`
 
-### 创建用户
+### 表格
 
-\`\`\`
-POST /api/users
-\`\`\`
+| 列一 | 列二 | 列三 |
+| --- | --- | --- |
+| A | B | C |
 
-**请求体：**
-\`\`\`json
-{
-  "name": "新用户",
-  "email": "new@example.com"
-}
-\`\`\`
+### 公式
 
-## 错误码
+行内公式 $a + b = c$，独立公式：
 
-| 错误码 | 描述 |
-|--------|------|
-| 400 | 请求参数错误 |
-| 401 | 未授权 |
-| 404 | 资源不存在 |
-| 500 | 服务器错误 |
+$$
+E = mc^2
+$$
+
+### 脚注
+
+这里是一处脚注[^1]。
+
+[^1]: 脚注内容统一排布在文档末尾。
+
+## 附录
+
+补充材料、参考资料与联系方式。
 `,
-};
-
-const defaultPage: PageSettings = {
-  size: 'A4',
-  orientation: 'portrait',
-  margins: {
-    top: 10,
-    bottom: 10,
-    left: 10,
-    right: 10,
+    settings: {
+      page: {
+        size: 'A4',
+        orientation: 'portrait',
+        margins: { top: 20, bottom: 20, left: 24, right: 24 },
+      },
+      font: {
+        body: 'GWM Sans UI',
+        code: 'JetBrains Mono',
+        baseSize: 18,
+        lineHeight: 2,
+        paragraphSpacing: 0.5,
+      },
+      extensions: {
+        githubAlerts: true,
+        codeHighlight: true,
+        codeTheme: 'github',
+        showLineNumbers: true,
+        taskLists: true,
+        mermaid: true,
+        mathJax: true,
+        footnotes: true,
+        footnoteMode: 'end',
+        h1PageBreak: false,
+        h2PageBreak: true,
+        mark: true,
+        ins: true,
+        sub: true,
+        sup: true,
+      },
+      headerFooter: {
+        enabled: true,
+        header: { font: 'GWM Sans UI', alignment: 'center', content: 'title' },
+        footer: { font: 'GWM Sans UI', alignment: 'center', content: 'pageNumberTotal' },
+      },
+      cover: { enabled: true },
+      preview: { targetDPI: 93 },
+    },
   },
 };
 
-const defaultFont: FontSettings = {
-  body: 'GWM Sans UI',
-  code: 'JetBrains Mono',
-  baseSize: 12,
-  lineHeight: 1.6,
-  paragraphSpacing: 0,
-};
+// 应用默认值的唯一来源：内置预设模板「中文技术文档」的 settings。
+// 用深拷贝取值，避免下游代码（如 setPage 的浅合并）意外改动 TEMPLATES 常量本身。
+const clonePreset = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-const defaultExtensions: ExtensionSettings = {
-  githubAlerts: true,
-  codeHighlight: true,
-  codeTheme: 'github',
-  showLineNumbers: false,
-  taskLists: true,
-  mermaid: false,
-  mathJax: false,
-  footnotes: true,
-  footnoteMode: 'end',
-  h1PageBreak: false,
-  h2PageBreak: false,
-  mark: true,
-  ins: true,
-  sub: true,
-  sup: true,
-};
+const defaultPage: PageSettings = clonePreset(TEMPLATES.zhTech.settings.page);
 
-const defaultCover: CoverSettings = {
-  enabled: false,
-};
+const defaultFont: FontSettings = clonePreset(TEMPLATES.zhTech.settings.font);
 
-const defaultHeaderFooter: HeaderFooterSettings = {
-  enabled: true, // 🔧 修复：默认启用页眉页脚
-  header: {
-    font: 'GWM Sans UI',
-    alignment: 'center',
-    content: '', // 页眉默认不显示内容（用户可选配置）
-  },
-  footer: {
-    font: 'GWM Sans UI',
-    alignment: 'center',
-    content: 'pageNumber', // 页脚默认显示页码
-  },
-};
+const defaultExtensions: ExtensionSettings = clonePreset(TEMPLATES.zhTech.settings.extensions);
 
-const defaultPreview: PreviewSettings = {
-  targetDPI: 96, // 默认 96 DPI
-};
+const defaultCover: CoverSettings = clonePreset(TEMPLATES.zhTech.settings.cover);
+
+const defaultHeaderFooter: HeaderFooterSettings = clonePreset(TEMPLATES.zhTech.settings.headerFooter);
+
+const defaultPreview: PreviewSettings = clonePreset(TEMPLATES.zhTech.settings.preview);
 
 const STORAGE_KEY = 'aimtp-custom-templates';
 
@@ -518,52 +551,119 @@ const localStorageAvailable = (): boolean => {
   }
 };
 
-const loadCustomTemplates = (): CustomTemplate[] => {
-  if (!localStorageAvailable()) {
-    logger.warn('localStorage is not available, using default templates');
-    return [];
-  }
+// 非 Electron 环境（如纯浏览器测试）下没有该 API，此时退回 localStorage 读写。
+const templatesApi = () => window.electronAPI?.templates;
+
+/** 读取历史上存在 localStorage 里的自定义模板（仅用于一次性迁移与兜底） */
+const readLegacyCustomTemplates = (): CustomTemplate[] => {
+  if (!localStorageAvailable()) return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const validated = validateCustomTemplates(parsed);
-      if (validated.length !== parsed.length) {
-        logger.warn('Some templates were invalid and discarded during loading');
-      }
-      return validated;
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    const validated = validateCustomTemplates(parsed);
+    if (validated.length !== parsed.length) {
+      logger.warn('Some templates were invalid and discarded during loading');
     }
+    return validated;
   } catch (error) {
-    logger.error('Failed to load custom templates:', error);
+    logger.error('Failed to load legacy custom templates:', error);
+    return [];
   }
-  return [];
 };
 
-const saveCustomTemplates = (templates: CustomTemplate[]) => {
-  if (!localStorageAvailable()) {
-    logger.warn('localStorage is not available, cannot save templates');
+const clearLegacyCustomTemplates = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    logger.warn('Failed to clear legacy custom templates:', error);
+  }
+};
+
+/**
+ * 从磁盘目录（userData/templates）读取自定义模板。
+ * 目录为空时，把 localStorage 里的历史数据迁移到磁盘（一次性），
+ * 迁移成功后清掉 localStorage 中的旧副本，避免下次又迁回来。
+ */
+export const loadCustomTemplates = async (): Promise<CustomTemplate[]> => {
+  const api = templatesApi();
+  if (!api) {
+    // 没有主进程 API 时沿用旧行为，保证测试/纯浏览器环境仍可用
+    return readLegacyCustomTemplates();
+  }
+
+  try {
+    const records = await api.list();
+    const validated = validateCustomTemplates(records);
+    if (validated.length > 0) {
+      return validated;
+    }
+
+    const legacy = readLegacyCustomTemplates();
+    if (legacy.length === 0) return [];
+
+    for (const template of legacy) {
+      try {
+        await api.save(template);
+      } catch (error) {
+        logger.error('Failed to migrate template to disk:', template.id, error);
+      }
+    }
+    clearLegacyCustomTemplates();
+    logger.log(`Migrated ${legacy.length} custom template(s) to disk`);
+    return legacy;
+  } catch (error) {
+    logger.error('Failed to load custom templates from disk:', error);
+    return readLegacyCustomTemplates();
+  }
+};
+
+/** 把单个模板写入磁盘（新增与更新都走这里） */
+const persistTemplate = async (template: CustomTemplate): Promise<void> => {
+  const api = templatesApi();
+  if (!api) {
+    logger.warn('Template file API is not available, cannot save template');
     return;
   }
   try {
-    // TODO: [潜在问题8] localStorage 容量无限制处理
-    // 如果用户保存大量模板，可能导致存储失败
-    // 建议：检测容量超限并提示用户清理旧数据
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+    await api.save(template);
   } catch (error) {
-    logger.error('Failed to save custom templates:', error);
+    logger.error('Failed to save custom template:', error);
+  }
+};
+
+const persistTemplateRemoval = async (id: string): Promise<void> => {
+  const api = templatesApi();
+  if (!api) return;
+  try {
+    await api.remove(id);
+  } catch (error) {
+    logger.error('Failed to remove custom template:', error);
+  }
+};
+
+/** 「清除所有个人数据」：删除磁盘上的全部模板文件 */
+export const clearAllCustomTemplates = async (): Promise<void> => {
+  clearLegacyCustomTemplates();
+  const api = templatesApi();
+  if (!api) return;
+  try {
+    await api.clear();
+  } catch (error) {
+    logger.error('Failed to clear custom templates:', error);
   }
 };
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      markdown: TEMPLATES.blank,
+      markdown: TEMPLATES.zhTech.markdown,
       setMarkdown: (markdown) => set({ markdown }),
 
       renderNonce: 0,
       bumpRenderNonce: () => set((s) => ({ renderNonce: s.renderNonce + 1 })),
       
-      currentTemplate: 'blank',
+      currentTemplate: 'zhTech',
       setCurrentTemplate: (currentTemplate) => set({ currentTemplate }),
       
       locale: 'zh',
@@ -599,7 +699,8 @@ export const useAppStore = create<AppState>()(
       showTemplateSelection: false,
       setShowTemplateSelection: (show) => set({ showTemplateSelection: show }),
       
-      customTemplates: loadCustomTemplates(),
+      // 自定义模板来自磁盘目录，由下方 loadCustomTemplates() 异步填充
+      customTemplates: [],
       
       saveAsTemplate: (name) => {
         const trimmedName = name?.trim();
@@ -628,7 +729,7 @@ export const useAppStore = create<AppState>()(
           createdAt: Date.now(),
         };
         const newTemplates = [...state.customTemplates, newTemplate];
-        saveCustomTemplates(newTemplates);
+        void persistTemplate(newTemplate);
         set({
           customTemplates: newTemplates,
         });
@@ -652,7 +753,7 @@ export const useAppStore = create<AppState>()(
       deleteTemplate: (templateId) => {
         const state = get();
         const newTemplates = state.customTemplates.filter(t => t.id !== templateId);
-        saveCustomTemplates(newTemplates);
+        void persistTemplateRemoval(templateId);
         set({
           customTemplates: newTemplates,
         });
@@ -661,9 +762,17 @@ export const useAppStore = create<AppState>()(
       selectPresetTemplate: (templateKey) => {
         const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
         if (template) {
+          const { page, font, extensions, headerFooter, cover, preview } = template.settings;
           set({
-            markdown: template,
+            markdown: template.markdown,
             currentTemplate: templateKey,
+            // 预设模板自带一套完整设置，选择模板即应用这套设置（含目标 DPI）
+            page: clonePreset(page),
+            font: clonePreset(font),
+            extensions: clonePreset(extensions),
+            headerFooter: clonePreset(headerFooter),
+            cover: clonePreset(cover),
+            preview: clonePreset(preview),
             showTemplateSelection: false, // 关闭模板选择面板
           });
         }
@@ -683,16 +792,18 @@ export const useAppStore = create<AppState>()(
         cover: state.cover,
         headerFooter: state.headerFooter,
         preview: state.preview,
-        customTemplates: state.customTemplates,
+        // customTemplates 刻意不进入 localStorage：它已经以 JSON 文件的形式
+        // 存放在 userData/templates，由 loadCustomTemplates() 异步加载。
       }),
       // 默认合并是「持久化值覆盖初始值」的浅合并。
-      // 旧版本曾把 markdown / currentTemplate 写进 localStorage，
+      // 旧版本曾把 markdown / currentTemplate / customTemplates 写进 localStorage，
       // 这里显式重置，保证即使本机残留历史数据也不会被恢复。
       merge: (persistedState, currentState) => ({
         ...currentState,
         ...(persistedState as Partial<AppState>),
-        markdown: TEMPLATES.blank,
-        currentTemplate: 'blank',
+        markdown: TEMPLATES.zhTech.markdown,
+        currentTemplate: 'zhTech',
+        customTemplates: currentState.customTemplates,
       }),
       // 在状态加载（rehydrate）时执行的验证逻辑
       onRehydrateStorage: (_state) => {
@@ -711,7 +822,6 @@ export const useAppStore = create<AppState>()(
               rehydratedState.cover = validateCoverSettings(rehydratedState.cover);
               rehydratedState.headerFooter = validateHeaderFooterSettings(rehydratedState.headerFooter);
               rehydratedState.preview = validatePreviewSettings(rehydratedState.preview);
-              rehydratedState.customTemplates = validateCustomTemplates(rehydratedState.customTemplates);
             } catch (e) {
               logger.warn('Validation during rehydration failed, using some default values:', e);
             }
@@ -721,3 +831,11 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+// 启动时从磁盘（userData/templates）加载自定义模板。
+// 加载是异步的，完成前列表为空；加载完成后 setState 触发一次更新即可。
+void loadCustomTemplates().then((templates) => {
+  if (templates.length > 0) {
+    useAppStore.setState({ customTemplates: templates });
+  }
+});

@@ -24,7 +24,14 @@ Compliance-first Markdown to PDF desktop application
 
 从 [Releases](https://github.com/XinDi-Technology/aimtp/releases) 页面下载对应平台的安装包：
 
--   **Windows**：`.exe`
+-   **Windows**：`.exe`（向导式安装）
+
+Windows 安装程序为向导式（NSIS）：
+
+1.  启动后先选择界面语言（中文 / English）；
+2.  默认安装到当前用户目录，**不需要管理员权限**；也可为所有用户安装并自选安装路径；
+3.  可选择是否创建桌面快捷方式与开始菜单快捷方式；
+4.  安装完成后可直接启动。
 
 ## 支持的排版设置
 
@@ -45,7 +52,7 @@ Compliance-first Markdown to PDF desktop application
 | 代码字体 | JetBrains Mono / Monaspace Argon Frozen |
 | 基础字号 | 可自定义（默认 18） |
 | 行高 | 可自定义（默认 2） |
-| 段落间距 | 可自定义（默认 0.8） |
+| 段落间距 | 可自定义（默认 0.5） |
 
 ### 内容特性
 
@@ -72,6 +79,27 @@ Compliance-first Markdown to PDF desktop application
 | 页脚字体 | GWM Sans UI |
 | 页脚对齐 | 左对齐 / 居中 / 右对齐 |
 | 页脚内容 | 页码 / 第 X 页 / 共 X 页 |
+
+## 预设模板
+
+内置唯一的预设模板「中文技术文档」：正文包含完整的设置说明表与 Markdown 排版示例，
+并携带一套默认排版设置（A4 纵向、页边距上 20 / 下 20 / 左 24 / 右 24 mm、基础字号 18px、
+行高 2、段落间距 0.5em、目标 DPI 93）。选择该模板即应用这套设置，
+这套设置同时也是应用首次启动时的默认值。
+
+## 数据与卸载
+
+自定义模板以 JSON 文件的形式保存在应用数据目录下，每个模板一个文件：
+
+| 平台 | 目录 |
+| :-: | :-: |
+| Windows | `%APPDATA%\Aimtp\templates` |
+| macOS | `~/Library/Application Support/Aimtp/templates` |
+| Linux | `~/.config/Aimtp/templates` |
+
+-   可在「设置」面板底部直接打开该目录，方便备份、拷贝或纳入版本管理。
+-   **卸载应用不会删除该目录**，重新安装后模板仍然保留。
+-   如需彻底清除，可使用设置面板中的「清除所有个人数据」，该操作会删除全部自定义模板并重置界面设置，不可撤销。
 
 ## 字体说明
 

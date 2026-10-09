@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
-import { useAppStore, PageSettings } from '../store/useAppStore';
+import React, { useEffect, useState } from 'react';
+import { clearAllCustomTemplates, useAppStore, PageSettings } from '../store/useAppStore';
 
 export const SettingsPanel: React.FC = () => {
   const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, preview, setPreview } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [templatesDir, setTemplatesDir] = useState('');
+
+  // 自定义模板以 JSON 文件的形式存放在 userData/templates，目录路径展示给用户，
+  // 方便备份与迁移（卸载程序不会删除该目录）。
+  useEffect(() => {
+    let cancelled = false;
+    window.electronAPI?.templates
+      ?.dir()
+      .then((dir) => {
+        if (!cancelled) setTemplatesDir(dir);
+      })
+      .catch(() => { /* 取不到目录就不展示路径 */ });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const hasTemplateApi = !!window.electronAPI?.templates;
 
   const handleSaveTemplate = () => {
     if (templateName.trim()) {
@@ -12,6 +31,20 @@ export const SettingsPanel: React.FC = () => {
       setTemplateName('');
       setShowModal(false);
     }
+  };
+
+  const handleOpenTemplateDir = () => {
+    void window.electronAPI?.templates?.openDir().catch(() => { /* 打开失败静默处理 */ });
+  };
+
+  const handleClearPersonalData = async () => {
+    setShowClearConfirm(false);
+    await clearAllCustomTemplates();
+    useAppStore.setState({ customTemplates: [] });
+    try {
+      localStorage.removeItem('aimtp-app-storage');
+    } catch { /* 清理失败不阻断 */ }
+    window.location.reload();
   };
 
   return (
@@ -547,6 +580,32 @@ date: 2024-01-01
           >
             💾 保存设置为模板
           </button>
+
+          <button
+            className="btn btn-ghost"
+            style={{ width: '100%', marginTop: '8px' }}
+            onClick={handleOpenTemplateDir}
+            disabled={!hasTemplateApi}
+            data-testid="open-template-dir-btn"
+          >
+            📂 打开模板目录
+          </button>
+
+          {templatesDir && (
+            <p style={{ color: '#666', fontSize: '12px', marginTop: '6px', wordBreak: 'break-all' }}>
+              模板保存在：{templatesDir}
+            </p>
+          )}
+
+          <button
+            className="btn btn-ghost"
+            style={{ width: '100%', marginTop: '8px' }}
+            onClick={() => setShowClearConfirm(true)}
+            disabled={!hasTemplateApi}
+            data-testid="clear-personal-data-btn"
+          >
+            🗑️ 清除所有个人数据
+          </button>
         </div>
       </div>
 
@@ -583,6 +642,27 @@ date: 2024-01-01
                 disabled={!templateName.trim()}
               >
                 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 清除个人数据确认弹窗 */}
+      {showClearConfirm && (
+        <div className="modal-overlay" onClick={() => setShowClearConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>清除所有个人数据</h3>
+            <p style={{ fontSize: '13px', lineHeight: 1.6 }}>
+              将删除磁盘上的全部自定义模板{templatesDir ? `（${templatesDir}）` : ''}，
+              并重置界面设置。此操作不可撤销。
+            </p>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowClearConfirm(false)}>
+                取消
+              </button>
+              <button className="btn btn-primary" onClick={handleClearPersonalData}>
+                确认清除
               </button>
             </div>
           </div>

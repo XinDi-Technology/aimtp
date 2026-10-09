@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="4000" viewBox="0 0 300 4000">
+  <rect x="0" y="0" width="300" height="4000" fill="#f6f8fa" />
+  <rect x="6" y="6" width="288" height="3988" fill="none" stroke="#57606a" stroke-width="4" />
+  <g fill="#0969da">
+    <rect x="40" y="200" width="220" height="40" rx="4" />
+    <rect x="40" y="600" width="220" height="40" rx="4" fill="#1a7f37" />
+    <rect x="40" y="1000" width="220" height="40" rx="4" fill="#bf8700" />
+    <rect x="40" y="1400" width="220" height="40" rx="4" fill="#8250df" />
+    <rect x="40" y="1800" width="220" height="40" rx="4" fill="#cf222e" />
+    <rect x="40" y="2200" width="220" height="40" rx="4" />
+    <rect x="40" y="2600" width="220" height="40" rx="4" fill="#1a7f37" />
+    <rect x="40" y="3000" width="220" height="40" rx="4" fill="#bf8700" />
+    <rect x="40" y="3400" width="220" height="40" rx="4" fill="#8250df" />
+    <rect x="40" y="3800" width="220" height="40" rx="4" fill="#cf222e" />
+  </g>
+  <text x="150" y="120" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#24292f">300 x 4000</text>
+  <text x="150" y="2020" text-anchor="middle" font-family="sans-serif" font-size="30" fill="#57606a">long strip</text>
+  <text x="150" y="3960" text-anchor="middle" font-family="sans-serif" font-size="30" fill="#57606a">bottom</text>
+</svg>

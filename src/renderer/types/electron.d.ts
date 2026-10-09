@@ -1,4 +1,10 @@
-export {};
+/** 主进程持久化的模板记录（与 src/main/templateStore.ts 中的 TemplateRecord 保持一致） */
+export interface TemplateRecord {
+  id: string;
+  name: string;
+  settings: unknown;
+  createdAt: number;
+}
 
 declare global {
   /** MathJax v4 outputJax 结构（最小类型，仅声明实际用到的成员） */
@@ -36,6 +42,15 @@ declare global {
         pageConfig: { size: string; orientation: string },
         metadata?: { title?: string; author?: string; subject?: string; keywords?: string[] },
       ) => Promise<Uint8Array>;
+      /** 自定义模板读写（文件位于 userData/templates，卸载时保留） */
+      templates?: {
+        list: () => Promise<TemplateRecord[]>;
+        save: (record: TemplateRecord) => Promise<void>;
+        remove: (id: string) => Promise<void>;
+        clear: () => Promise<void>;
+        dir: () => Promise<string>;
+        openDir: () => Promise<void>;
+      };
     };
     /** PreviewPanel 注册的最近一次预览渲染结果 */
     __aimtpGetLastRenderResult?: () => {

@@ -2,10 +2,14 @@ import type { FC } from 'react';
 import { useAppStore } from '../store/useAppStore';
 
 const templateList = [
-  { key: 'blank', name: '空白文档', nameEn: 'Blank', icon: '📄', desc: '新建空白文档', descEn: 'Create new document' },
-  { key: 'report', name: '项目报告', nameEn: 'Report', icon: '📊', desc: '包含数据表格和图表', descEn: 'With data tables and charts' },
-  { key: 'article', name: '文章', nameEn: 'Article', icon: '📝', desc: '文章和博客格式', descEn: 'Article and blog format' },
-  { key: 'documentation', name: 'API文档', nameEn: 'API Doc', icon: '📚', desc: '技术文档格式', descEn: 'Technical documentation' },
+  {
+    key: 'zhTech',
+    name: '中文技术文档',
+    nameEn: 'Chinese Technical Doc',
+    icon: '📘',
+    desc: '含设置说明与排版示例，默认 A4 / 18px / 行高 2',
+    descEn: 'With settings notes and typography samples, A4 / 18px / line-height 2',
+  },
 ];
 
 export const TemplateSelectionPanel: FC = () => {

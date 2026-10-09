@@ -4,6 +4,15 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { logger } from './logger';
 import { t } from '../shared/i18n';
+import {
+  clearAllTemplates,
+  ensureTemplatesDir,
+  getTemplatesDir,
+  listTemplates,
+  removeTemplate,
+  saveTemplate,
+  type TemplateRecord,
+} from './templateStore';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -62,6 +71,22 @@ ipcMain.handle('save-pdf-to-path', async (_, data: Uint8Array, filePath: string)
     logger.error('Error saving PDF:', error);
     throw new Error(t('file-write-error'), { cause: error });
   }
+});
+
+// 自定义模板：以 JSON 文件的形式存放在 userData/templates，
+// 卸载程序不会删除该目录（deleteAppDataOnUninstall: false），重装后模板仍在。
+ipcMain.handle('templates:list', () => listTemplates());
+
+ipcMain.handle('templates:save', (_event, record: TemplateRecord) => saveTemplate(record));
+
+ipcMain.handle('templates:remove', (_event, id: string) => removeTemplate(id));
+
+ipcMain.handle('templates:clear', () => clearAllTemplates());
+
+ipcMain.handle('templates:dir', () => getTemplatesDir());
+
+ipcMain.handle('templates:openDir', async () => {
+  await shell.openPath(ensureTemplatesDir());
 });
 
 function getPageDimensionsMm(size: string, landscape: boolean): { width: number; height: number } {
@@ -229,6 +254,7 @@ process.on('unhandledRejection', (reason, promise) => {
 app.commandLine.appendSwitch('disable-font-subsetting');
 
 app.whenReady().then(() => {
+  ensureTemplatesDir();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

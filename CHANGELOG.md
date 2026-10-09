@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.0 - 2026-10-09
+
+### 新增
+- 自定义模板改存到应用数据目录下的独立 JSON 文件（Windows `%APPDATA%\Aimtp\templates`、macOS `~/Library/Application Support/Aimtp/templates`、Linux `~/.config/Aimtp/templates`）
+- Windows 安装包改为向导式 NSIS 安装
+
+### 变更
+- 预设模板收敛为唯一的「中文技术文档」
+- 首次启动会把历史上存放在 `localStorage` 中的自定义模板一次性迁移到磁盘目录，迁移成功后清除旧副本；取不到主进程 API 时（如纯浏览器测试环境）仍退回 `localStorage` 读写，行为不变
+
 ## v0.2.45 - 2026-10-07
 
 ### 修复

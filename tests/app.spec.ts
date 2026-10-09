@@ -92,10 +92,10 @@ test.describe('Aimtp Application', () => {
       await expect(page.locator('.template-selection-inline')).toContainText(/(预设模板|Preset Templates)/, { timeout: UI_TIMEOUT });
     });
 
-    test('should select report template and update preview', async ({ page }) => {
+    test('should select preset template and update preview', async ({ page }) => {
       await page.locator('[data-testid="template-btn"]').click({ timeout: UI_TIMEOUT });
-      const reportTemplateRow = page.locator('.template-row').nth(1);
-      await reportTemplateRow.locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
+      const presetTemplateRow = page.locator('.template-row').first();
+      await presetTemplateRow.locator('.template-select-btn').click({ timeout: UI_TIMEOUT });
       
       await expect(page.locator('.template-selection-inline')).not.toBeVisible({ timeout: UI_TIMEOUT });
       
@@ -105,7 +105,7 @@ test.describe('Aimtp Application', () => {
       // 使用 frameLocator 直接访问 iframe 内容（无 cross-origin 问题）
       const previewFrame = page.frameLocator('.editor-preview iframe').first();
       await expect(previewFrame.locator('body')).toContainText(
-        /项目报告|Project Report/,
+        /中文技术文档|Chinese Technical Doc/,
         { timeout: 20000 }
       );
     });
