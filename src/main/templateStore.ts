@@ -59,7 +59,7 @@ const templatePath = (dir: string, id: string): string => join(dir, `${id}${TEMP
 export function listTemplates(): TemplateRecord[] {
   const dir = ensureTemplatesDir();
 
-  let entries: string[] = [];
+  let entries: string[];
   try {
     entries = fs.readdirSync(dir);
   } catch (error) {
@@ -120,7 +120,7 @@ export function saveTemplate(record: TemplateRecord): void {
     try {
       if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
     } catch { /* 临时文件清理失败可忽略 */ }
-    throw new Error(t('template-write-error'));
+    throw new Error(t('template-write-error'), { cause: error });
   }
 }
 
@@ -133,14 +133,14 @@ export function removeTemplate(id: string): void {
     if (fs.existsSync(target)) fs.unlinkSync(target);
   } catch (error) {
     logger.error('Failed to remove template:', id, error);
-    throw new Error(t('template-write-error'));
+    throw new Error(t('template-write-error'), { cause: error });
   }
 }
 
 /** 清空全部自定义模板文件（「清除所有个人数据」用） */
 export function clearAllTemplates(): void {
   const dir = ensureTemplatesDir();
-  let entries: string[] = [];
+  let entries: string[];
   try {
     entries = fs.readdirSync(dir);
   } catch (error) {
