@@ -176,7 +176,8 @@ test.describe('Aimtp Application', () => {
         .toContainText(/预览页面尺寸校准|Preview Calibration/, { timeout: UI_TIMEOUT });
       const dpiInput = page.locator('[data-testid="dpi-input"]');
       await expect(dpiInput).toBeVisible({ timeout: UI_TIMEOUT });
-      await expect(dpiInput).toHaveValue('96', { timeout: UI_TIMEOUT });
+      // 默认 DPI 来自内置预设模板「中文技术文档」的 settings
+      await expect(dpiInput).toHaveValue('93', { timeout: UI_TIMEOUT });
     });
   });
 
