@@ -1,21 +1,25 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { useI18n } from '../hooks';
 
 export const StatusBar: React.FC = () => {
   const { markdown, currentTemplate } = useAppStore();
-  
+  const { t } = useI18n();
+
   const wordCount = markdown.trim() ? markdown.trim().split(/\s+/).length : 0;
   const lineCount = markdown ? markdown.split('\n').length : 0;
-  
+
   const templateNames: Record<string, string> = {
-    blank: '空白文档',
-    report: '项目报告',
-    article: '文章',
-    documentation: 'API文档',
+    zhTech: t.templatePanel.zhTechName,
+    blank: t.statusBar.templateBlank,
+    report: t.statusBar.templateReport,
+    article: t.statusBar.templateArticle,
+    documentation: t.statusBar.templateDocumentation,
   };
 
-  const displayName = currentTemplate ? templateNames[currentTemplate] : '未命名.md';
-  
+  // 兜底：未知模板 id 时显示「未命名」，而不是让状态栏出现空白
+  const displayName = (currentTemplate && templateNames[currentTemplate]) || t.statusBar.untitled;
+
   return (
     <footer className="status-bar">
       <div className="status-item">
@@ -24,11 +28,11 @@ export const StatusBar: React.FC = () => {
       </div>
       <div className="status-item">
         <span>📊</span>
-        <span>字 数: {wordCount}</span>
+        <span>{t.statusBar.words}: {wordCount}</span>
       </div>
       <div className="status-item">
         <span>🔤</span>
-        <span>行数: {lineCount}</span>
+        <span>{t.statusBar.lines}: {lineCount}</span>
       </div>
     </footer>
   );

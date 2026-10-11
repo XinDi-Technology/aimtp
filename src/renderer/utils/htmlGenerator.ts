@@ -6,6 +6,8 @@ import { logger } from './logger';
 import DOMPurify from 'dompurify';
 import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
 import { parseFrontMatter, formatDate } from './frontMatter';
+import type { FrontMatterData } from './frontMatter';
+import { isErrorCode } from '../../shared/i18n';
 import { renderMermaidSync } from './mermaidPlugin';
 import { renderMathInlineAsync, renderMathDisplayAsync } from './mathjaxPlugin';
 import { buildFinalCss, getPageWidthMm, getPageHeightMm } from './cssTemplate';
@@ -50,9 +52,21 @@ function getFontsBaseUrl(): string {
   }
 }
 
+/**
+ * 解析文档标题：front matter title → 正文首个 H1。
+ * 标题归文档作者所有，两者都没有时返回空串，应用不编造任何兜底文案。
+ */
+function resolveDocumentTitle(frontMatter: FrontMatterData, markdownBody: string): string {
+  const fmTitle = frontMatter.title;
+  if (typeof fmTitle === 'string' && fmTitle.trim()) {
+    return fmTitle.trim();
+  }
+  const h1Match = markdownBody.match(/^#\s+(.+)$/m);
+  return h1Match ? h1Match[1].trim() : '';
+}
+
 export interface HtmlGeneratorOptions {
   markdown: string;
-  locale: 'zh' | 'en';
   page: PageSettings;
   font: FontSettings;
   extensions: ExtensionSettings;
@@ -120,7 +134,7 @@ const transformFootnotesToPagedJs = (html: string): string => {
 };
 
 export const generateHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
-  const { markdown, locale, page, font, extensions, headerFooter, cover, preview } = options;
+  const { markdown, page, font, extensions, headerFooter, cover, preview } = options;
 
   try {
     const { data: frontMatter, content: markdownWithoutFrontMatter } = parseFrontMatter(markdown);
@@ -301,10 +315,22 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     const fontsBaseUrl = getFontsBaseUrl();
     const fontsCssWithRealPath = fontsCss.replace(/file:\/\/FONTS_PATH\//g, fontsBaseUrl);
 
-    let titleText = frontMatter.title;
-    if (!titleText) {
-      const h1Match = markdownWithoutFrontMatter.match(/^#\s+(.+)$/m);
-      titleText = h1Match ? h1Match[1].trim() : (locale === 'zh' ? '文档标题' : 'Document Title');
+    const titleText = resolveDocumentTitle(frontMatter, markdownWithoutFrontMatter);
+
+    // 封面（标题/日期）与页眉页脚「标题」都依赖文档自身提供的字段。
+    // 缺失时只抛错误码，由渲染层按界面语言翻译后提示用户，这里不兜底、不编造文案。
+    if (cover.enabled && !titleText) {
+      throw new Error('errors.coverTitleMissing');
+    }
+    if (
+      headerFooter.enabled
+      && (headerFooter.header.content === 'title' || headerFooter.footer.content === 'title')
+      && !titleText
+    ) {
+      throw new Error('errors.headerFooterTitleMissing');
+    }
+    if (cover.enabled && !frontMatter.date) {
+      throw new Error('errors.coverDateMissing');
     }
 
     const finalCss = buildFinalCss(previewCssTemplate, { page, font, cover, headerFooter, preview });
@@ -339,7 +365,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       <div class="cover-content">
           <h1>${DOMPurify.sanitize(String(titleText))}</h1>
           ${frontMatter.author ? `<p class="cover-author">${DOMPurify.sanitize(frontMatter.author)}</p>` : ''}
-          ${frontMatter.date ? `<p class="cover-date">${formatDate(frontMatter.date, locale)}</p>` : ''}
+          ${frontMatter.date ? `<p class="cover-date">${formatDate(frontMatter.date)}</p>` : ''}
       </div>
     </div>
   ` : ''}
@@ -351,6 +377,10 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     return finalHtml;
   } catch (error) {
     logger.error('HTML generation error:', error);
+    // 文档字段缺失等「文档侧」错误以错误码形式继续向上抛，由渲染层翻译后提示用户
+    if (error instanceof Error && isErrorCode(error.message)) {
+      throw error;
+    }
     return `<html><body><h1>Error generating HTML</h1><p>${(error as Error).message}</p></body></html>`;
   }
 };

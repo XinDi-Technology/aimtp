@@ -2,7 +2,6 @@ import { app } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
 import { logger } from './logger';
-import { t } from '../shared/i18n';
 
 /**
  * 自定义模板的持久化：每个模板一个 JSON 文件，放在 userData/templates 下。
@@ -101,10 +100,11 @@ export function listTemplates(): TemplateRecord[] {
  */
 export function saveTemplate(record: TemplateRecord): void {
   if (!isValidId(record?.id)) {
-    throw new Error(t('template-invalid-id'));
+    // 只抛错误码，界面语言由渲染层翻译后再展示
+    throw new Error('errors.templateInvalidId');
   }
   if (typeof record.name !== 'string' || record.name.trim() === '') {
-    throw new Error(t('template-invalid-name'));
+    throw new Error('errors.templateInvalidName');
   }
 
   const dir = ensureTemplatesDir();
@@ -120,20 +120,21 @@ export function saveTemplate(record: TemplateRecord): void {
     try {
       if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
     } catch { /* 临时文件清理失败可忽略 */ }
-    throw new Error(t('template-write-error'), { cause: error });
+    throw new Error('errors.templateWriteError', { cause: error });
   }
 }
 
 export function removeTemplate(id: string): void {
   if (!isValidId(id)) {
-    throw new Error(t('template-invalid-id'));
+    // 只抛错误码，界面语言由渲染层翻译后再展示
+    throw new Error('errors.templateInvalidId');
   }
   const target = templatePath(ensureTemplatesDir(), id);
   try {
     if (fs.existsSync(target)) fs.unlinkSync(target);
   } catch (error) {
     logger.error('Failed to remove template:', id, error);
-    throw new Error(t('template-write-error'), { cause: error });
+    throw new Error('errors.templateWriteError', { cause: error });
   }
 }
 

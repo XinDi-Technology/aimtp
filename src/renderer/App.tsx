@@ -6,10 +6,11 @@ import { Toolbar } from './components/Toolbar';
 import { StatusBar } from './components/StatusBar';
 import { TemplateSelectionPanel } from './components/TemplateSelectionPanel';
 import { useAppStore } from './store/useAppStore';
-import { usePDFExport, useFontLoading } from './hooks';
+import { usePDFExport, useFontLoading, useI18n } from './hooks';
 
 function App() {
-  const { locale, showTemplateSelection } = useAppStore();
+  const { showTemplateSelection } = useAppStore();
+  const { t } = useI18n();
   // Defer mounting the template panel to avoid startup layout shifts when it's not activated
   const [mountTemplate, setMountTemplate] = useState(false);
   const { handleExportPdf } = usePDFExport();
@@ -32,11 +33,11 @@ function App() {
           <Toolbar onExportPdf={handleExportPdf} />
           <div className="main-content-body">
           {mountTemplate && showTemplateSelection && (
-            <section className="template-selection-inline" aria-label={locale === 'zh' ? '模板选择' : 'Template Selection'}>
+            <section className="template-selection-inline" aria-label={t.app.templateSelection}>
               <TemplateSelectionPanel />
             </section>
           )}
-            <div className="editor-preview" role="region" aria-label={locale === 'zh' ? '预览' : 'Preview'}>
+            <div className="editor-preview" role="region" aria-label={t.app.preview}>
               <PreviewPanel />
             </div>
           </div>

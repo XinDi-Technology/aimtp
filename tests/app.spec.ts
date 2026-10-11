@@ -158,7 +158,7 @@ test.describe('Aimtp Application', () => {
     });
 
     test('should have header footer settings', async ({ page }) => {
-      await expect(page.locator('[data-testid="settings-panel"]')).toContainText(/(页眉页脚|Header Footer)/, { timeout: UI_TIMEOUT });
+      await expect(page.locator('[data-testid="settings-panel"]')).toContainText(/(页眉页脚|Header & Footer|Header Footer)/, { timeout: UI_TIMEOUT });
     });
 
     test('should have page margins controls', async ({ page }) => {
@@ -195,6 +195,50 @@ test.describe('Aimtp Application', () => {
       await langToggle.click({ timeout: UI_TIMEOUT });
       await expect(langToggle).toHaveText('中文', { timeout: UI_TIMEOUT });
       await expect(page.locator('[data-testid="import-file-btn"]')).toContainText('导入文件', { timeout: UI_TIMEOUT });
+    });
+
+    test('should not re-render the preview when switching locale', async ({ page }) => {
+      const previewFrame = page.frameLocator('.editor-preview iframe').first();
+      await previewFrame.locator('.pagedjs_page').first().waitFor({
+        state: 'attached',
+        timeout: UI_TIMEOUT,
+      });
+
+      const overlay = page.locator('[data-testid="preview-loading-overlay"]');
+      await expect(overlay).toHaveCount(0, { timeout: UI_TIMEOUT });
+
+      await page.locator('[data-testid="lang-toggle-btn"]').click({ timeout: UI_TIMEOUT });
+      await expect(page.locator('[data-testid="import-file-btn"]')).toContainText('Import', { timeout: UI_TIMEOUT });
+
+      // 语言切换只改界面文案；预览不应出现渲染 Loading，也不应触发重新分页。
+      // 观察窗口覆盖 visual-only 更新（56ms）+ 完整渲染修正（500ms）的时序。
+      for (const waitMs of [100, 400, 900, 1600]) {
+        await page.waitForTimeout(waitMs);
+        await expect(overlay).toHaveCount(0);
+      }
+
+      const pagesAfter = previewFrame.locator('.pagedjs_page');
+      expect(await pagesAfter.count()).toBeGreaterThanOrEqual(1);
+
+      // 复位为中文，避免 locale 持久化影响后续用例
+      await page.locator('[data-testid="lang-toggle-btn"]').click({ timeout: UI_TIMEOUT });
+      await expect(page.locator('[data-testid="lang-toggle-btn"]')).toHaveText('中文', { timeout: UI_TIMEOUT });
+    });
+
+    test('should switch settings panel and status bar labels to English', async ({ page }) => {
+      await page.locator('[data-testid="lang-toggle-btn"]').click({ timeout: UI_TIMEOUT });
+
+      const settingsPanel = page.locator('[data-testid="settings-panel"]');
+      await expect(settingsPanel).toContainText('Page Settings', { timeout: UI_TIMEOUT });
+      await expect(settingsPanel).toContainText('Font Settings', { timeout: UI_TIMEOUT });
+      await expect(settingsPanel).toContainText('Extensions', { timeout: UI_TIMEOUT });
+
+      await expect(page.locator('.status-bar')).toContainText('Words', { timeout: UI_TIMEOUT });
+      await expect(page.locator('.status-bar')).toContainText('Lines', { timeout: UI_TIMEOUT });
+
+      // 复位为中文，避免 locale 持久化影响后续用例
+      await page.locator('[data-testid="lang-toggle-btn"]').click({ timeout: UI_TIMEOUT });
+      await expect(page.locator('[data-testid="lang-toggle-btn"]')).toHaveText('中文', { timeout: UI_TIMEOUT });
     });
   });
 

@@ -2,6 +2,8 @@ import { useCallback, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { exportOrchestrator } from '../orchestration/ExportOrchestrator';
 import { logger } from '../utils/logger';
+import { getUiText } from './useI18n';
+import { t, isErrorCode } from '../../shared/i18n';
 
 const usePDFExport = () => {
   const isExportingRef = useRef(false);
@@ -22,17 +24,23 @@ const usePDFExport = () => {
         {
           pageSize: state.page.size,
           orientation: state.page.orientation,
-          locale: state.locale,
         },
         state.markdown,
       );
 
       if (!result.success) {
-        window.alert(result.error || 'PDF 导出失败');
+        // 主进程只返回错误码，按当前界面语言翻译后再展示；原始错误仅用于排查
+        logger.error('PDF export failed:', result.error ?? result.errorCode);
+        // 导出过程可能持续数秒，这里取实时语言，避免用导出开始前的旧值
+        const locale = useAppStore.getState().locale;
+        const message = isErrorCode(result.errorCode)
+          ? t(result.errorCode, locale)
+          : getUiText(locale).common.exportFailed;
+        window.alert(message);
       }
     } catch (error) {
       logger.error('PDF export error:', error);
-      window.alert('PDF 导出失败，请查看控制台获取详细信息');
+      window.alert(getUiText().common.exportFailedDetail);
     } finally {
       isExportingRef.current = false;
       useAppStore.getState().setIsGenerating(false);

@@ -24,6 +24,9 @@ import {
 } from '../orchestration/SettingChangeClassifier';
 import type { AppSettingsSnapshot } from '../orchestration/SettingChangeClassifier';
 import type { HeaderFooterConfig, FrontMatter } from '../domain/handlers/AimtpHandler';
+import { getUiText, useI18n } from '../hooks';
+// 别名导入：避免与 useI18n() 解构出的文案对象 t 重名
+import { t as translateText, isErrorCode } from '../../shared/i18n';
 
 const containerStyle: React.CSSProperties = {
   width: '100%',
@@ -85,6 +88,7 @@ const PreviewPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [pageCount, setPageCount] = useState(0);
   const [progressText, setProgressText] = useState('');
+  const { t } = useI18n();
 
   // PreviewOrchestrator 实例（每个组件一个）
   const orchestratorRef = useRef<PreviewOrchestrator | null>(null);
@@ -95,7 +99,6 @@ const PreviewPanel: React.FC = () => {
   const extensions = useAppStore((s) => s.extensions);
   const cover = useAppStore((s) => s.cover);
   const headerFooter = useAppStore((s) => s.headerFooter);
-  const locale = useAppStore((s) => s.locale);
   const preview = useAppStore((s) => s.preview);
   const currentTemplate = useAppStore((s) => s.currentTemplate);
   const isGenerating = useAppStore((s) => s.isGenerating);
@@ -106,6 +109,8 @@ const PreviewPanel: React.FC = () => {
     html: string;
     totalPages: number;
   } | null>(null);
+  /** 上次已提示过的错误码：同一错误码只弹一次，文档修正后再次缺失才重新提示 */
+  const lastErrorCodeRef = useRef<string | null>(null);
 
   // 创建/获取当前设置快照
   const currentSnapshot = useCallback((): AppSettingsSnapshot => {
@@ -115,22 +120,24 @@ const PreviewPanel: React.FC = () => {
   // Set up progress callback on the adapter
   useEffect(() => {
     const callback: LayoutProgressCallback = (phase, detail) => {
+      // 此处用 getUiText 而非 useI18n，避免文案进入渲染依赖导致切换语言触发重渲染
+      const text = getUiText();
       switch (phase) {
         case 'fonts':
-          setProgressText('加载字体...');
+          setProgressText(text.preview.loadingFonts);
           break;
         case 'document':
-          setProgressText('准备文档...');
+          setProgressText(text.preview.preparingDocument);
           break;
         case 'injecting':
-          setProgressText('注入排版引擎...');
+          setProgressText(text.preview.injectingEngine);
           break;
         case 'rendering':
-          setProgressText('分页渲染中...');
+          setProgressText(text.preview.rendering);
           break;
         case 'page':
           if (detail?.current && detail?.total) {
-            setProgressText(`分页中 ${detail.current}/${detail.total}...`);
+            setProgressText(`${text.preview.paginating} ${detail.current}/${detail.total}...`);
           }
           break;
         case 'done':
@@ -171,6 +178,15 @@ const PreviewPanel: React.FC = () => {
     });
   }, []);
 
+  /** 文档字段缺失等错误：generateHtml 只抛错误码，这里按界面语言翻译后提示 */
+  const reportRenderError = useCallback((err: unknown) => {
+    const code = err instanceof Error ? err.message : '';
+    if (!isErrorCode(code)) return;
+    if (lastErrorCodeRef.current === code) return;
+    lastErrorCodeRef.current = code;
+    window.alert(translateText(code, useAppStore.getState().locale));
+  }, []);
+
   /** 完整渲染（content-change 路径或修正分页） */
   const doFullRender = useCallback(async () => {
     const currentRenderId = ++renderIdCounter;
@@ -179,7 +195,7 @@ const PreviewPanel: React.FC = () => {
 
     try {
       const html = await generateHtml({
-        markdown, locale, page, font, extensions, cover, headerFooter, preview,
+        markdown, page, font, extensions, cover, headerFooter, preview,
       });
 
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
@@ -214,12 +230,14 @@ const PreviewPanel: React.FC = () => {
       lastRenderResultRef.current = { html: renderedHtml, totalPages: layoutDOM.metadata.totalPages };
 
       setPageCount(layoutDOM.metadata.totalPages);
+      lastErrorCodeRef.current = null;
       setLoading(false);
     } catch (err) {
       console.error('[Aimtp] Preview render failed:', err);
+      reportRenderError(err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, ensureFrameReady]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, ensureFrameReady, reportRenderError]);
 
   // 每次渲染后同步最新 doFullRender 到 ref（官方 latest-ref 模式，避免渲染期间写 ref）
   useEffect(() => {
@@ -335,7 +353,7 @@ const PreviewPanel: React.FC = () => {
         );
 
         const context: RenderContext = {
-          generateHtml: () => generateHtml({ markdown, locale, page, font, extensions, cover, headerFooter, preview }),
+          generateHtml: () => generateHtml({ markdown, page, font, extensions, cover, headerFooter, preview }),
           iframe: frame,
           sourceHash,
           stateSnapshot: { page, font, cover, headerFooter, preview },
@@ -351,7 +369,7 @@ const PreviewPanel: React.FC = () => {
     setLoading(true);
     try {
       const html = await generateHtml({
-        markdown, locale, page, font, extensions, cover, headerFooter, preview,
+        markdown, page, font, extensions, cover, headerFooter, preview,
       });
 
       if (renderIdRef.current !== currentRenderId) { setLoading(false); return; }
@@ -386,12 +404,14 @@ const PreviewPanel: React.FC = () => {
       lastRenderResultRef.current = { html: renderedHtml, totalPages: layoutDOM.metadata.totalPages };
 
       setPageCount(layoutDOM.metadata.totalPages);
+      lastErrorCodeRef.current = null;
       setLoading(false);
     } catch (err) {
       console.error('[Aimtp] Preview render failed:', err);
+      reportRenderError(err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, currentTemplate, currentSnapshot, ensureFrameReady, reportRenderError]);
 
   // 设置变更触发渲染（防抖）
   useEffect(() => {
@@ -447,9 +467,11 @@ const PreviewPanel: React.FC = () => {
         title="preview-frame"
       />
       {loading && (
-        <div style={loadingOverlayStyle}>
-          <span>{progressText || '渲染中...'}</span>
-          {pageCount > 0 && <span>已渲染 {pageCount} 页</span>}
+        <div style={loadingOverlayStyle} data-testid="preview-loading-overlay">
+          <span>{progressText || t.preview.renderingFallback}</span>
+          {pageCount > 0 && (
+            <span>{t.preview.renderedPages.replace('{n}', String(pageCount))}</span>
+          )}
         </div>
       )}
     </div>

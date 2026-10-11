@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { clearAllCustomTemplates, useAppStore, PageSettings } from '../store/useAppStore';
+import { useI18n } from '../hooks';
 
 export const SettingsPanel: React.FC = () => {
   const { page, setPage, font, setFont, extensions, setExtensions, headerFooter, setHeaderFooter, cover, setCover, saveAsTemplate, preview, setPreview } = useAppStore();
+  const { t } = useI18n();
   const [showModal, setShowModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -50,13 +52,13 @@ export const SettingsPanel: React.FC = () => {
   return (
     <div className="settings-panel" data-testid="settings-panel">
       <div className="settings-panel-scroll" data-testid="settings-panel-scroll">
-        <h2>⚙️ 设置</h2>
+        <h2>⚙️ {t.settings.title}</h2>
 
         <div className="setting-section" data-testid="page-settings">
-          <h3>页面设置</h3>
+          <h3>{t.settings.page.title}</h3>
 
           <div className="setting-group">
-            <label className="setting-label">页面尺寸</label>
+            <label className="setting-label">{t.settings.page.size}</label>
             <select
               className="setting-input setting-select"
               data-testid="page-size-select"
@@ -69,22 +71,22 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           <div className="setting-group">
-            <label className="setting-label">页面方向</label>
+            <label className="setting-label">{t.settings.page.orientation}</label>
             <select
               className="setting-input setting-select"
               value={page.orientation}
               onChange={(e) => setPage({ orientation: e.target.value as PageSettings['orientation'] })}
             >
-              <option value="portrait">纵向</option>
-              <option value="landscape">横向</option>
+              <option value="portrait">{t.settings.page.orientationPortrait}</option>
+              <option value="landscape">{t.settings.page.orientationLandscape}</option>
             </select>
           </div>
 
           <div className="setting-group">
-            <label className="setting-label">页边距 (mm)</label>
+            <label className="setting-label">{t.settings.page.margins}</label>
             <div className="margin-controls-vertical">
               <div className="margin-item">
-                <span className="margin-label">上</span>
+                <span className="margin-label">{t.settings.page.marginTop}</span>
                 <input
                   type="number"
                   className="setting-input margin-input"
@@ -98,7 +100,7 @@ export const SettingsPanel: React.FC = () => {
                 />
               </div>
               <div className="margin-item">
-                <span className="margin-label">下</span>
+                <span className="margin-label">{t.settings.page.marginBottom}</span>
                 <input
                   type="number"
                   className="setting-input margin-input"
@@ -112,7 +114,7 @@ export const SettingsPanel: React.FC = () => {
                 />
               </div>
               <div className="margin-item">
-                <span className="margin-label">左</span>
+                <span className="margin-label">{t.settings.page.marginLeft}</span>
                 <input
                   type="number"
                   className="setting-input margin-input"
@@ -126,7 +128,7 @@ export const SettingsPanel: React.FC = () => {
                 />
               </div>
               <div className="margin-item">
-                <span className="margin-label">右</span>
+                <span className="margin-label">{t.settings.page.marginRight}</span>
                 <input
                   type="number"
                   className="setting-input margin-input"
@@ -144,10 +146,10 @@ export const SettingsPanel: React.FC = () => {
         </div>
 
         <div className="setting-section">
-          <h3>字体设置</h3>
+          <h3>{t.settings.font.title}</h3>
 
           <div className="setting-group">
-            <label className="setting-label">正文字体</label>
+            <label className="setting-label">{t.settings.font.body}</label>
             <select
               className="setting-input setting-select"
               value={font.body}
@@ -158,7 +160,7 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           <div className="setting-group">
-            <label className="setting-label">代码字体</label>
+            <label className="setting-label">{t.settings.font.code}</label>
             <select
               className="setting-input setting-select"
               value={font.code}
@@ -170,7 +172,7 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           <div className="setting-group">
-            <label className="setting-label">基础字号</label>
+            <label className="setting-label">{t.settings.font.baseSize}</label>
             <input
               type="number"
               className="setting-input"
@@ -182,7 +184,7 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           <div className="setting-group">
-            <label className="setting-label">行高</label>
+            <label className="setting-label">{t.settings.font.lineHeight}</label>
             <input
               type="number"
               className="setting-input"
@@ -195,7 +197,7 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           <div className="setting-group">
-            <label className="setting-label">段落间距</label>
+            <label className="setting-label">{t.settings.font.paragraphSpacing}</label>
             <input
               type="number"
               className="setting-input"
@@ -209,7 +211,7 @@ export const SettingsPanel: React.FC = () => {
         </div>
 
         <div className="setting-section">
-          <h3>扩展功能</h3>
+          <h3>{t.settings.extensions.title}</h3>
 
           <div className="setting-group">
             <label className="setting-checkbox">
@@ -218,7 +220,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.githubAlerts}
                 onChange={(e) => setExtensions({ githubAlerts: e.target.checked })}
               />
-              GitHub 风格警告框
+              {t.settings.extensions.githubAlerts}
             </label>
           </div>
 
@@ -229,13 +231,13 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.codeHighlight}
                 onChange={(e) => setExtensions({ codeHighlight: e.target.checked })}
               />
-              代码高亮
+              {t.settings.extensions.codeHighlight}
             </label>
           </div>
 
           {extensions.codeHighlight && (
             <div className="setting-group">
-              <label className="setting-label">代码高亮主题</label>
+              <label className="setting-label">{t.settings.extensions.codeTheme}</label>
               <select
                 className="setting-input setting-select"
                 value={extensions.codeTheme}
@@ -255,7 +257,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.taskLists}
                 onChange={(e) => setExtensions({ taskLists: e.target.checked })}
               />
-              待办事项
+              {t.settings.extensions.taskLists}
             </label>
           </div>
 
@@ -266,33 +268,33 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.footnotes}
                 onChange={(e) => setExtensions({ footnotes: e.target.checked })}
               />
-              脚注
+              {t.settings.extensions.footnotes}
             </label>
           </div>
 
           {extensions.footnotes && (
             <div className="setting-group">
-              <label className="setting-label">脚注位置</label>
+              <label className="setting-label">{t.settings.extensions.footnotePosition}</label>
               <select
                 className="setting-input setting-select"
                 value={extensions.footnoteMode}
                 onChange={(e) => setExtensions({ footnoteMode: e.target.value as 'end' | 'page-bottom' })}
               >
-                <option value="end">文档末尾</option>
-                <option value="page-bottom">当前页底部</option>
+                <option value="end">{t.settings.extensions.footnoteEnd}</option>
+                <option value="page-bottom">{t.settings.extensions.footnotePageBottom}</option>
               </select>
             </div>
           )}
 
           <div className="setting-group">
-            <label className="setting-label" style={{ marginBottom: '8px', display: 'block' }}>分页设置</label>
+            <label className="setting-label" style={{ marginBottom: '8px', display: 'block' }}>{t.settings.extensions.pageBreak}</label>
             <label className="setting-checkbox">
               <input
                 type="checkbox"
                 checked={extensions.h1PageBreak}
                 onChange={(e) => setExtensions({ h1PageBreak: e.target.checked })}
               />
-              按 H1 标题自动分页
+              {t.settings.extensions.h1PageBreak}
             </label>
           </div>
 
@@ -303,7 +305,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.h2PageBreak}
                 onChange={(e) => setExtensions({ h2PageBreak: e.target.checked })}
               />
-              按 H2 标题自动分页
+              {t.settings.extensions.h2PageBreak}
             </label>
           </div>
 
@@ -314,7 +316,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.showLineNumbers}
                 onChange={(e) => setExtensions({ showLineNumbers: e.target.checked })}
               />
-              显示代码行号
+              {t.settings.extensions.showLineNumbers}
             </label>
           </div>
 
@@ -325,7 +327,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.mermaid}
                 onChange={(e) => setExtensions({ mermaid: e.target.checked })}
               />
-              Mermaid 图表
+              {t.settings.extensions.mermaid}
             </label>
           </div>
 
@@ -336,7 +338,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.mathJax}
                 onChange={(e) => setExtensions({ mathJax: e.target.checked })}
               />
-              MathJax 数学公式
+              {t.settings.extensions.mathJax}
             </label>
           </div>
 
@@ -347,7 +349,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.mark}
                 onChange={(e) => setExtensions({ mark: e.target.checked })}
               />
-              高亮标记 (==text==)
+              {t.settings.extensions.mark}
             </label>
           </div>
 
@@ -358,7 +360,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.ins}
                 onChange={(e) => setExtensions({ ins: e.target.checked })}
               />
-              下划线插入 (++text++)
+              {t.settings.extensions.ins}
             </label>
           </div>
 
@@ -369,7 +371,7 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.sub}
                 onChange={(e) => setExtensions({ sub: e.target.checked })}
               />
-              下标 (H~2~O)
+              {t.settings.extensions.sub}
             </label>
           </div>
 
@@ -380,16 +382,16 @@ export const SettingsPanel: React.FC = () => {
                 checked={extensions.sup}
                 onChange={(e) => setExtensions({ sup: e.target.checked })}
               />
-              上标 (E=mc^2^)
+              {t.settings.extensions.sup}
             </label>
           </div>
         </div>
 
         <div className="setting-section">
-          <h3>以下设置需要 YAML Front Matter</h3>
+          <h3>{t.settings.frontMatter.title}</h3>
 
           <div className="setting-hint" style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-            💡 目前支持以下格式：
+            {t.settings.frontMatter.hint}
             <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px', marginTop: '4px', fontSize: '11px' }}>
 {`---
 title: 文档标题
@@ -401,7 +403,7 @@ date: 2024-01-01
         </div>
 
         <div className="setting-section">
-          <h3>封面设置</h3>
+          <h3>{t.settings.cover.title}</h3>
 
           <div className="setting-group">
             <label className="setting-checkbox">
@@ -410,13 +412,13 @@ date: 2024-01-01
                 checked={cover.enabled}
                 onChange={(e) => setCover({ enabled: e.target.checked })}
               />
-              封面
+              {t.settings.cover.enabled}
             </label>
           </div>
         </div>
 
         <div className="setting-section">
-          <h3>页眉页脚</h3>
+          <h3>{t.settings.headerFooter.title}</h3>
 
           <div className="setting-group">
             <label className="setting-checkbox">
@@ -425,7 +427,7 @@ date: 2024-01-01
                 checked={headerFooter.enabled}
                 onChange={(e) => setHeaderFooter({ enabled: e.target.checked })}
               />
-              页眉页脚
+              {t.settings.headerFooter.enabled}
             </label>
           </div>
 
@@ -433,10 +435,10 @@ date: 2024-01-01
             <>
               {/* 页眉设置 */}
               <div className="setting-subsection">
-                <h4>页眉设置</h4>
+                <h4>{t.settings.headerFooter.headerSettings}</h4>
 
                 <div className="setting-group">
-                  <label className="setting-label">字体</label>
+                  <label className="setting-label">{t.settings.headerFooter.font}</label>
                   <select
                     className="setting-input setting-select"
                     value={headerFooter.header.font}
@@ -452,7 +454,7 @@ date: 2024-01-01
                 </div>
 
                 <div className="setting-group">
-                  <label className="setting-label">对齐方式</label>
+                  <label className="setting-label">{t.settings.headerFooter.alignment}</label>
                   <select
                     className="setting-input setting-select"
                     value={headerFooter.header.alignment}
@@ -463,14 +465,14 @@ date: 2024-01-01
                       }
                     })}
                   >
-                    <option value="left">左对齐</option>
-                    <option value="center">居中</option>
-                    <option value="right">右对齐</option>
+                    <option value="left">{t.settings.headerFooter.alignLeft}</option>
+                    <option value="center">{t.settings.headerFooter.alignCenter}</option>
+                    <option value="right">{t.settings.headerFooter.alignRight}</option>
                   </select>
                 </div>
 
                 <div className="setting-group">
-                  <label className="setting-label">内容</label>
+                  <label className="setting-label">{t.settings.headerFooter.content}</label>
                   <select
                     className="setting-input setting-select"
                     value={headerFooter.header.content}
@@ -481,20 +483,20 @@ date: 2024-01-01
                       }
                     })}
                   >
-                    <option value="title">标题</option>
-                    <option value="author">作者</option>
-                    <option value="date">日期</option>
-                    <option value="">不显示</option>
+                    <option value="title">{t.settings.headerFooter.contentTitle}</option>
+                    <option value="author">{t.settings.headerFooter.contentAuthor}</option>
+                    <option value="date">{t.settings.headerFooter.contentDate}</option>
+                    <option value="">{t.settings.headerFooter.contentNone}</option>
                   </select>
                 </div>
               </div>
 
               {/* 页脚设置 */}
               <div className="setting-subsection">
-                <h4>页脚设置</h4>
+                <h4>{t.settings.headerFooter.footerSettings}</h4>
 
                 <div className="setting-group">
-                  <label className="setting-label">字体</label>
+                  <label className="setting-label">{t.settings.headerFooter.font}</label>
                   <select
                     className="setting-input setting-select"
                     value={headerFooter.footer.font}
@@ -510,7 +512,7 @@ date: 2024-01-01
                 </div>
 
                 <div className="setting-group">
-                  <label className="setting-label">对齐方式</label>
+                  <label className="setting-label">{t.settings.headerFooter.alignment}</label>
                   <select
                     className="setting-input setting-select"
                     value={headerFooter.footer.alignment}
@@ -521,14 +523,14 @@ date: 2024-01-01
                       }
                     })}
                   >
-                    <option value="left">左对齐</option>
-                    <option value="center">居中</option>
-                    <option value="right">右对齐</option>
+                    <option value="left">{t.settings.headerFooter.alignLeft}</option>
+                    <option value="center">{t.settings.headerFooter.alignCenter}</option>
+                    <option value="right">{t.settings.headerFooter.alignRight}</option>
                   </select>
                 </div>
 
                 <div className="setting-group">
-                  <label className="setting-label">内容</label>
+                  <label className="setting-label">{t.settings.headerFooter.content}</label>
                   <select
                     className="setting-input setting-select"
                     value={headerFooter.footer.content}
@@ -539,12 +541,12 @@ date: 2024-01-01
                       }
                     })}
                   >
-                    <option value="pageNumber">页码</option>
-                    <option value="pageNumberTotal">第x页/共x页</option>
-                    <option value="title">标题</option>
-                    <option value="author">作者</option>
-                    <option value="date">日期</option>
-                    <option value="">不显示</option>
+                    <option value="pageNumber">{t.settings.headerFooter.contentPageNumber}</option>
+                    <option value="pageNumberTotal">{t.settings.headerFooter.contentPageNumberTotal}</option>
+                    <option value="title">{t.settings.headerFooter.contentTitle}</option>
+                    <option value="author">{t.settings.headerFooter.contentAuthor}</option>
+                    <option value="date">{t.settings.headerFooter.contentDate}</option>
+                    <option value="">{t.settings.headerFooter.contentNone}</option>
                   </select>
                 </div>
               </div>
@@ -553,7 +555,7 @@ date: 2024-01-01
         </div>
 
         <div className="setting-section">
-          <h3>预览页面尺寸校准</h3>
+          <h3>{t.settings.preview.title}</h3>
 
           <div className="setting-group">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -567,7 +569,7 @@ date: 2024-01-01
                 style={{ width: '80px' }}
                 data-testid="dpi-input"
               />
-              <span style={{ color: '#666', fontSize: '14px' }}>DPI</span>
+              <span style={{ color: '#666', fontSize: '14px' }}>{t.settings.preview.dpi}</span>
             </div>
           </div>
         </div>
@@ -578,7 +580,7 @@ date: 2024-01-01
             style={{ width: '100%', marginTop: '8px' }}
             onClick={() => setShowModal(true)}
           >
-            💾 保存设置为模板
+            💾 {t.settings.actions.saveAsTemplate}
           </button>
 
           <button
@@ -588,12 +590,12 @@ date: 2024-01-01
             disabled={!hasTemplateApi}
             data-testid="open-template-dir-btn"
           >
-            📂 打开模板目录
+            📂 {t.settings.actions.openTemplateDir}
           </button>
 
           {templatesDir && (
             <p style={{ color: '#666', fontSize: '12px', marginTop: '6px', wordBreak: 'break-all' }}>
-              模板保存在：{templatesDir}
+              {t.settings.actions.templateDirPrefix}{templatesDir}
             </p>
           )}
 
@@ -604,7 +606,7 @@ date: 2024-01-01
             disabled={!hasTemplateApi}
             data-testid="clear-personal-data-btn"
           >
-            🗑️ 清除所有个人数据
+            🗑️ {t.settings.actions.clearPersonalData}
           </button>
         </div>
       </div>
@@ -613,15 +615,15 @@ date: 2024-01-01
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>保存设置为模板</h3>
+            <h3>{t.settings.modal.saveTemplateTitle}</h3>
             <div className="setting-group">
-              <label className="setting-label">模板名称</label>
+              <label className="setting-label">{t.settings.modal.templateName}</label>
               <input
                 type="text"
                 className="setting-input"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
-                placeholder="请输入模板名称"
+                placeholder={t.settings.modal.templateNamePlaceholder}
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -634,14 +636,14 @@ date: 2024-01-01
             </div>
             <div className="modal-actions">
               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
-                取消
+                {t.settings.modal.cancel}
               </button>
               <button
                 className="btn btn-primary"
                 onClick={handleSaveTemplate}
                 disabled={!templateName.trim()}
               >
-                保存
+                {t.settings.modal.save}
               </button>
             </div>
           </div>
@@ -652,17 +654,16 @@ date: 2024-01-01
       {showClearConfirm && (
         <div className="modal-overlay" onClick={() => setShowClearConfirm(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>清除所有个人数据</h3>
+            <h3>{t.settings.modal.clearDataTitle}</h3>
             <p style={{ fontSize: '13px', lineHeight: 1.6 }}>
-              将删除磁盘上的全部自定义模板{templatesDir ? `（${templatesDir}）` : ''}，
-              并重置界面设置。此操作不可撤销。
+              {t.settings.modal.clearDataMessage}{templatesDir ? `（${templatesDir}）` : ''}{t.settings.modal.clearDataMessageSuffix}
             </p>
             <div className="modal-actions">
               <button className="btn btn-ghost" onClick={() => setShowClearConfirm(false)}>
-                取消
+                {t.settings.modal.cancel}
               </button>
               <button className="btn btn-primary" onClick={handleClearPersonalData}>
-                确认清除
+                {t.settings.modal.confirmClear}
               </button>
             </div>
           </div>

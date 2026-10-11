@@ -3,6 +3,7 @@ import type { LayoutDOM } from '../domain/LayoutDOM';
 import { logger } from '../utils/logger';
 import { parseFrontMatter } from '../utils/frontMatter';
 import type { ExportOptions, ExportProgress, ExportResult, ExportStage } from './ExportTypes';
+import { isErrorCode } from '../../shared/i18n';
 
 const STAGE_PROGRESS: Record<ExportStage, [number, number]> = {
   validate: [0, 10],
@@ -30,7 +31,7 @@ export class ExportOrchestrator {
       const validation = layoutDOMManager.validate(currentMarkdown);
 
       if (!layoutDOM) {
-        return { success: false, error: '预览尚未渲染完成，请稍候再试' };
+        return { success: false, errorCode: 'errors.previewNotReady' };
       }
 
       if (!validation.isValid) {
@@ -53,7 +54,7 @@ export class ExportOrchestrator {
       this.emitProgress('save', 0, 'Selecting save location...');
       const filePath = await this.selectSavePath();
       if (!filePath) {
-        return { success: false, error: 'Save cancelled by user' };
+        return { success: false, errorCode: 'errors.saveCancelled' };
       }
 
       this.emitProgress('save', 50, 'Saving PDF...');
@@ -62,7 +63,12 @@ export class ExportOrchestrator {
 
       return { success: true, filePath };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      // 主进程抛的是错误码（'errors.xxx'），交给渲染层按界面语言翻译；
+      // 其他异常只保留原始信息用于排查。
+      const message = error instanceof Error ? error.message : 'errors.unknownError';
+      return isErrorCode(message)
+        ? { success: false, errorCode: message }
+        : { success: false, error: message };
     }
   }
 

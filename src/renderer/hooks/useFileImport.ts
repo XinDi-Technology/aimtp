@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { logger } from '../utils/logger';
+import { getUiText } from './useI18n';
 
 export const useFileImport = () => {
   const setMarkdown = useAppStore(state => state.setMarkdown);
@@ -26,7 +27,7 @@ export const useFileImport = () => {
           bumpRenderNonce();
         } catch (error) {
           logger.error('Failed to read file:', error);
-          alert('Failed to read file: ' + (error as Error).message);
+          alert(getUiText().common.readFileFailed + (error as Error).message);
         }
       }
     };

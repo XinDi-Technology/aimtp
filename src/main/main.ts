@@ -3,7 +3,6 @@ import { join } from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { logger } from './logger';
-import { t } from '../shared/i18n';
 import {
   clearAllTemplates,
   ensureTemplatesDir,
@@ -69,7 +68,8 @@ ipcMain.handle('save-pdf-to-path', async (_, data: Uint8Array, filePath: string)
     return filePath;
   } catch (error) {
     logger.error('Error saving PDF:', error);
-    throw new Error(t('file-write-error'), { cause: error });
+    // 只抛错误码，界面语言由渲染层翻译后再展示
+    throw new Error('errors.fileWriteError', { cause: error });
   }
 });
 
@@ -203,7 +203,8 @@ ipcMain.handle('pdf:print-from-layout-html', async (
     return output;
   } catch (error) {
     logger.error('Error in pdf:print-from-layout-html:', error);
-    throw new Error(t('pdf-generation-error'), { cause: error });
+    // 只抛错误码，界面语言由渲染层翻译后再展示
+    throw new Error('errors.pdfGenerationError', { cause: error });
   } finally {
     if (pdfWindow && !pdfWindow.isDestroyed()) {
       pdfWindow.destroy();

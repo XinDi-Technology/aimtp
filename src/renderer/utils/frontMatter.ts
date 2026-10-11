@@ -82,16 +82,21 @@ export function parseFrontMatter(markdown: string): {
 
 /**
  * 格式化 Front Matter 中的日期
+ *
+ * 与界面语言无关：按 YAML Front Matter 的常规写法原样呈现。
+ * - 字符串（如 '2026-10-09'、'2026年10月9日'）直接沿用作者写法；
+ * - Date 对象输出 YYYY-MM-DD。
  */
-export function formatDate(date: string | Date | undefined, locale: string = 'zh'): string {
+export function formatDate(date: string | Date | undefined): string {
   if (!date) return '';
-  
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(dateObj.getTime())) return '';
 
-  return dateObj.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  // 作者在 YAML 里怎么写就怎么显示，不做本地化转换
+  if (typeof date === 'string') return date;
+
+  if (isNaN(date.getTime())) return '';
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

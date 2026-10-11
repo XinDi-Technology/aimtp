@@ -1,4 +1,6 @@
 import React, { Component, ReactNode } from 'react';
+import { useAppStore } from '../store/useAppStore';
+import { getUiText } from '../hooks/useI18n';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -62,6 +64,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
 
       const isCritical = this.state.errorCount >= 3;
+      // class 组件无法使用 hook，直接按当前界面语言取文案
+      const text = getUiText(useAppStore.getState().locale);
 
       return (
         <div className="error-boundary" style={{ 
@@ -88,7 +92,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               marginBottom: '16px', 
               color: isCritical ? '#dc2626' : '#374151' 
             }}>
-              {isCritical ? 'Critical Error' : 'Something went wrong'}
+              {isCritical ? text.errorBoundary.criticalTitle : text.errorBoundary.errorTitle}
             </h2>
             <p style={{ 
               marginBottom: '24px', 
@@ -96,8 +100,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               lineHeight: '1.6' 
             }}>
               {isCritical 
-                ? 'Multiple errors detected. Please refresh the page.'
-                : 'An unexpected error occurred. Try again or refresh the page.'}
+                ? text.errorBoundary.criticalMessage
+                : text.errorBoundary.message}
             </p>
             {this.state.error && (
               <div className="error-details" style={{
@@ -111,7 +115,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 maxHeight: '300px',
                 overflowY: 'auto'
               }}>
-                <h3 style={{ marginBottom: '12px', color: '#f5f5f5' }}>Error Details:</h3>
+                <h3 style={{ marginBottom: '12px', color: '#f5f5f5' }}>{text.errorBoundary.details}</h3>
                 <pre style={{ margin: '0', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                   {this.state.error.toString()}
                 </pre>
@@ -135,7 +139,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                     cursor: 'pointer'
                   }}
                 >
-                  Try Again
+                  {text.errorBoundary.tryAgain}
                 </button>
               )}
               <button 
@@ -150,7 +154,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   cursor: 'pointer'
                 }}
               >
-                Refresh Page
+                {text.errorBoundary.refresh}
               </button>
             </div>
           </div>

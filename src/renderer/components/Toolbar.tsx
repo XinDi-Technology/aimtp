@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { useFileImport } from '../hooks';
+import { useFileImport, useI18n } from '../hooks';
 
 interface ToolbarProps {
   onExportPdf?: () => void;
@@ -9,6 +9,7 @@ interface ToolbarProps {
 export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
   const { showTemplateSelection, setShowTemplateSelection, locale, setLocale, theme, setTheme, isGenerating } = useAppStore();
   const { handleImportFile } = useFileImport();
+  const { t } = useI18n();
 
   // 处理主题切换
   const handleToggleTheme = () => {
@@ -19,48 +20,30 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
   // 获取主题图标和提示
   const getThemeInfo = () => {
     if (theme === 'light') {
-      return { icon: '☀️', label: locale === 'zh' ? '切换到暗色模式' : 'Switch to Dark Mode' };
+      return { icon: '☀️', label: t.toolbar.themeToDark };
     } else {
-      return { icon: '🌙', label: locale === 'zh' ? '切换到浅色模式' : 'Switch to Light Mode' };
+      return { icon: '🌙', label: t.toolbar.themeToLight };
     }
   };
 
-  const labels = useMemo(() => ({
-    zh: {
-      template: '模板',
-      generating: '生成中...',
-      exportPdf: '导出 PDF',
-      importFile: '导入文件',
-      language: '语言',
-      export: '导出',
-    },
-    en: {
-      template: 'Template',
-      generating: 'Generating...',
-      exportPdf: 'Export PDF',
-      importFile: 'Import File',
-      language: 'Language',
-      export: 'Export',
-    },
-  }), []);
-
-  const t = (key: keyof typeof labels.zh) => labels[locale][key];
+  const templateLabel = showTemplateSelection ? t.toolbar.closeTemplate : t.toolbar.template;
+  const templateTitle = showTemplateSelection ? t.toolbar.closeTemplateTitle : t.toolbar.template;
 
   return (
     <header className="toolbar" role="banner" data-testid="toolbar">
       <button 
         className="btn btn-toolbar" 
         onClick={handleImportFile}
-        aria-label={t('importFile')}
+        aria-label={t.toolbar.importFile}
         data-testid="import-file-btn"
       >
-        <span aria-hidden="true">📁</span> {locale === 'zh' ? '导入文件' : 'Import'}
+        <span aria-hidden="true">📁</span> {t.toolbar.importFile}
       </button>
       <div className="toolbar-spacer"></div>
       <button 
         className="btn btn-toolbar lang-toggle"
         onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
-        aria-label={t('language')}
+        aria-label={t.toolbar.language}
         data-testid="lang-toggle-btn"
       >
         {locale === 'zh' ? '中文' : 'EN'}
@@ -77,29 +60,29 @@ export const Toolbar: React.FC<ToolbarProps> = React.memo(({ onExportPdf }) => {
       <button 
         className="btn btn-toolbar"
         onClick={() => setShowTemplateSelection(!showTemplateSelection)}
-        title={showTemplateSelection ? (locale === 'zh' ? '关闭模板选择' : 'Close Template Selection') : t('template')}
-        aria-label={showTemplateSelection ? (locale === 'zh' ? '关闭模板选择' : 'Close Template Selection') : t('template')}
+        title={templateTitle}
+        aria-label={templateTitle}
         aria-pressed={showTemplateSelection}
         data-testid="template-btn"
       >
-        <span aria-hidden="true">🎨</span> {showTemplateSelection ? (locale === 'zh' ? '关闭' : 'Close') : t('template')}
+        <span aria-hidden="true">🎨</span> {templateLabel}
       </button>
       <button 
         className="btn btn-toolbar btn-primary-action" 
         onClick={onExportPdf}
         disabled={isGenerating}
-        aria-label={t('export')}
+        aria-label={t.toolbar.export}
         aria-busy={isGenerating}
         data-testid="export-pdf-btn"
       >
         {isGenerating ? (
           <>
             <span className="loading-spinner" aria-hidden="true"></span>
-            {t('generating')}
+            {t.toolbar.generating}
           </>
         ) : (
           <>
-            <span aria-hidden="true">📄</span> {t('exportPdf')}
+            <span aria-hidden="true">📄</span> {t.toolbar.exportPdf}
           </>
         )}
       </button>
