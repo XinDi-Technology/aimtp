@@ -7,18 +7,18 @@
 [![License](https://img.shields.io/github/license/XinDi-Technology/aimtp)](./LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/)
 
-专注合规的 Markdown 转 PDF 桌面应用
+为「技术文档」服务的Markdown 转 PDF 桌面应用
 
-Compliance-first Markdown to PDF desktop application
+A Markdown to PDF desktop app for technical documentation。
 
 ---
 
 ## 核心特性
 
--   **完全本地运行**：无需网络环境。
--   **免费可商用字体**：内置 GWM Sans UI（中文）、JetBrains Mono 与 Monaspace Argon Frozen（代码），全部免费商用，无版权风险
--   **预览即所得**：所见即所得，预览效果与导出 PDF 完全一致
--   **真纸张尺寸预览**：预览区域按实际页面宽高比渲染，你看到的每一页都和打印出的纸张大小一样
+-   **完全本地运行**：软件运行无需网络环境。
+-   **免费可商用字体**：内置 GWM Sans UI（中文）、JetBrains Mono 与 Monaspace Argon Frozen（代码），全部免费商用，无版权风险。
+-   **所见即所得**：预览效果与导出 PDF 完全一致。
+-   **真纸张尺寸预览**：预览区域与实际纸张尺寸一致。
 -   **导出PDF兼容性高**：使用PDF v1.4格式进行导出。
 ## 安装使用
 
@@ -82,9 +82,11 @@ Windows 安装程序为向导式（NSIS）：
 
 ## 预设模板
 
-内置唯一的预设模板「中文技术文档」：正文包含完整的设置说明表与 Markdown 排版示例，
-并携带一套默认排版设置（A4 纵向、页边距上 20 / 下 20 / 左 24 / 右 24 mm、基础字号 18px、
-行高 2、段落间距 0.5em、目标 DPI 93）。选择该模板即应用这套设置，
+「中文技术文档」：正文包含完整的设置说明表与 Markdown 排版示例，
+并携带一套默认排版设置（A4 纵向、页边距上 20 / 下 20 / 左 24 / 右 24 mm、基础字号 18px、行高 2、段落间距 0.5em、目标 DPI 93）。
+
+选择该模板即应用这套设置。
+
 这套设置同时也是应用首次启动时的默认值。
 
 ## 数据与卸载
@@ -94,8 +96,6 @@ Windows 安装程序为向导式（NSIS）：
 | 平台 | 目录 |
 | :-: | :-: |
 | Windows | `%APPDATA%\Aimtp\templates` |
-| macOS | `~/Library/Application Support/Aimtp/templates` |
-| Linux | `~/.config/Aimtp/templates` |
 
 -   可在「设置」面板底部直接打开该目录，方便备份、拷贝或纳入版本管理。
 -   **卸载应用不会删除该目录**，重新安装后模板仍然保留。
@@ -110,15 +110,6 @@ Windows 安装程序为向导式（NSIS）：
 | [GWM Sans UI](https://www.gwm.com.cn/gwmsans/fontdownload.html) | 中文正文 / 页眉页脚 | GB18030-2022 L2 | 免费商用 |
 | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) | 代码 |  | [OFL 1.1](https://github.com/JetBrains/JetBrainsMono?tab=OFL-1.1-1-ov-file) |
 | [Monaspace Argon Frozen](https://monaspace.githubnext.com/) | 代码 |  | [OFL 1.1](https://github.com/githubnext/monaspace?tab=OFL-1.1-1-ov-file) |
-
-## 风险警告
-
-1.  本项目由 AI 辅助编程
-2.  本项目目前为个人爱好性质软件
-3.  本项目目前未收到赞助
-4.  本项目目前未有其他贡献者
-5.  本项目目前专注于核心功能的完善
-6.  本项目目前没有其他使用者汇报使用情况
 
 ## License
 
