@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pageConfig: { size: string; orientation: string },
     metadata?: { title?: string; author?: string; subject?: string; keywords?: string[] },
   ) => ipcRenderer.invoke('pdf:print-from-layout-html', { layoutHtml, pageConfig, metadata }),
+  // 通知主进程界面语言已变更，用于重建原生菜单文案（文件/视图/帮助等）
+  setLocale: (locale: 'zh' | 'en') => ipcRenderer.send('app:locale-changed', locale),
   // 自定义模板：以 JSON 文件形式存放在 userData/templates，卸载时不会被删除
   templates: {
     list: () => ipcRenderer.invoke('templates:list'),

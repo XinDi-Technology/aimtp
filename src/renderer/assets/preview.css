@@ -23,6 +23,30 @@ body {
   background-color: #9ca3af;
 }
 
+/* 预览滚动条：与外壳统一外形（灰底背景下用中性半透明，明暗下均协调） */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 8px;
+  border: 2px solid transparent; /* 与外壳一致的留白 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .pagedjs_pages {
   display: flex !important;
   flex-direction: column !important;

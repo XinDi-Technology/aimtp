@@ -35,6 +35,8 @@ declare global {
   interface Window {
     /** Electron preload 暴露的 API（与 src/main/preload.ts 保持一致） */
     electronAPI?: {
+      /** 通知主进程界面语言已变更，用于重建原生菜单文案 */
+      setLocale: (locale: 'zh' | 'en') => void;
       selectSavePath: () => Promise<string | null>;
       savePdfToPath: (data: Uint8Array, filePath: string) => Promise<string>;
       printFromLayoutHtml: (

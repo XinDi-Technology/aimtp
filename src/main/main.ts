@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -12,10 +12,15 @@ import {
   saveTemplate,
   type TemplateRecord,
 } from './templateStore';
+import { buildMenu } from './menu';
+import type { Locale } from '../shared/i18n';
 
 const isDev = process.env.NODE_ENV === 'development';
 
 let mainWindow: BrowserWindow | null = null;
+
+// 原生菜单当前使用的界面语言，随渲染层切换而更新
+let currentLocale: Locale = 'zh';
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -87,6 +92,12 @@ ipcMain.handle('templates:dir', () => getTemplatesDir());
 
 ipcMain.handle('templates:openDir', async () => {
   await shell.openPath(ensureTemplatesDir());
+});
+
+// 渲染层切换界面语言时，重建原生菜单以匹配新的文案（文件/视图/帮助等）
+ipcMain.on('app:locale-changed', (_event, locale: Locale) => {
+  currentLocale = locale;
+  Menu.setApplicationMenu(buildMenu(currentLocale));
 });
 
 function getPageDimensionsMm(size: string, landscape: boolean): { width: number; height: number } {
@@ -257,6 +268,7 @@ app.commandLine.appendSwitch('disable-font-subsetting');
 app.whenReady().then(() => {
   ensureTemplatesDir();
   createWindow();
+  Menu.setApplicationMenu(buildMenu(currentLocale));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

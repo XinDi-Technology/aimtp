@@ -839,3 +839,15 @@ void loadCustomTemplates().then((templates) => {
     useAppStore.setState({ customTemplates: templates });
   }
 });
+
+// 界面语言变化时同步通知主进程，使原生菜单文案（文件/视图/帮助等）随之切换。
+useAppStore.subscribe((state, prevState) => {
+  if (state.locale !== prevState.locale) {
+    window.electronAPI?.setLocale(state.locale);
+  }
+});
+
+// 模块加载时主动同步一次，覆盖「persist 重水合早于订阅注册」导致首屏语言未同步菜单的情况。
+if (typeof window !== 'undefined') {
+  window.electronAPI?.setLocale(useAppStore.getState().locale);
+}

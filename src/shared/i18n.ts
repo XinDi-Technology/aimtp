@@ -176,6 +176,15 @@ const zh = {
     exportFailed: 'PDF 导出失败',
     exportFailedDetail: 'PDF 导出失败，请查看控制台获取详细信息',
   },
+  menu: {
+    file: '文件',
+    view: '视图',
+    help: '帮助',
+    quit: '退出',
+    toggleDevTools: '开发者工具',
+    about: '关于 Aimtp',
+    aboutDetail: 'Aimtp 是一款 Markdown 转 PDF 的排版工具。',
+  },
 };
 
 const en: typeof zh = {
@@ -339,6 +348,15 @@ const en: typeof zh = {
     readFileFailed: 'Failed to read file: ',
     exportFailed: 'PDF export failed',
     exportFailedDetail: 'PDF export failed. See the console for details.',
+  },
+  menu: {
+    file: 'File',
+    view: 'View',
+    help: 'Help',
+    quit: 'Quit',
+    toggleDevTools: 'Developer Tools',
+    about: 'About Aimtp',
+    aboutDetail: 'Aimtp is a Markdown to PDF typesetting tool.',
   },
 };
 
