@@ -22,6 +22,17 @@ function App() {
     return () => clearTimeout(t);
   }, []);
 
+  // 帮助菜单「字体授权协议」：主进程读取 MD 后以"类导入"方式在此渲染进预览区
+  useEffect(() => {
+    const off = window.electronAPI?.onOpenDocument(({ content }) => {
+      const { setMarkdown, setCurrentTemplate, bumpRenderNonce } = useAppStore.getState();
+      setMarkdown(content);
+      setCurrentTemplate('documentation'); // 唯一模板「中文技术文档」
+      bumpRenderNonce();
+    });
+    return () => off?.();
+  }, []);
+
   
   return (
     <ErrorBoundary>

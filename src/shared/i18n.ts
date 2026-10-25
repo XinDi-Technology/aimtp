@@ -184,6 +184,7 @@ const zh = {
     toggleDevTools: '开发者工具',
     about: '关于 Aimtp',
     aboutDetail: 'Aimtp 是一款 Markdown 转 PDF 的排版工具。',
+    fontsLicense: '字体授权协议',
   },
 };
 
@@ -357,6 +358,7 @@ const en: typeof zh = {
     toggleDevTools: 'Developer Tools',
     about: 'About Aimtp',
     aboutDetail: 'Aimtp is a Markdown to PDF typesetting tool.',
+    fontsLicense: 'Fonts License',
   },
 };
 

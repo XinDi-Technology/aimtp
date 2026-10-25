@@ -37,6 +37,8 @@ declare global {
     electronAPI?: {
       /** 通知主进程界面语言已变更，用于重建原生菜单文案 */
       setLocale: (locale: 'zh' | 'en') => void;
+      /** 主进程以"类导入"方式请求渲染层打开一段文档内容（如字体授权协议） */
+      onOpenDocument: (cb: (payload: { content: string }) => void) => (() => void) | undefined;
       selectSavePath: () => Promise<string | null>;
       savePdfToPath: (data: Uint8Array, filePath: string) => Promise<string>;
       printFromLayoutHtml: (

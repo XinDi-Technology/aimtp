@@ -97,7 +97,7 @@ ipcMain.handle('templates:openDir', async () => {
 // 渲染层切换界面语言时，重建原生菜单以匹配新的文案（文件/视图/帮助等）
 ipcMain.on('app:locale-changed', (_event, locale: Locale) => {
   currentLocale = locale;
-  Menu.setApplicationMenu(buildMenu(currentLocale));
+  Menu.setApplicationMenu(buildMenu(currentLocale, mainWindow));
 });
 
 function getPageDimensionsMm(size: string, landscape: boolean): { width: number; height: number } {
@@ -268,7 +268,7 @@ app.commandLine.appendSwitch('disable-font-subsetting');
 app.whenReady().then(() => {
   ensureTemplatesDir();
   createWindow();
-  Menu.setApplicationMenu(buildMenu(currentLocale));
+  Menu.setApplicationMenu(buildMenu(currentLocale, mainWindow));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
