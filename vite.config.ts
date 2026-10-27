@@ -1,6 +1,31 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { resolve, extname, sep } from 'path';
+import { existsSync, statSync, createReadStream } from 'node:fs';
+
+// dev / preview 环境下通过 /fonts/* 虚拟路径提供 src/fonts 内的字体文件。
+// 打包后的 Electron 应用走 resources/fonts（由 utils/fontFace.ts 的 electron-prod 分支处理），
+// 此中间件仅在 vite dev / preview 服务器生效，不参与 build，因此不会增大打包体积。
+function createFontsMiddleware() {
+  const fontsRoot = resolve(__dirname, 'src/fonts');
+  return (req, res, next) => {
+    const rel = (req.url || '').split('?')[0].replace(/^\/+/, '');
+    const filePath = resolve(fontsRoot, rel);
+    const withinRoot = filePath === fontsRoot || filePath.startsWith(fontsRoot + sep);
+    if (!withinRoot || !existsSync(filePath) || !statSync(filePath).isFile()) {
+      next();
+      return;
+    }
+    const mimeByExt: Record<string, string> = {
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.md': 'text/markdown; charset=utf-8',
+    };
+    res.setHeader('Content-Type', mimeByExt[extname(filePath).toLowerCase()] || 'application/octet-stream');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    createReadStream(filePath).pipe(res);
+  };
+}
 
 export default defineConfig({
   base: './',
@@ -9,6 +34,15 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'serve-fonts',
+      configureServer(server) {
+        server.middlewares.use('/fonts', createFontsMiddleware());
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use('/fonts', createFontsMiddleware());
+      },
+    },
     {
       name: 'fix-crossorigin',
       generateBundle(_options: unknown, bundle: { [fileName: string]: { type: string; source: string | Uint8Array } }) {

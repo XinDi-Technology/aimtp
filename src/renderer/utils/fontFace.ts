@@ -67,15 +67,15 @@ function detectEnvironment(): RuntimeEnvironment {
  * - electron-prod：打包后 index.html 位于 app.asar/dist/renderer/，
  *   字体在同级 resources/fonts（extraResources 目标），故把 app.asar 之后的路径整体替换。
  * - electron-dev：直接使用 vite define 注入的 src/fonts 绝对路径。
- * - browser-http：vite dev server 场景，经 /@fs/ 直连项目内 src/fonts
- *   （server.fs.allow 默认包含项目根目录）。
+ * - browser-http：经 vite dev / preview 的 /fonts/ 虚拟路径访问 src/fonts
+ *   （由 vite.config.ts 的 serve-fonts 插件提供，不进入打包产物）。
  */
 export function getBuiltinFontsDirUrl(): string {
   const env = detectEnvironment();
 
   switch (env.type) {
     case 'browser-http':
-      return `${window.location.origin}/@fs/${__FONTS_DIR__.replace(/\\/g, '/')}/`;
+      return `${window.location.origin}/fonts/`;
     case 'electron-dev':
       return `file:///${env.fontsDir}/`;
     case 'electron-prod':
