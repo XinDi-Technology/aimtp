@@ -73,7 +73,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .setting-group-inline .setting-label {
@@ -81,10 +81,11 @@ body {
   flex-shrink: 0;
 }
 
-/* 仅收窄宽度的控件，样式完全继承 .setting-input / .setting-select */
+/* 固定宽度控件：框宽统一 120px，右边缘对齐、不受左侧标签文字长度影响；
+   配合行内分组的小间距（space-sm），在常驻纵向滚动条占位（内容区约 192px）时仍留有余量、不会溢出 */
 .setting-input-compact {
-  width: 120px;
-  flex-shrink: 0;
+  flex: 0 0 120px;
+  max-width: 120px;
 }
 
 .setting-subsection {
