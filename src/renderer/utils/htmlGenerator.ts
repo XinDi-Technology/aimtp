@@ -1,6 +1,5 @@
-declare const __FONTS_DIR__: string;
-
 import { createMarkdownIt } from './markdown';
+import { buildFontFaceCss, getBuiltinFontFamilies } from './fontFace';
 import { FontSettings, PageSettings, ExtensionSettings, HeaderFooterSettings, CoverSettings, PreviewSettings } from '../store/useAppStore';
 import { logger } from './logger';
 import DOMPurify from 'dompurify';
@@ -12,45 +11,6 @@ import { renderMermaidSync } from './mermaidPlugin';
 import { renderMathInlineAsync, renderMathDisplayAsync } from './mathjaxPlugin';
 import { buildFinalCss, getPageWidthMm, getPageHeightMm } from './cssTemplate';
 import previewCssTemplate from '../assets/preview.css?raw';
-
-type RuntimeEnvironment =
-  | { type: 'browser-http'; origin: string }
-  | { type: 'electron-dev'; fontsDir: string }
-  | { type: 'electron-prod'; appUrl: string }
-  | { type: 'fallback' };
-
-function detectEnvironment(): RuntimeEnvironment {
-  const protocol = window.location.protocol;
-
-  if (protocol === 'http:' || protocol === 'https:') {
-    return { type: 'browser-http', origin: window.location.origin };
-  }
-
-  if (protocol === 'file:') {
-    const appUrl = window.location.href;
-    if (appUrl.includes('src/renderer')) {
-      return { type: 'electron-dev', fontsDir: __FONTS_DIR__.replace(/\\/g, '/') };
-    }
-    return { type: 'electron-prod', appUrl };
-  }
-
-  return { type: 'fallback' };
-}
-
-function getFontsBaseUrl(): string {
-  const env = detectEnvironment();
-
-  switch (env.type) {
-    case 'browser-http':
-      return `${window.location.origin}/assets/fonts/`;
-    case 'electron-dev':
-      return `file:///${env.fontsDir}/`;
-    case 'electron-prod':
-      return env.appUrl.replace(/app\.asar\/.*$/, 'dist/renderer/fonts/');
-    case 'fallback':
-      return `file:///${__FONTS_DIR__.replace(/\\/g, '/')}/`;
-  }
-}
 
 /**
  * 解析文档标题：front matter title → 正文首个 H1。
@@ -251,69 +211,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       ? `<style>${getHljsBaseStyles(font.baseSize * 0.8)}${getHljsTheme(hljsTheme)}</style>`
       : '';
 
-    const fontsCss = `
-@font-face {
-  font-family: 'GWM Sans UI';
-  src: url('file://FONTS_PATH/GWMSansUI-Regular.woff2') format('woff2');
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'GWM Sans UI';
-  src: url('file://FONTS_PATH/GWMSansUI-Bold.woff2') format('woff2');
-  font-weight: bold;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'GWM Sans UI';
-  src: url('file://FONTS_PATH/GWMSansUI-Light.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('file://FONTS_PATH/JetBrainsMono-Regular.woff2') format('woff2');
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('file://FONTS_PATH/JetBrainsMono-Bold.woff2') format('woff2');
-  font-weight: bold;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('file://FONTS_PATH/JetBrainsMono-Light.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-}
-/* Monaspace Argon 字体 (TrueType 轮廓，避免 CFF woff2 在 printToPDF 中产生 T3Font) */
-@font-face {
-  font-family: 'Monaspace Argon';
-  src: url('file://FONTS_PATH/MonaspaceArgonFrozen-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Monaspace Argon';
-  src: url('file://FONTS_PATH/MonaspaceArgonFrozen-Bold.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Monaspace Argon';
-  src: url('file://FONTS_PATH/MonaspaceArgonFrozen-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-`;
-
-    const fontsBaseUrl = getFontsBaseUrl();
-    const fontsCssWithRealPath = fontsCss.replace(/file:\/\/FONTS_PATH\//g, fontsBaseUrl);
+    const fontsCssWithRealPath = buildFontFaceCss(getBuiltinFontFamilies());
 
     const titleText = resolveDocumentTitle(frontMatter, markdownWithoutFrontMatter);
 

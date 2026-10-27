@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './styles/index.css';
+import { injectAppFontFaces } from './utils/fontFace';
 
 const handleError = (error: Error, source?: string) => {
   console.error(`[Aimtp] Error in ${source || 'unknown'}:`, error);
@@ -50,6 +51,10 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('[Aimtp] Unhandled promise rejection:', event.reason);
   handleError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)), 'unhandled promise rejection');
 });
+
+// 字体 @font-face 由运行时注入（见 utils/fontFace.ts），在 React 首帧前完成，
+// 避免界面字体回退闪烁；font-display: block 保证测量与打印使用最终字形。
+injectAppFontFaces();
 
 try {
   const rootElement = document.getElementById('root');

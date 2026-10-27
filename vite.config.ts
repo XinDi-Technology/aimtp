@@ -51,13 +51,9 @@ export default defineConfig({
           // Paged.js（分页排版引擎）
           if (id.includes('node_modules/pagedjs/')) return 'vendor-pagedjs';
         },
-        // 启用 gzip 压缩
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name && (assetInfo.name.endsWith('.woff2') || assetInfo.name.endsWith('.ttf'))) {
-            return 'assets/fonts/[name][extname]';
-          }
-          return 'assets/[name]-[hash][extname]';
-        },
+        // 字体不再走打包链（运行时由 utils/fontFace.ts 从 resources/fonts 加载），
+        // 因此不存在字体类资源，统一使用带 hash 的普通资源命名。
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
     // 启用 sourcemap 排除（生产环境不需要）

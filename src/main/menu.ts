@@ -40,7 +40,7 @@ export function buildMenu(locale: Locale, mainWindow: BrowserWindow | null): Men
           label: m('fontsLicense'),
           click: () => {
             const mdPath = app.isPackaged
-              ? join(process.resourcesPath, 'dist/renderer/fonts/GWM Sans license.md')
+              ? join(process.resourcesPath, 'fonts/GWM Sans license.md')
               : join(app.getAppPath(), 'src/fonts/GWM Sans license.md');
             try {
               const content = fs.readFileSync(mdPath, 'utf-8');

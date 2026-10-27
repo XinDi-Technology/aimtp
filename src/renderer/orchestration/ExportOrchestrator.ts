@@ -137,9 +137,10 @@ export class ExportOrchestrator {
     // 2. 序列化
     let layoutHtml = doc.documentElement.outerHTML;
 
-    // 3. 移除 fonts.css 的相对路径 @font-face 声明
+    // 3. 防御性清理：移除任何使用相对路径的 @font-face 声明
     // 导出 HTML 位于 os.tmpdir()，相对路径 ./xxx.woff2 会指向临时目录而非字体目录，
-    // 导致字体加载失败。htmlGenerator.ts 已生成使用绝对路径的 @font-face，仅需保留那些。
+    // 导致字体加载失败。当前 @font-face 已全部由 utils/fontFace.ts 以绝对 file:// 生成，
+    // 此处仅作兜底（幂等），确保导出产物不含相对路径声明。
     layoutHtml = this.removeRelativeFontFaceDeclarations(layoutHtml);
 
     // 4. 日志：验证页眉页脚 DOM 元素是否包含在序列化结果中
@@ -155,10 +156,10 @@ export class ExportOrchestrator {
   }
 
   /**
-   * 移除使用相对路径的 @font-face 声明（来自 fonts.css 的 @import）
+   * 移除使用相对路径的 @font-face 声明（防御性兜底）
    *
-   * 特征：fonts.css 生成的 @font-face 使用相对 URL（如 ./GWMSansUI-Regular.woff2），
-   * 而 htmlGenerator.ts 生成的使用绝对 file:// URL。
+   * 特征：相对 URL 形如 ./GWMSansUI-Regular.woff2，
+   * 而 utils/fontFace.ts 生成的使用绝对 file:// URL。
    * 在导出 HTML 中，相对路径无法解析到字体文件，仅保留绝对路径声明。
    */
   private removeRelativeFontFaceDeclarations(html: string): string {

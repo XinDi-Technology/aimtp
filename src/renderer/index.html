@@ -48,7 +48,7 @@
          且 file:// 下 <link rel="preload" crossorigin> 与 CSS @font-face 发起的字体请求
          credentials mode 不一致，preload 缓存条目无法复用，反而导致字体被下载两次，
          并在控制台产生 "credentials mode does not match" / "preloaded but not used" 警告。
-         字体由 fonts.css 的 @font-face 正常加载即可。 -->
+         字体由 utils/fontFace.ts 运行时注入的 @font-face 正常加载即可。 -->
     <title>Aimtp</title>
   </head>
   <body>

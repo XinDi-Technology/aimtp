@@ -15,7 +15,7 @@
   "extraResources": [
     {
       "from": "src/fonts",
-      "to": "dist/renderer/fonts"
+      "to": "fonts"
     },
     {
       "from": "node_modules/pagedjs/dist/paged.js",
