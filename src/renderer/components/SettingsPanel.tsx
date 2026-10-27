@@ -57,10 +57,10 @@ export const SettingsPanel: React.FC = () => {
         <div className="setting-section" data-testid="page-settings">
           <h3>{t.settings.page.title}</h3>
 
-          <div className="setting-group">
+          <div className="setting-group setting-group-inline">
             <label className="setting-label">{t.settings.page.size}</label>
             <select
-              className="setting-input setting-select"
+              className="setting-input setting-select setting-input-compact"
               data-testid="page-size-select"
               value={page.size}
               onChange={(e) => setPage({ size: e.target.value as PageSettings['size'] })}
@@ -70,10 +70,10 @@ export const SettingsPanel: React.FC = () => {
             </select>
           </div>
 
-          <div className="setting-group">
+          <div className="setting-group setting-group-inline">
             <label className="setting-label">{t.settings.page.orientation}</label>
             <select
-              className="setting-input setting-select"
+              className="setting-input setting-select setting-input-compact"
               value={page.orientation}
               onChange={(e) => setPage({ orientation: e.target.value as PageSettings['orientation'] })}
             >
@@ -89,7 +89,7 @@ export const SettingsPanel: React.FC = () => {
                 <span className="margin-label">{t.settings.page.marginTop}</span>
                 <input
                   type="number"
-                  className="setting-input margin-input"
+                  className="setting-input setting-input-compact"
                   value={page.margins.top}
                   min="1"
                   max="50"
@@ -103,7 +103,7 @@ export const SettingsPanel: React.FC = () => {
                 <span className="margin-label">{t.settings.page.marginBottom}</span>
                 <input
                   type="number"
-                  className="setting-input margin-input"
+                  className="setting-input setting-input-compact"
                   value={page.margins.bottom}
                   min="1"
                   max="50"
@@ -117,7 +117,7 @@ export const SettingsPanel: React.FC = () => {
                 <span className="margin-label">{t.settings.page.marginLeft}</span>
                 <input
                   type="number"
-                  className="setting-input margin-input"
+                  className="setting-input setting-input-compact"
                   value={page.margins.left}
                   min="1"
                   max="50"
@@ -131,7 +131,7 @@ export const SettingsPanel: React.FC = () => {
                 <span className="margin-label">{t.settings.page.marginRight}</span>
                 <input
                   type="number"
-                  className="setting-input margin-input"
+                  className="setting-input setting-input-compact"
                   value={page.margins.right}
                   min="1"
                   max="50"
@@ -171,11 +171,11 @@ export const SettingsPanel: React.FC = () => {
             </select>
           </div>
 
-          <div className="setting-group">
+          <div className="setting-group setting-group-inline">
             <label className="setting-label">{t.settings.font.baseSize}</label>
             <input
               type="number"
-              className="setting-input"
+              className="setting-input setting-input-compact"
               value={font.baseSize}
               min="8"
               max="72"
@@ -183,11 +183,11 @@ export const SettingsPanel: React.FC = () => {
             />
           </div>
 
-          <div className="setting-group">
+          <div className="setting-group setting-group-inline">
             <label className="setting-label">{t.settings.font.lineHeight}</label>
             <input
               type="number"
-              className="setting-input"
+              className="setting-input setting-input-compact"
               value={font.lineHeight}
               step="0.1"
               min="0.8"
@@ -196,11 +196,11 @@ export const SettingsPanel: React.FC = () => {
             />
           </div>
 
-          <div className="setting-group">
+          <div className="setting-group setting-group-inline">
             <label className="setting-label">{t.settings.font.paragraphSpacing}</label>
             <input
               type="number"
-              className="setting-input"
+              className="setting-input setting-input-compact"
               value={font.paragraphSpacing}
               step="0.1"
               min="0"

@@ -68,6 +68,25 @@ body {
   margin-bottom: var(--space-md);
 }
 
+/* 标签与控件同一行：标签居左，控件靠右收窄，其余样式保持不变 */
+.setting-group-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.setting-group-inline .setting-label {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+/* 仅收窄宽度的控件，样式完全继承 .setting-input / .setting-select */
+.setting-input-compact {
+  width: 120px;
+  flex-shrink: 0;
+}
+
 .setting-subsection {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
@@ -130,12 +149,6 @@ body {
   padding-right: 32px;
 }
 
-.margin-input {
-  text-align: center;
-  padding: var(--space-xs);
-  font-size: 12px;
-}
-
 .margin-controls-vertical {
   display: flex;
   flex-direction: column;
@@ -145,6 +158,7 @@ body {
 .margin-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-sm);
 }
 
@@ -152,11 +166,6 @@ body {
   min-width: 30px;
   font-size: 13px;
   color: var(--text-secondary);
-}
-
-.margin-item .margin-input {
-  flex: 1;
-  text-align: left;
 }
 
 .main-content {
