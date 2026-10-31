@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { clearAllCustomTemplates, useAppStore, PageSettings } from '../store/useAppStore';
+import React, { useState } from 'react';
+import { useAppStore, PageSettings } from '../store/useAppStore';
 import { useI18n } from '../hooks';
 
 export const SettingsPanel: React.FC = () => {
@@ -7,25 +7,6 @@ export const SettingsPanel: React.FC = () => {
   const { t } = useI18n();
   const [showModal, setShowModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [templatesDir, setTemplatesDir] = useState('');
-
-  // 自定义模板以 JSON 文件的形式存放在 userData/templates，目录路径展示给用户，
-  // 方便备份与迁移（卸载程序不会删除该目录）。
-  useEffect(() => {
-    let cancelled = false;
-    window.electronAPI?.templates
-      ?.dir()
-      .then((dir) => {
-        if (!cancelled) setTemplatesDir(dir);
-      })
-      .catch(() => { /* 取不到目录就不展示路径 */ });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const hasTemplateApi = !!window.electronAPI?.templates;
 
   const handleSaveTemplate = () => {
     if (templateName.trim()) {
@@ -33,20 +14,6 @@ export const SettingsPanel: React.FC = () => {
       setTemplateName('');
       setShowModal(false);
     }
-  };
-
-  const handleOpenTemplateDir = () => {
-    void window.electronAPI?.templates?.openDir().catch(() => { /* 打开失败静默处理 */ });
-  };
-
-  const handleClearPersonalData = async () => {
-    setShowClearConfirm(false);
-    await clearAllCustomTemplates();
-    useAppStore.setState({ customTemplates: [] });
-    try {
-      localStorage.removeItem('aimtp-app-storage');
-    } catch { /* 清理失败不阻断 */ }
-    window.location.reload();
   };
 
   return (
@@ -388,21 +355,6 @@ export const SettingsPanel: React.FC = () => {
         </div>
 
         <div className="setting-section">
-          <h3>{t.settings.frontMatter.title}</h3>
-
-          <div className="setting-hint" style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-            {t.settings.frontMatter.hint}
-            <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px', marginTop: '4px', fontSize: '11px' }}>
-{`---
-title: 文档标题
-author: 作者名
-date: 2024-01-01
----`}
-            </pre>
-          </div>
-        </div>
-
-        <div className="setting-section">
           <h3>{t.settings.cover.title}</h3>
 
           <div className="setting-group">
@@ -582,32 +534,6 @@ date: 2024-01-01
           >
             💾 {t.settings.actions.saveAsTemplate}
           </button>
-
-          <button
-            className="btn btn-ghost"
-            style={{ width: '100%', marginTop: '8px' }}
-            onClick={handleOpenTemplateDir}
-            disabled={!hasTemplateApi}
-            data-testid="open-template-dir-btn"
-          >
-            📂 {t.settings.actions.openTemplateDir}
-          </button>
-
-          {templatesDir && (
-            <p style={{ color: '#666', fontSize: '12px', marginTop: '6px', wordBreak: 'break-all' }}>
-              {t.settings.actions.templateDirPrefix}{templatesDir}
-            </p>
-          )}
-
-          <button
-            className="btn btn-ghost"
-            style={{ width: '100%', marginTop: '8px' }}
-            onClick={() => setShowClearConfirm(true)}
-            disabled={!hasTemplateApi}
-            data-testid="clear-personal-data-btn"
-          >
-            🗑️ {t.settings.actions.clearPersonalData}
-          </button>
         </div>
       </div>
 
@@ -644,26 +570,6 @@ date: 2024-01-01
                 disabled={!templateName.trim()}
               >
                 {t.settings.modal.save}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 清除个人数据确认弹窗 */}
-      {showClearConfirm && (
-        <div className="modal-overlay" onClick={() => setShowClearConfirm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>{t.settings.modal.clearDataTitle}</h3>
-            <p style={{ fontSize: '13px', lineHeight: 1.6 }}>
-              {t.settings.modal.clearDataMessage}{templatesDir ? `（${templatesDir}）` : ''}{t.settings.modal.clearDataMessageSuffix}
-            </p>
-            <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => setShowClearConfirm(false)}>
-                {t.settings.modal.cancel}
-              </button>
-              <button className="btn btn-primary" onClick={handleClearPersonalData}>
-                {t.settings.modal.confirmClear}
               </button>
             </div>
           </div>

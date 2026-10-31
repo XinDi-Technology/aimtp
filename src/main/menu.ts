@@ -50,6 +50,12 @@ export function buildMenu(locale: Locale, mainWindow: BrowserWindow | null): Men
             }
           },
         },
+        {
+          label: m('zhTechDoc'),
+          click: () => {
+            mainWindow?.webContents.send('app:request-default-doc');
+          },
+        },
       ],
     },
   ];

@@ -33,6 +33,11 @@ function App() {
     return () => off?.();
   }, []);
 
+  // 启动后自动以"类导入"方式载入内置「中文技术文档」（单一内容源：src/assets/zh-tech-doc.md）
+  useEffect(() => {
+    window.electronAPI?.requestDefaultDoc?.();
+  }, []);
+
   
   return (
     <ErrorBoundary>

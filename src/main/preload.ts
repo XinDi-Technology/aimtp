@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('app:open-document', listener);
     return () => ipcRenderer.removeListener('app:open-document', listener);
   },
+  // 请求主进程读取内置「中文技术文档」MD 并以"类导入"方式推送到预览区
+  requestDefaultDoc: () => ipcRenderer.send('app:request-default-doc'),
   // 自定义模板：以 JSON 文件形式存放在 userData/templates，卸载时不会被删除
   templates: {
     list: () => ipcRenderer.invoke('templates:list'),

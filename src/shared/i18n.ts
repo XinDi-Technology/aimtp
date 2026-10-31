@@ -56,6 +56,7 @@ const zh = {
   templatePanel: {
     preset: '预设模板',
     custom: '自定义模板',
+    dataAndDir: '数据与目录',
     select: '选择',
     createdAt: '创建于',
     delete: '删除',
@@ -123,10 +124,6 @@ const zh = {
       sub: '下标 (H~2~O)',
       sup: '上标 (E=mc^2^)',
     },
-    frontMatter: {
-      title: '以下设置需要 YAML Front Matter',
-      hint: '💡 目前支持以下格式：',
-    },
     cover: {
       title: '封面设置',
       enabled: '封面',
@@ -184,7 +181,8 @@ const zh = {
     toggleDevTools: '开发者工具',
     about: '关于 Aimtp',
     aboutDetail: 'Aimtp 是一款 Markdown 转 PDF 的排版工具。',
-    fontsLicense: '字体授权协议',
+    fontsLicense: 'GWM Sans 字体授权协议',
+    zhTechDoc: '中文技术文档',
   },
 };
 
@@ -230,6 +228,7 @@ const en: typeof zh = {
   templatePanel: {
     preset: 'Preset Templates',
     custom: 'Custom Templates',
+    dataAndDir: 'Data & Directory',
     select: 'Select',
     createdAt: 'Created',
     delete: 'Delete',
@@ -297,10 +296,6 @@ const en: typeof zh = {
       sub: 'Subscript (H~2~O)',
       sup: 'Superscript (E=mc^2^)',
     },
-    frontMatter: {
-      title: 'These settings require YAML Front Matter',
-      hint: '💡 Supported format:',
-    },
     cover: {
       title: 'Cover Settings',
       enabled: 'Cover',
@@ -358,7 +353,8 @@ const en: typeof zh = {
     toggleDevTools: 'Developer Tools',
     about: 'About Aimtp',
     aboutDetail: 'Aimtp is a Markdown to PDF typesetting tool.',
-    fontsLicense: 'Fonts License',
+    fontsLicense: 'GWM Sans Fonts License',
+    zhTechDoc: 'Chinese Technical Doc',
   },
 };
 

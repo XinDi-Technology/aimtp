@@ -18,6 +18,10 @@
       "to": "fonts"
     },
     {
+      "from": "src/assets/zh-tech-doc.md",
+      "to": "zh-tech-doc.md"
+    },
+    {
       "from": "node_modules/pagedjs/dist/paged.js",
       "to": "paged.js"
     }

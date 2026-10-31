@@ -39,6 +39,8 @@ declare global {
       setLocale: (locale: 'zh' | 'en') => void;
       /** 主进程以"类导入"方式请求渲染层打开一段文档内容（如字体授权协议） */
       onOpenDocument: (cb: (payload: { content: string }) => void) => (() => void) | undefined;
+      /** 请求主进程读取内置「中文技术文档」MD 并以"类导入"方式推送到预览区 */
+      requestDefaultDoc: () => void;
       selectSavePath: () => Promise<string | null>;
       savePdfToPath: (data: Uint8Array, filePath: string) => Promise<string>;
       printFromLayoutHtml: (

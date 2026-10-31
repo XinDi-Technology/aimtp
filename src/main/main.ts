@@ -100,6 +100,25 @@ ipcMain.on('app:locale-changed', (_event, locale: Locale) => {
   Menu.setApplicationMenu(buildMenu(currentLocale, mainWindow));
 });
 
+// 读取内置「中文技术文档」MD（打包后位于 resourcesPath，开发期位于 src/assets）
+function readDefaultDocContent(): string {
+  const mdPath = app.isPackaged
+    ? join(process.resourcesPath, 'zh-tech-doc.md')
+    : join(app.getAppPath(), 'src/assets/zh-tech-doc.md');
+  return fs.readFileSync(mdPath, 'utf-8');
+}
+
+// 渲染层请求以"类导入"方式打开内置「中文技术文档」：读取 MD 后推送到预览区
+ipcMain.on('app:request-default-doc', () => {
+  if (!mainWindow) return;
+  try {
+    const content = readDefaultDocContent();
+    mainWindow.webContents.send('app:open-document', { content });
+  } catch (err) {
+    logger.error('Failed to read default doc:', err);
+  }
+});
+
 function getPageDimensionsMm(size: string, landscape: boolean): { width: number; height: number } {
   let w: number, h: number;
   if (size === 'A3') {

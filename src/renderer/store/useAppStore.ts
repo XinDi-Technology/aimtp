@@ -152,9 +152,8 @@ export interface AppState {
   selectPresetTemplate: (templateKey: string) => void;
 }
 
-/** 预设模板：正文 + 该模板对应的完整设置 */
+/** 预设模板：完整设置（正文由内置 MD 文件提供，见主进程 app:request-default-doc） */
 export interface PresetTemplate {
-  markdown: string;
   settings: {
     page: PageSettings;
     font: FontSettings;
@@ -170,159 +169,6 @@ export interface PresetTemplate {
 // 避免「模板里一套、默认值另一套」的两处维护。
 export const TEMPLATES: Record<'zhTech', PresetTemplate> = {
   zhTech: {
-    markdown: `---
-title: 中文技术文档
-author: 文档作者
-date: 2026-10-09
----
-
-# 中文技术文档
-
-> 本文件是 Aimtp 内置模板「中文技术文档」的示例正文，展示了一套面向中文技术文档的排版规范，以及常用 Markdown 语法的渲染效果。
-
-## 文档设置
-
-本模板采用的排版设置如下，可在右侧「设置」面板中按需调整，也可另存为自定义模板。
-
-| 设置项 | 取值 |
-| --- | --- |
-| 页面尺寸 | A4 |
-| 页面方向 | 纵向 |
-| 页边距 | 上 20mm、下 20mm、左 24mm、右 24mm |
-| 正文字体 | GWM Sans UI |
-| 代码字体 | JetBrains Mono |
-| 基础字号 | 18px |
-| 行高 | 2 |
-| 段落间距 | 0.5em |
-| 代码高亮 | 启用，GitHub 主题，显示行号 |
-| 脚注 | 启用，统一置于文档末尾 |
-| 标题分页 | 二级标题自动另起一页 |
-| 页眉 | 居中显示文档标题 |
-| 页脚 | 居中显示「第 x 页 / 共 x 页」 |
-| 封面 | 启用，信息取自 YAML Front Matter |
-| 目标 DPI | 93 |
-
-## 修订记录
-
-| 版本 | 日期 | 修订人 | 修订说明 |
-| --- | --- | --- | --- |
-| 1.0 | 2026-10-09 | 文档作者 | 初稿创建 |
-
-## 概述
-
-说明文档的编写目的、适用范围与预期读者。
-
-## 术语与缩略语
-
-| 术语 | 全称 | 说明 |
-| --- | --- | --- |
-| PDF | Portable Document Format | 便携式文档格式 |
-| DPI | Dots Per Inch | 每英寸点数，用于预览缩放校准 |
-
-## 系统架构
-
-系统由编辑器、解析层、分页引擎与导出层四部分组成。
-
-\`\`\`mermaid
-graph LR
-  A[Markdown 编辑器] --> B[解析层]
-  B --> C[Paged.js 分页引擎]
-  C --> D[PDF 导出]
-\`\`\`
-
-## 功能说明
-
-### 模块一
-
-描述模块一的职责与边界。
-
-### 模块二
-
-描述模块二的职责与边界。
-
-## 接口说明
-
-| 接口 | 方法 | 说明 |
-| --- | --- | --- |
-| /api/documents | GET | 获取文档列表 |
-| /api/documents | POST | 创建文档 |
-| /api/documents/:id | DELETE | 删除文档 |
-
-## 部署与运维
-
-\`\`\`bash
-npm install
-npm run build
-npm run dist
-\`\`\`
-
-## Markdown 语法示例
-
-### 标题层级
-
-四级、五级、六级标题依此类推。
-
-### 强调与行内格式
-
-**加粗**、*斜体*、\`行内代码\`、==高亮==、++插入++、~下标~、^上标^、[链接](https://github.com/XinDi-Technology/aimtp)。
-
-### 列表
-
-1. 有序列表第一项
-2. 有序列表第二项
-
-- 无序列表第一项
-- 无序列表第二项
-
-### 任务列表
-
-- [x] 已完成事项
-- [ ] 待办事项
-
-### 引用
-
-> 引用用于突出关键结论或外部来源。
-
-### 提示块
-
-> [!NOTE]
-> 这是 NOTE 提示块，用于补充说明。
-
-> [!WARNING]
-> 这是 WARNING 提示块，用于提醒风险。
-
-### 代码块
-
-\`\`\`typescript
-export function renderMarkdown(source: string): string {
-  return source.trim();
-}
-\`\`\`
-
-### 表格
-
-| 列一 | 列二 | 列三 |
-| --- | --- | --- |
-| A | B | C |
-
-### 公式
-
-行内公式 $a + b = c$，独立公式：
-
-$$
-E = mc^2
-$$
-
-### 脚注
-
-这里是一处脚注[^1]。
-
-[^1]: 脚注内容统一排布在文档末尾。
-
-## 附录
-
-补充材料、参考资料与联系方式。
-`,
     settings: {
       page: {
         size: 'A4',
@@ -657,7 +503,7 @@ export const clearAllCustomTemplates = async (): Promise<void> => {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      markdown: TEMPLATES.zhTech.markdown,
+      markdown: '',
       setMarkdown: (markdown) => set({ markdown }),
 
       renderNonce: 0,
@@ -740,6 +586,8 @@ export const useAppStore = create<AppState>()(
         const template = state.customTemplates.find(t => t.id === templateId);
         if (template) {
           set({
+            // 用户自存模板只应用设置，正文重置为空白页
+            markdown: '',
             page: { ...template.settings.page },
             font: { ...template.settings.font },
             extensions: { ...template.settings.extensions },
@@ -764,7 +612,6 @@ export const useAppStore = create<AppState>()(
         if (template) {
           const { page, font, extensions, headerFooter, cover, preview } = template.settings;
           set({
-            markdown: template.markdown,
             currentTemplate: templateKey,
             // 预设模板自带一套完整设置，选择模板即应用这套设置（含目标 DPI）
             page: clonePreset(page),
@@ -775,6 +622,8 @@ export const useAppStore = create<AppState>()(
             preview: clonePreset(preview),
             showTemplateSelection: false, // 关闭模板选择面板
           });
+          // 正文从内置 MD 文件载入（单一内容源），而非内联字符串
+          window.electronAPI?.requestDefaultDoc?.();
         }
       },
     }),
@@ -801,7 +650,7 @@ export const useAppStore = create<AppState>()(
       merge: (persistedState, currentState) => ({
         ...currentState,
         ...(persistedState as Partial<AppState>),
-        markdown: TEMPLATES.zhTech.markdown,
+        markdown: '',
         currentTemplate: 'zhTech',
         customTemplates: currentState.customTemplates,
       }),
