@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { logger } from '../utils/logger';
+// 内置「中文技术文档」示例正文：以独立 MD 文件为单一内容源。
+// 渲染包内通过 ?raw 内联该文件内容作为默认正文（纯浏览器/测试环境也能拿到，
+// 不必依赖主进程读文件）；主进程仍从 resourcesPath 读取同一文件供「帮助」菜单类导入。
+import zhTechDoc from '../../assets/zh-tech-doc.md?raw';
 
 // 应用主题
 const applyTheme = (theme: 'light' | 'dark' | 'system') => {
@@ -503,7 +507,7 @@ export const clearAllCustomTemplates = async (): Promise<void> => {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      markdown: '',
+      markdown: zhTechDoc,
       setMarkdown: (markdown) => set({ markdown }),
 
       renderNonce: 0,
@@ -613,6 +617,8 @@ export const useAppStore = create<AppState>()(
           const { page, font, extensions, headerFooter, cover, preview } = template.settings;
           set({
             currentTemplate: templateKey,
+            // 正文从内置 MD 文件载入（单一内容源，渲染包内已内联该文件内容）
+            markdown: zhTechDoc,
             // 预设模板自带一套完整设置，选择模板即应用这套设置（含目标 DPI）
             page: clonePreset(page),
             font: clonePreset(font),
@@ -622,8 +628,6 @@ export const useAppStore = create<AppState>()(
             preview: clonePreset(preview),
             showTemplateSelection: false, // 关闭模板选择面板
           });
-          // 正文从内置 MD 文件载入（单一内容源），而非内联字符串
-          window.electronAPI?.requestDefaultDoc?.();
         }
       },
     }),
@@ -650,7 +654,7 @@ export const useAppStore = create<AppState>()(
       merge: (persistedState, currentState) => ({
         ...currentState,
         ...(persistedState as Partial<AppState>),
-        markdown: '',
+        markdown: zhTechDoc,
         currentTemplate: 'zhTech',
         customTemplates: currentState.customTemplates,
       }),
