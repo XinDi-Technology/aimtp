@@ -7,6 +7,7 @@ import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
 import mdGithubAlerts from 'markdown-it-github-alerts';
+import tocAndAnchor from 'markdown-it-toc-and-anchor';
 import { mermaidPlugin } from './mermaidPlugin';
 
 export interface MarkdownItOptions {
@@ -21,6 +22,8 @@ export interface MarkdownItOptions {
   sub: boolean;
   sup: boolean;
   githubAlerts: boolean;
+  toc: boolean;
+  tocDepth: number;
 }
 
 /**
@@ -139,6 +142,22 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance
   if (options.mermaid) {
     // 使用自定义 Mermaid 插件
     md.use(mermaidPlugin);
+  }
+
+  if (options.toc) {
+    // 目录（TOC）：采用 Typora 风格的 [TOC] 占位语法（通过 tocPattern 改写默认 [@toc]）。
+    // 仅当文档中出现 [TOC] 时才生成目录；标题 id 与链接 href 的中文一致性
+    // 由 htmlGenerator 的 enrichToc 在渲染后统一校正，插件仅负责生成嵌套列表。
+    md.use(tocAndAnchor, {
+      tocPattern: /\[TOC\]/,
+      tocFirstLevel: 1,
+      tocLastLevel: options.tocDepth,
+      appendIdtoHeading: true,
+      anchorLink: false,
+      tocClassName: 'aimtp-toc',
+      // 仅作为兜底；真实 id/href 由 enrichToc 重写，避免 uslug 对中文标题的转写/丢失。
+      slugify: (str: string) => (str || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w一-龥-]/g, ''),
+    });
   }
 
   // 存入缓存

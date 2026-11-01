@@ -6,7 +6,7 @@ import DOMPurify from 'dompurify';
 import { getHljsTheme, getHljsBaseStyles } from './hljsThemes';
 import { parseFrontMatter, formatDate } from './frontMatter';
 import type { FrontMatterData } from './frontMatter';
-import { isErrorCode } from '../../shared/i18n';
+import { isErrorCode, getTranslations, type Locale } from '../../shared/i18n';
 import { renderMermaidSync } from './mermaidPlugin';
 import { renderMathInlineAsync, renderMathDisplayAsync } from './mathjaxPlugin';
 import { buildFinalCss, getPageWidthMm, getPageHeightMm } from './cssTemplate';
@@ -33,6 +33,7 @@ export interface HtmlGeneratorOptions {
   headerFooter: HeaderFooterSettings;
   cover: CoverSettings;
   preview: PreviewSettings;
+  locale: Locale;
 }
 
 const transformFootnotesToPagedJs = (html: string): string => {
@@ -93,8 +94,79 @@ const transformFootnotesToPagedJs = (html: string): string => {
   return doc.body.innerHTML;
 };
 
+/**
+ * 中文安全的 slug：保留字母数字、连字符与中日韩文字，去除其他字符并转小写。
+ * 用于在插件（uslug）对中文标题可能转写/丢失时，提供可预测的 id 兜底。
+ */
+const cjkSlug = (text: string): string =>
+  (text || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w一-龥-]/g, '');
+
+/**
+ * 目录后处理（仅当文档含 [TOC]、插件已生成 .aimtp-toc 时生效）：
+ * 1. 校正正文标题 id —— 保留插件生成的合法且唯一的 id，否则按 cjkSlug 补齐唯一 id；
+ * 2. 按「标题文本顺序」重写 TOC 链接 href，确保中文锚点一一对应（含重复标题正确处理）；
+ * 3. 在每条 TOC 链接内追加引导点（.toc-leader）与页码占位（.toc-page[data-target]），
+ *    页码由 PagedJsAdapter 在分页完成后回填；
+ * 4. 在目录列表前插入本地化标题（.toc-title）。
+ */
+const enrichToc = (html: string, locale: Locale): string => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const toc = doc.querySelector('.aimtp-toc');
+  if (!toc) return html;
+
+  // 1. 校正标题 id 并保证全局唯一
+  const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6')) as HTMLElement[];
+  const usedIds = new Set<string>();
+  const headingByText = new Map<string, HTMLElement[]>();
+  for (const h of headings) {
+    let id = h.id;
+    if (!id || usedIds.has(id)) {
+      const base = cjkSlug(h.textContent || '') || 'section';
+      id = base;
+      let n = 2;
+      while (usedIds.has(id)) id = `${base}-${n++}`;
+    }
+    usedIds.add(id);
+    h.id = id;
+    const key = (h.textContent || '').trim();
+    if (!headingByText.has(key)) headingByText.set(key, []);
+    headingByText.get(key)!.push(h);
+  }
+
+  // 2 & 3. 重写 TOC 链接 href 并追加引导点 + 页码占位
+  const links = Array.from(toc.querySelectorAll('a[href^="#"]')) as HTMLAnchorElement[];
+  for (const link of links) {
+    const key = (link.textContent || '').trim();
+    const candidates = headingByText.get(key);
+    if (candidates && candidates.length) {
+      const target = candidates.shift()!; // 取下一个未匹配的同级标题，正确处理重复标题
+      link.setAttribute('href', `#${target.id}`);
+      const leader = doc.createElement('span');
+      leader.className = 'toc-leader';
+      const page = doc.createElement('span');
+      page.className = 'toc-page';
+      page.setAttribute('data-target', target.id);
+      link.appendChild(leader);
+      link.appendChild(page);
+    }
+  }
+
+  // 4. 本地化目录标题
+  const titleDiv = doc.createElement('div');
+  titleDiv.className = 'toc-title';
+  titleDiv.textContent = getTranslations(locale).settings.extensions.tocTitle;
+  toc.parentNode?.insertBefore(titleDiv, toc);
+
+  return doc.body.innerHTML;
+};
+
 export const generateHtml = async (options: HtmlGeneratorOptions): Promise<string> => {
-  const { markdown, page, font, extensions, headerFooter, cover, preview } = options;
+  const { markdown, page, font, extensions, headerFooter, cover, preview, locale } = options;
 
   try {
     const { data: frontMatter, content: markdownWithoutFrontMatter } = parseFrontMatter(markdown);
@@ -111,6 +183,8 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       sub: extensions.sub,
       sup: extensions.sup,
       githubAlerts: extensions.githubAlerts,
+      toc: extensions.toc,
+      tocDepth: extensions.tocDepth,
     });
 
     let content = markdownWithoutFrontMatter;
@@ -138,7 +212,7 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
     try {
       const sanitized = DOMPurify.sanitize(result, {
         ADD_ATTR: ['target', 'id', 'data-processed', 'xlink:href', 'xmlns:xlink', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize', 'data-*', 'aria-hidden'],
-        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon', 'input', 'ins', 'mark', 'sub', 'sup', 'b', 's', 'section', 'defs', 'use', 'clipPath', 'symbol', 'desc', 'title', 'style', 'foreignObject', 'marker', 'stop', 'linearGradient', 'radialGradient', 'filter', 'feGaussianBlur', 'feOffset', 'feMerge', 'feMergeNode', 'feFlood', 'feColorMatrix', 'feComponentTransfer', 'feFuncA', 'feFuncR', 'feFuncG', 'feFuncB', 'feBlend', 'feComposite', 'feDropShadow', 'mask', 'pattern', 'image', 'textPath', 'animate', 'animateTransform', 'set', 'math', 'mrow', 'mi', 'mn', 'mo', 'mtext', 'mfrac', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'mspace', 'mphantom', 'mpadded', 'menclose', 'maction', 'mstyle', 'ms', 'annotation', 'semantics', 'switch'],
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'strong', 'em', 'br', 'hr', 'div', 'span', 'img', 'svg', 'path', 'g', 'rect', 'circle', 'text', 'tspan', 'line', 'polyline', 'polygon', 'input', 'ins', 'mark', 'sub', 'sup', 'b', 's', 'section', 'defs', 'use', 'clipPath', 'symbol', 'desc', 'title', 'style', 'foreignObject', 'marker', 'stop', 'linearGradient', 'radialGradient', 'filter', 'feGaussianBlur', 'feOffset', 'feMerge', 'feMergeNode', 'feFlood', 'feColorMatrix', 'feComponentTransfer', 'feFuncA', 'feFuncR', 'feFuncG', 'feFuncB', 'feBlend', 'feComposite', 'feDropShadow', 'mask', 'pattern', 'image', 'textPath', 'animate', 'animateTransform', 'set', 'math', 'mrow', 'mi', 'mn', 'mo', 'mtext', 'mfrac', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'mspace', 'mphantom', 'mpadded', 'menclose', 'maction', 'mstyle', 'ms', 'annotation', 'semantics', 'switch', ...(extensions.kbd ? ['kbd'] : [])],
         ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'id', 'data-processed', 'd', 'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'fill-opacity', 'opacity', 'transform', 'x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'viewBox', 'preserveAspectRatio', 'xmlns', 'xmlns:xlink', 'font-family', 'font-size', 'font-weight', 'font-style', 'font-variant', 'text-anchor', 'dominant-baseline', 'alignment-baseline', 'baseline-shift', 'letter-spacing', 'word-spacing', 'text-decoration', 'textLength', 'lengthAdjust', 'paint-order', 'x1', 'y1', 'x2', 'y2', 'points', 'dy', 'dx', 'stdDeviation', 'flood-opacity', 'flood-color', 'cursor', 'marker-end', 'marker-start', 'marker-mid', 'refX', 'refY', 'markerWidth', 'markerHeight', 'orient', 'markerUnits', 'clip-rule', 'fill-rule', 'clip-path', 'mask', 'stop-color', 'stop-opacity', 'type', 'checked', 'data-line', 'data-math', 'aria-label', 'role', 'rev', 'xlink:href', 'overflow', 'pointer-events', 'focusable', 'tabindex', 'mathvariant', 'stretchy', 'symmetric', 'lspace', 'rspace', 'minsize', 'maxsize', 'largeop', 'movablelimits', 'display', 'color', 'mathcolor', 'mathbackground', 'fontsize', 'aria-hidden', 'alttext', 'jax', 'scriptlevel', 'displaystyle', 'mathsize', 'dir', 'mathspacing', 'form', 'fence', 'separator', 'accent', 'accentunder', 'align', 'close', 'open', 'bevelled', 'denomalign', 'numalign', 'linethickness', 'subscriptshift', 'superscriptshift', 'notation', 'depth', 'voffset', 'offset', 'position', 'columnalign', 'rowalign', 'columnspacing', 'rowspacing', 'columnlines', 'rowlines', 'frame', 'framespacing', 'equalcolumns', 'equalrows', 'side', 'selection', 'actiontype', 'name', 'cdgroup', 'encoding', 'definitionurl', 'nth', 'scope', 'stackalign', 'charalign', 'charspacing', 'longdivstyle', 'color-interpolation', 'color-interpolation-filters', 'color-rendering', 'shape-rendering', 'text-rendering', 'image-rendering', 'data-id', 'data-type'],
         // MathJax v4 使用 mjx-* 自定义元素（Custom Elements），用 CUSTOM_ELEMENT_HANDLING 统一放行
         CUSTOM_ELEMENT_HANDLING: {
@@ -204,6 +278,12 @@ export const generateHtml = async (options: HtmlGeneratorOptions): Promise<strin
       });
     }
     result = doc.body.innerHTML;
+
+    // 目录（TOC）后处理：仅当文档含 [TOC]（插件已生成 .aimtp-toc）时生效。
+    // 校正标题 id 与 TOC 链接 href 的中文一致性，并追加页码占位（分页后回填）。
+    if (extensions.toc) {
+      result = enrichToc(result, locale);
+    }
 
     const hljsTheme = extensions.codeTheme || 'github';
 

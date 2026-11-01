@@ -350,6 +350,11 @@ export class PagedJsAdapter implements LayoutEngine {
       }
     }
 
+    // 回填目录页码：分页完成后，根据每个 .pagedjs_page 内标题 id 计算其所在页，
+    // 写入 TOC 中对应的 .toc-page[data-target] 占位。仅改文字、不增高度（CSS nowrap），
+    // 不会触发二次分页，页码即为真实打印页号。
+    this.fillTocPageNumbers(doc);
+
     // 6. Build LayoutDOM
     const metadata = this.extractMetadata(iframe, flow);
     const provenance = this.buildProvenance(sourceHash);
@@ -360,6 +365,31 @@ export class PagedJsAdapter implements LayoutEngine {
       metadata,
       provenance,
     };
+  }
+
+  /**
+   * 回填目录页码。分页后遍历 .pagedjs_page，记录每个标题 id 所在的 1-based 页号
+   * （标题跨页拆分时取首次出现页），再写入 TOC 中 .toc-page[data-target] 占位。
+   */
+  private fillTocPageNumbers(doc: Document): void {
+    const pages = doc.querySelectorAll('.pagedjs_page');
+    const idToPage = new Map<string, number>();
+    pages.forEach((pageEl, idx) => {
+      const headings = pageEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach((h) => {
+        const id = h.id;
+        if (id && !idToPage.has(id)) {
+          idToPage.set(id, idx + 1);
+        }
+      });
+    });
+
+    doc.querySelectorAll('.toc-page').forEach((span) => {
+      const target = span.getAttribute('data-target');
+      if (!target) return;
+      const pageNum = idToPage.get(target);
+      if (pageNum != null) span.textContent = String(pageNum);
+    });
   }
 
   dispose(): void {

@@ -123,6 +123,10 @@ const zh = {
       ins: '下划线插入 (++text++)',
       sub: '下标 (H~2~O)',
       sup: '上标 (E=mc^2^)',
+      kbd: '按键标签 (<kbd>key</kbd>)',
+      toc: '目录 ([TOC])',
+      tocDepth: '目录深度',
+      tocTitle: '目录',
     },
     cover: {
       title: '封面设置',
@@ -295,6 +299,10 @@ const en: typeof zh = {
       ins: 'Insert (++text++)',
       sub: 'Subscript (H~2~O)',
       sup: 'Superscript (E=mc^2^)',
+      kbd: 'Keyboard Keys (<kbd>key</kbd>)',
+      toc: 'Table of Contents ([TOC])',
+      tocDepth: 'TOC Depth',
+      tocTitle: 'Contents',
     },
     cover: {
       title: 'Cover Settings',

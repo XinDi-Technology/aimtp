@@ -64,6 +64,9 @@ export interface ExtensionSettings {
   ins: boolean;
   sub: boolean;
   sup: boolean;
+  kbd: boolean;
+  toc: boolean;
+  tocDepth: number;
 }
 
 export interface CoverSettings {
@@ -202,6 +205,9 @@ export const TEMPLATES: Record<'zhTech', PresetTemplate> = {
         ins: true,
         sub: true,
         sup: true,
+        kbd: true,
+        toc: false,
+        tocDepth: 3,
       },
       headerFooter: {
         enabled: true,
@@ -311,6 +317,11 @@ const validateExtensionSettings = (data: unknown): ExtensionSettings => {
     ins: isValidBoolean(d.ins) ? d.ins : defaults.ins,
     sub: isValidBoolean(d.sub) ? d.sub : defaults.sub,
     sup: isValidBoolean(d.sup) ? d.sup : defaults.sup,
+    kbd: isValidBoolean(d.kbd) ? d.kbd : defaults.kbd,
+    toc: isValidBoolean(d.toc) ? d.toc : defaults.toc,
+    tocDepth: isValidNumber(d.tocDepth)
+      ? Math.min(4, Math.max(1, Math.floor(d.tocDepth)))
+      : defaults.tocDepth,
   };
 };
 

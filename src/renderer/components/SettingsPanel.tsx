@@ -352,6 +352,43 @@ export const SettingsPanel: React.FC = () => {
               {t.settings.extensions.sup}
             </label>
           </div>
+
+          <div className="setting-group">
+            <label className="setting-checkbox">
+              <input
+                type="checkbox"
+                checked={extensions.kbd}
+                onChange={(e) => setExtensions({ kbd: e.target.checked })}
+              />
+              {t.settings.extensions.kbd}
+            </label>
+          </div>
+
+          <div className="setting-group">
+            <label className="setting-checkbox">
+              <input
+                type="checkbox"
+                checked={extensions.toc}
+                onChange={(e) => setExtensions({ toc: e.target.checked })}
+              />
+              {t.settings.extensions.toc}
+            </label>
+          </div>
+
+          <div className="setting-group">
+            <label className="setting-checkbox">
+              <span>{t.settings.extensions.tocDepth}</span>
+              <select
+                value={extensions.tocDepth}
+                onChange={(e) => setExtensions({ tocDepth: Number(e.target.value) })}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <div className="setting-section">

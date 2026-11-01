@@ -194,6 +194,56 @@ pre code {
   padding: 0;
 }
 
+kbd {
+  font-family: $$fontCode, $$fontBody;
+  font-size: $$codeFontSize;
+  padding: 1px 6px;
+  border: 1px solid #d0d7de;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background-color: #f6f8fa;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* ── 目录 (TOC) ── */
+.toc-title {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin: 0 0 0.8em;
+}
+.aimtp-toc ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.aimtp-toc li > ul {
+  padding-left: 1.4em;
+  margin: 0.2em 0;
+}
+.aimtp-toc li {
+  margin: 0.3em 0;
+}
+.aimtp-toc li > a {
+  display: inline-flex;
+  align-items: baseline;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  white-space: nowrap;
+}
+.toc-leader {
+  flex: 1 1 auto;
+  margin: 0 0.4em;
+  border-bottom: 1px dotted currentColor;
+  transform: translateY(-0.25em);
+}
+.toc-page {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 pre.hljs {
   position: relative;
   padding: 1em 1em 1em 0;

@@ -102,6 +102,7 @@ const PreviewPanel: React.FC = () => {
   const preview = useAppStore((s) => s.preview);
   const currentTemplate = useAppStore((s) => s.currentTemplate);
   const isGenerating = useAppStore((s) => s.isGenerating);
+  const locale = useAppStore((s) => s.locale);
   // 导入文件后自增，用于强制重渲染（内容未变时也要重跑一次完整渲染）
   const renderNonce = useAppStore((s) => s.renderNonce);
 
@@ -353,7 +354,7 @@ const PreviewPanel: React.FC = () => {
         );
 
         const context: RenderContext = {
-          generateHtml: () => generateHtml({ markdown, page, font, extensions, cover, headerFooter, preview }),
+          generateHtml: () => generateHtml({ markdown, page, font, extensions, cover, headerFooter, preview, locale }),
           iframe: frame,
           sourceHash,
           stateSnapshot: { page, font, cover, headerFooter, preview },
