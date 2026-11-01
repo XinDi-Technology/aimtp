@@ -7,7 +7,7 @@ import mdMark from 'markdown-it-mark';
 import mdSub from 'markdown-it-sub';
 import mdSup from 'markdown-it-sup';
 import mdGithubAlerts from 'markdown-it-github-alerts';
-import tocAndAnchor from 'markdown-it-toc-and-anchor';
+import tocDoneRight from 'markdown-it-toc-done-right';
 import { mermaidPlugin } from './mermaidPlugin';
 
 export interface MarkdownItOptions {
@@ -145,17 +145,16 @@ export const createMarkdownIt = (options: MarkdownItOptions): MarkdownItInstance
   }
 
   if (options.toc) {
-    // 目录（TOC）：采用 Typora 风格的 [TOC] 占位语法（通过 tocPattern 改写默认 [@toc]）。
-    // 仅当文档中出现 [TOC] 时才生成目录；标题 id 与链接 href 的中文一致性
-    // 由 htmlGenerator 的 enrichToc 在渲染后统一校正，插件仅负责生成嵌套列表。
-    md.use(tocAndAnchor, {
-      tocPattern: /\[TOC\]/,
-      tocFirstLevel: 1,
-      tocLastLevel: options.tocDepth,
-      appendIdtoHeading: true,
-      anchorLink: false,
-      tocClassName: 'aimtp-toc',
-      // 仅作为兜底；真实 id/href 由 enrichToc 重写，避免 uslug 对中文标题的转写/丢失。
+    // 目录（TOC）：采用 Typora 风格的 [TOC] 占位语法（通过 placeholder 选项限定为 [TOC]）。
+    // markdown-it-toc-done-right 为自包含 ESM，不深层导入 markdown-it/lib/*，与 v15 兼容；
+    // 也不依赖 markdown-it-anchor。仅当文档出现 [TOC] 时生成目录；标题 id 与链接 href
+    // 的中文一致性由 htmlGenerator 的 enrichToc 在渲染后统一校正。
+    md.use(tocDoneRight, {
+      placeholder: '\\[TOC\\]',
+      level: Array.from({ length: options.tocDepth }, (_, i) => i + 1),
+      containerClass: 'aimtp-toc',
+      listType: 'ul',
+      // 仅作为兜底；真实 id/href 由 enrichToc 重写，避免 encodeURIComponent 对中文的转写。
       slugify: (str: string) => (str || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w一-龥-]/g, ''),
     });
   }

@@ -212,6 +212,7 @@ kbd {
   font-weight: 700;
   margin: 0 0 0.8em;
 }
+.aimtp-toc,
 .aimtp-toc ul {
   list-style: none;
   padding-left: 0;
