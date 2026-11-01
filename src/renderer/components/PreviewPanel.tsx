@@ -412,7 +412,7 @@ const PreviewPanel: React.FC = () => {
       reportRenderError(err);
       setLoading(false);
     }
-  }, [markdown, page, font, extensions, cover, headerFooter, preview, currentTemplate, currentSnapshot, ensureFrameReady, reportRenderError]);
+  }, [markdown, page, font, extensions, cover, headerFooter, preview, locale, currentTemplate, currentSnapshot, ensureFrameReady, reportRenderError]);
 
   // 设置变更触发渲染（防抖）
   useEffect(() => {
